@@ -2,6 +2,10 @@ D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows
 D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/flutter_windows.dll
 D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/AssetManifest.bin
 D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/AssetManifest.json
+D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/assets/images/1.jpg
+D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/assets/images/2.jpg
+D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/assets/images/3.jpg
+D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/assets/images/4.jpg
 D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/FontManifest.json
 D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/fonts/MaterialIcons-Regular.otf
 D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/kernel_blob.bin
