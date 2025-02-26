@@ -1,0 +1,11 @@
+D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/icudtl.dat
+D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/flutter_windows.dll
+D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/AssetManifest.bin
+D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/AssetManifest.json
+D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/FontManifest.json
+D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/fonts/MaterialIcons-Regular.otf
+D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/kernel_blob.bin
+D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/NativeAssetsManifest.json
+D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/NOTICES.Z
+D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/packages/cupertino_icons/assets/CupertinoIcons.ttf
+D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/Debug/data/flutter_assets/shaders/ink_sparkle.frag

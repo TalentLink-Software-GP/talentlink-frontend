@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\Software GP\TalentLink\frontend\talentlink-frontend\talent_link\build\windows\x64\CMakeFiles\c0afeff42efd8d4e2156b54ed04624b4\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{DB44FE88-3DC0-3F4E-9C30-BD837D0AD291}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

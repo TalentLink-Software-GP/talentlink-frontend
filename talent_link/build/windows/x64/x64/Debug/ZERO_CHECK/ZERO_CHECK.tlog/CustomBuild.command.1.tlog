@@ -1,0 +1,10 @@
+^D:\SOFTWARE GP\TALENTLINK\FRONTEND\TALENTLINK-FRONTEND\TALENT_LINK\BUILD\WINDOWS\X64\CMAKEFILES\C0AFEFF42EFD8D4E2156B54ED04624B4\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" "-SD:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/windows" "-BD:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64" --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file "D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/talent_link.sln"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

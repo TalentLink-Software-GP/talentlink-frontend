@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\Software GP\TalentLink\frontend\talentlink-frontend\talent_link\build\windows\x64\CMakeFiles\dc156936c20ad9b6d759ecc2bda5d09b\flutter_windows.dll.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Software GP\TalentLink\frontend\talentlink-frontend\talent_link\build\windows\x64\CMakeFiles\90d3d563be980552ed7b9d94f799f8fd\flutter_assemble.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Software GP\TalentLink\frontend\talentlink-frontend\talent_link\windows\flutter\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\Software GP\TalentLink\frontend\talentlink-frontend\talent_link\build\windows\x64\flutter\CMakeFiles\flutter_assemble" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{DB44FE88-3DC0-3F4E-9C30-BD837D0AD291}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
