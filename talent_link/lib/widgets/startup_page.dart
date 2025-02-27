@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:talent_link/widgets/button.dart';
 import 'package:talent_link/widgets/choose_auth-page.dart';
-
 
 class StartupPage extends StatefulWidget {
   const StartupPage({super.key});
-
   @override
   State<StartupPage> createState() => _StartupPageState();
 }
@@ -30,23 +29,14 @@ class _StartupPageState extends State<StartupPage> {
           ),
         ),
         Spacer(flex: 1),
-        Container(
-          width: double.infinity,
-          margin: EdgeInsets.symmetric(horizontal: 24.0),
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ChooseAuthPage()),
-              );
-            },
-
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFF0C9E91),
-              foregroundColor: Colors.white,
-            ),
-            child: Text("Get Started"),
-          ),
+        BaseButton(
+          text: "Get Started",
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => ChooseAuthPage()),
+            );
+          },
         ),
         Spacer(flex: 1),
       ],
