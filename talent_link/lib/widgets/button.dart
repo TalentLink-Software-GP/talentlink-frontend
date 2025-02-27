@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
 
-class BaseButton extends StatefulWidget {
-  const BaseButton({super.key});
+class BaseButton extends StatelessWidget {
+  final String text;
+  final VoidCallback onPressed;
 
-  @override
-  State<BaseButton> createState() => _BaseButtonState();
-}
+  const BaseButton({super.key, required this.text, required this.onPressed});
 
-class _BaseButtonState extends State<BaseButton> {
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(onPressed: () {}, child: Text("BaseButton"));
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF0C9E91),
+          foregroundColor: Colors.white,
+        ),
+        child: Text(text),
+      ),
+    );
   }
 }
