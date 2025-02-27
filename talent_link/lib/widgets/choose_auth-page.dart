@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:talent_link/widgets/button.dart';
 import 'package:talent_link/widgets/login_page.dart';
+import 'package:talent_link/widgets/signup_page.dart';
 
 class ChooseAuthPage extends StatefulWidget {
   const ChooseAuthPage({super.key});
@@ -47,7 +48,7 @@ class _ChooseAuthPageState extends State<ChooseAuthPage> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => LoginPage()),
+                  MaterialPageRoute(builder: (context) => SignupPage()),
                 );
               },
             ),
