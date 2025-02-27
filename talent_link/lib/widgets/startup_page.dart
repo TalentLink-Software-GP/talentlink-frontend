@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:talent_link/widgets/choose_auth-page.dart';
 
+
 class StartupPage extends StatefulWidget {
   const StartupPage({super.key});
 
@@ -39,6 +40,7 @@ class _StartupPageState extends State<StartupPage> {
                 MaterialPageRoute(builder: (context) => ChooseAuthPage()),
               );
             },
+
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFF0C9E91),
               foregroundColor: Colors.white,
