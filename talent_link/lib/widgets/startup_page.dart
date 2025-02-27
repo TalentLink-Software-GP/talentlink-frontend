@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:talent_link/widgets/button.dart';
+import 'package:talent_link/widgets/choose_auth-page.dart';
 
 class StartupPage extends StatefulWidget {
   const StartupPage({super.key});
@@ -14,10 +14,7 @@ class _StartupPageState extends State<StartupPage> {
     return Column(
       children: [
         Spacer(flex: 4),
-        Image.asset(
-          'assets/images/3.jpg',
-          fit: BoxFit.cover, // or BoxFit.contain
-        ),
+        Image.asset('assets/images/3.jpg', fit: BoxFit.cover),
         Spacer(flex: 3),
         Text(
           "TalentLink",
@@ -36,7 +33,12 @@ class _StartupPageState extends State<StartupPage> {
           width: double.infinity,
           margin: EdgeInsets.symmetric(horizontal: 24.0),
           child: ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ChooseAuthPage()),
+              );
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFF0C9E91),
               foregroundColor: Colors.white,
