@@ -4,7 +4,6 @@ import 'package:talent_link/widgets/choose_auth-page.dart';
 
 class StartupPage extends StatefulWidget {
   const StartupPage({super.key});
-
   @override
   State<StartupPage> createState() => _StartupPageState();
 }
