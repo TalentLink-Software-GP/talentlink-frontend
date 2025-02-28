@@ -27,12 +27,14 @@ class _LoginPageState extends State<LoginPage> {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: TextField(
-                textAlign: TextAlign.center,
+                textAlign: TextAlign.start,
                 decoration: InputDecoration(
                   border: UnderlineInputBorder(),
                   label: Text("Username"),
+                  labelStyle: TextStyle(color: Colors.black),
                   hintText: 'Enter Username',
                   fillColor: Colors.white,
+                  hintStyle: TextStyle(color: Colors.grey),
                 ),
               ),
             ),
@@ -45,6 +47,8 @@ class _LoginPageState extends State<LoginPage> {
                   hintText: 'Enter Password',
                   fillColor: Colors.white,
                   label: Text("Password"),
+                  labelStyle: TextStyle(color: Colors.black),
+                  hintStyle: TextStyle(color: Colors.grey),
                 ),
               ),
             ),
