@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:talent_link/widgets/login_page.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -12,7 +13,7 @@ class _SignupPageState extends State<SignupPage> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(body: Text("SignUp Page")),
+      home: Scaffold(body: LoginPage()),
     );
   }
 }
