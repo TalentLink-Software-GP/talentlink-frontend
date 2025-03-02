@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:talent_link/widgets/button.dart';
 import 'package:talent_link/widgets/signup_page.dart';
+import 'package:talent_link/widgets/text_field.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -24,33 +25,13 @@ class _LoginPageState extends State<LoginPage> {
               "TalentLink",
               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 40),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                textAlign: TextAlign.start,
-                decoration: InputDecoration(
-                  border: UnderlineInputBorder(),
-                  label: Text("Username"),
-                  labelStyle: TextStyle(color: Colors.black),
-                  hintText: 'Enter Username',
-                  fillColor: Colors.white,
-                  hintStyle: TextStyle(color: Colors.grey),
-                ),
-              ),
+            LoginSignupTextFieled(
+              textHint: "Enter Username",
+              textLable: "Username",
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: TextField(
-                textAlign: TextAlign.center,
-                decoration: InputDecoration(
-                  border: UnderlineInputBorder(),
-                  hintText: 'Enter Password',
-                  fillColor: Colors.white,
-                  label: Text("Password"),
-                  labelStyle: TextStyle(color: Colors.black),
-                  hintStyle: TextStyle(color: Colors.grey),
-                ),
-              ),
+            LoginSignupTextFieled(
+              textHint: "Enter Password",
+              textLable: "Password",
             ),
             TextButton(onPressed: () {}, child: Text("Forget Password?")),
             BaseButton(text: "Login", onPressed: () {}),
@@ -63,7 +44,6 @@ class _LoginPageState extends State<LoginPage> {
                 );
               },
             ),
-
             Spacer(flex: 4),
           ],
         ),
