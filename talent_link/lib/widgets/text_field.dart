@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 
 class LoginSignupTextFieled extends StatelessWidget {
   final String textHint, textLable;
+  final TextEditingController controller;
+  final bool obscureText;
   const LoginSignupTextFieled({
     super.key,
     required this.textHint,
     required this.textLable,
+    required this.controller,
+    required this.obscureText,
   });
 
   @override
@@ -13,7 +17,9 @@ class LoginSignupTextFieled extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: TextField(
+        controller: controller,
         textAlign: TextAlign.center,
+        obscureText: obscureText,
         decoration: InputDecoration(
           border: UnderlineInputBorder(),
           hintText: textHint,
