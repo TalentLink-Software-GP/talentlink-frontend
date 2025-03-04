@@ -11,6 +11,15 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -24,21 +33,34 @@ class _SignupPageState extends State<SignupPage> {
               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 40),
             ),
             LoginSignupTextFieled(
+              controller: emailController,
               textHint: "Enter Username",
               textLable: "Username",
+              obscureText: false,
             ),
-            LoginSignupTextFieled(textHint: "Enter Email", textLable: "Email"),
             LoginSignupTextFieled(
+              textHint: "Enter Email",
+              textLable: "Email",
+              controller: emailController,
+              obscureText: false,
+            ),
+            LoginSignupTextFieled(
+              controller: emailController,
               textHint: "Enter Phone Number",
               textLable: "Phone Number",
+              obscureText: false,
             ),
             LoginSignupTextFieled(
+              controller: emailController,
               textHint: "Choose Password",
               textLable: "Password",
+              obscureText: false,
             ),
             LoginSignupTextFieled(
+              controller: emailController,
               textHint: "Enter Password Again",
               textLable: "Password",
+              obscureText: false,
             ),
             BaseButton(text: "SigneUp", onPressed: () {}),
             TextButton(
