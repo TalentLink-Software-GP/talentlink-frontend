@@ -66,7 +66,7 @@ class _LoginPageState extends State<LoginPage> {
                 if (response.statusCode == 200) {
                   var data = jsonDecode(response.body);
                   String token = data["token"];
-                  print("Login Successfull, Token: ${token}");
+                  print("Login Successfull, Token: $token");
 
                   Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
                   String userId = decodedToken['id'];
@@ -92,7 +92,7 @@ class _LoginPageState extends State<LoginPage> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => SignupPage()),
+                  MaterialPageRoute(builder: (context) => SignUpScreen()),
                 );
               },
             ),

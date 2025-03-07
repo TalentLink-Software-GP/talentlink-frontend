@@ -1,6 +1,6 @@
-^D:\SOFTWARE GP\TALENTLINK\FRONTEND\TALENTLINK-FRONTEND\TALENT_LINK\WINDOWS\RUNNER\CMAKELISTS.TXT
+^C:\USERS\MTC\DESKTOP\GRADUATIONPROJECT\NEW FOLDER\TALENTLINK-FRONTEND\TALENT_LINK\WINDOWS\RUNNER\CMAKELISTS.TXT
 setlocal
-"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" "-SD:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/windows" "-BD:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64" --check-stamp-file "D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/build/windows/x64/runner/CMakeFiles/generate.stamp"
+"C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" "-SC:/Users/MTC/Desktop/GraduationProject/New folder/talentlink-frontend/talent_link/windows" "-BC:/Users/MTC/Desktop/GraduationProject/New folder/talentlink-frontend/talent_link/build/windows/x64" --check-stamp-file "C:/Users/MTC/Desktop/GraduationProject/New folder/talentlink-frontend/talent_link/build/windows/x64/runner/CMakeFiles/generate.stamp"
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone

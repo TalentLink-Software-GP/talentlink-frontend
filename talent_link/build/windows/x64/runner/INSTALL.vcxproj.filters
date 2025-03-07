@@ -1,13 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <CustomBuild Include="D:\Software GP\TalentLink\frontend\talentlink-frontend\talent_link\build\windows\x64\CMakeFiles\f4074056bb440a05525222100c9c303b\INSTALL_force.rule">
+    <CustomBuild Include="C:\Users\MTC\Desktop\GraduationProject\New folder\talentlink-frontend\talent_link\build\windows\x64\CMakeFiles\d648b3d59a0da1420712e3a78004a32e\INSTALL_force.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="CMake Rules">
-      <UniqueIdentifier>{DB44FE88-3DC0-3F4E-9C30-BD837D0AD291}</UniqueIdentifier>
+      <UniqueIdentifier>{4DB8221E-7440-3862-9B46-A7C82C7DB92D}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
