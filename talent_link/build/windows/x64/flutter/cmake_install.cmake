@@ -1,4 +1,4 @@
-# Install script for directory: D:/Software GP/TalentLink/frontend/talentlink-frontend/talent_link/windows/flutter
+# Install script for directory: C:/Users/MTC/Desktop/GraduationProject/New folder/talentlink-frontend/talent_link/windows/flutter
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

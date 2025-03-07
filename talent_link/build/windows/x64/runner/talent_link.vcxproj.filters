@@ -1,33 +1,33 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="D:\Software GP\TalentLink\frontend\talentlink-frontend\talent_link\windows\runner\flutter_window.cpp">
+    <ClCompile Include="C:\Users\MTC\Desktop\GraduationProject\New folder\talentlink-frontend\talent_link\windows\runner\flutter_window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D:\Software GP\TalentLink\frontend\talentlink-frontend\talent_link\windows\runner\main.cpp">
+    <ClCompile Include="C:\Users\MTC\Desktop\GraduationProject\New folder\talentlink-frontend\talent_link\windows\runner\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D:\Software GP\TalentLink\frontend\talentlink-frontend\talent_link\windows\runner\utils.cpp">
+    <ClCompile Include="C:\Users\MTC\Desktop\GraduationProject\New folder\talentlink-frontend\talent_link\windows\runner\utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D:\Software GP\TalentLink\frontend\talentlink-frontend\talent_link\windows\runner\win32_window.cpp">
+    <ClCompile Include="C:\Users\MTC\Desktop\GraduationProject\New folder\talentlink-frontend\talent_link\windows\runner\win32_window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D:\Software GP\TalentLink\frontend\talentlink-frontend\talent_link\windows\flutter\generated_plugin_registrant.cc">
+    <ClCompile Include="C:\Users\MTC\Desktop\GraduationProject\New folder\talentlink-frontend\talent_link\windows\flutter\generated_plugin_registrant.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="D:\Software GP\TalentLink\frontend\talentlink-frontend\talent_link\windows\runner\CMakeLists.txt" />
+    <CustomBuild Include="C:\Users\MTC\Desktop\GraduationProject\New folder\talentlink-frontend\talent_link\windows\runner\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="D:\Software GP\TalentLink\frontend\talentlink-frontend\talent_link\windows\runner\Runner.rc">
+    <ResourceCompile Include="C:\Users\MTC\Desktop\GraduationProject\New folder\talentlink-frontend\talent_link\windows\runner\Runner.rc">
       <Filter>Source Files</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{200219F6-315C-3726-98E8-6921B19D40B7}</UniqueIdentifier>
+      <UniqueIdentifier>{9EE426EC-7AF0-30EE-AA72-4118CEBCD91C}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
