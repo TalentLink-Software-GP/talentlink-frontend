@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:talent_link/widgets/button.dart';
 import 'package:talent_link/widgets/home_page.dart';
-import 'package:talent_link/widgets/signup_page.dart';
+import 'package:talent_link/widgets/sign_up_choose_positions.dart';
+
 import 'package:talent_link/widgets/text_field.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -27,6 +28,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      showSemanticsDebugger: false,
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: Column(
@@ -50,7 +52,6 @@ class _LoginPageState extends State<LoginPage> {
               textLable: "Password",
               obscureText: true,
             ),
-            TextButton(onPressed: () {}, child: Text("Forget Password?")),
             BaseButton(
               text: "Login",
               onPressed: () async {
@@ -92,7 +93,7 @@ class _LoginPageState extends State<LoginPage> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => SignUpScreen()),
+                  MaterialPageRoute(builder: (context) => ChoosePositions()),
                 );
               },
             ),

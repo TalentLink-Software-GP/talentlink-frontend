@@ -12,7 +12,7 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final _formKey = GlobalKey<FormState>(); // Form key for validation
+  final _formKey = GlobalKey<FormState>();
 
   bool agreeToTerms = false;
   bool _obscurePassword = true;
@@ -69,7 +69,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  // Function to handle the deep link (call after registration)
   void _handleDeepLink(String link) {
     Uri uri = Uri.parse(link);
     if (uri.pathSegments.contains('verify') &&
