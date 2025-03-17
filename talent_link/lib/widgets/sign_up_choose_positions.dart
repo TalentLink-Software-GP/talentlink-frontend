@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:talent_link/widgets/button.dart';
 import 'package:talent_link/widgets/login_page.dart';
-import 'package:talent_link/widgets/signup_page.dart';
 import 'package:talent_link/widgets/signup_userDetails.dart';
 
 class ChoosePositions extends StatefulWidget {

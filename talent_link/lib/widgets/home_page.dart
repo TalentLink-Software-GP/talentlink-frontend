@@ -11,12 +11,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text("User Logged n ${widget.data}"), // ✅ No 'const' here
-        ),
-      ),
-    );
+    return Scaffold(appBar: AppBar());
   }
 }

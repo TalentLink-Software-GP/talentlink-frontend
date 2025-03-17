@@ -86,6 +86,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Form(
@@ -269,7 +270,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 class CheckVerificationScreen extends StatefulWidget {
   final String token;
 
-  CheckVerificationScreen({required this.token});
+  const CheckVerificationScreen({super.key, required this.token});
 
   @override
   _CheckVerificationScreenState createState() =>
@@ -353,7 +354,7 @@ class _CheckVerificationScreenState extends State<CheckVerificationScreen> {
 class AccountCreatedScreen extends StatelessWidget {
   final String token;
 
-  const AccountCreatedScreen({Key? key, required this.token}) : super(key: key);
+  const AccountCreatedScreen({super.key, required this.token});
 
   @override
   Widget build(BuildContext context) {

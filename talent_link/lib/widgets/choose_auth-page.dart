@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:talent_link/widgets/button.dart';
 import 'package:talent_link/widgets/login_page.dart';
-import 'package:talent_link/widgets/signup_page.dart';
 import 'package:talent_link/widgets/sign_up_choose_positions.dart';
 
 import 'package:talent_link/widgets/ForgotAccountScreen.dart';
@@ -17,6 +16,7 @@ class _ChooseAuthPageState extends State<ChooseAuthPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
       body: SingleChildScrollView(
         // Allow scrolling
         child: Column(

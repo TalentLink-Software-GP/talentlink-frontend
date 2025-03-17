@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class ForgotAccountScreen extends StatefulWidget {
-  const ForgotAccountScreen({Key? key}) : super(key: key);
+  const ForgotAccountScreen({super.key});
 
   @override
   _ForgotAccountScreenState createState() => _ForgotAccountScreenState();
@@ -131,7 +131,7 @@ class _ForgotAccountScreenState extends State<ForgotAccountScreen> {
 class EnterResetCodeScreen extends StatefulWidget {
   final String email;
 
-  const EnterResetCodeScreen({Key? key, required this.email}) : super(key: key);
+  const EnterResetCodeScreen({super.key, required this.email});
 
   @override
   _EnterResetCodeScreenState createState() => _EnterResetCodeScreenState();
@@ -238,7 +238,7 @@ class _EnterResetCodeScreenState extends State<EnterResetCodeScreen> {
 class NewPasswordScreen extends StatefulWidget {
   final String email;
 
-  const NewPasswordScreen({Key? key, required this.email}) : super(key: key);
+  const NewPasswordScreen({super.key, required this.email});
 
   @override
   _NewPasswordScreenState createState() => _NewPasswordScreenState();
