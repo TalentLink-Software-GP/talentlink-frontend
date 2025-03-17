@@ -11,6 +11,19 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(appBar: AppBar());
+    return Scaffold(
+      appBar: AppBar(),
+      bottomNavigationBar: BottomAppBar(
+        color: const Color(0xFF0C9E91),
+        child: Row(
+          children: [
+            ElevatedButton(onPressed: () {}, child: Text("Home")),
+            ElevatedButton(onPressed: () {}, child: Text("Home")),
+            ElevatedButton(onPressed: () {}, child: Text("Home")),
+            ElevatedButton(onPressed: () {}, child: Text("Home")),
+          ],
+        ),
+      ),
+    );
   }
 }

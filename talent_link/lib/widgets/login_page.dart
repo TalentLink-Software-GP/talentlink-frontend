@@ -30,81 +30,78 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
-      body: Column(
-        children: [
-          Spacer(flex: 4),
-          Image.asset("assets/images/5.jpg", fit: BoxFit.cover),
-          Spacer(flex: 3),
-          Text(
-            "TalentLink",
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 40),
-          ),
-          LoginSignupTextFieled(
-            controller: emailController,
-            textHint: "Enter Email",
-            textLable: "Email",
-            obscureText: false,
-          ),
-          LoginSignupTextFieled(
-            controller: passwordController,
-            textHint: "Enter Password",
-            textLable: "Password",
-            obscureText: true,
-          ),
-          BaseButton(
-            text: "Login",
-            onPressed: () async {
-              String email = emailController.text;
-              String password = passwordController.text;
-              var url = Uri.parse('http://10.0.2.2:5000/api/auth/login');
-              var response = await http.post(
-                url,
-                headers: {"Content-Type": "application/json"},
-                body: jsonEncode({"email": email, "password": password}),
-              );
+      body: Center(
+        child: Column(
+          children: [
+            Text(
+              "TalentLink",
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 40),
+            ),
+            LoginSignupTextFieled(
+              controller: emailController,
+              textHint: "Enter Email",
+              textLable: "Email",
+              obscureText: false,
+            ),
+            LoginSignupTextFieled(
+              controller: passwordController,
+              textHint: "Enter Password",
+              textLable: "Password",
+              obscureText: true,
+            ),
+            BaseButton(
+              text: "Login",
+              onPressed: () async {
+                String email = emailController.text;
+                String password = passwordController.text;
+                var url = Uri.parse('http://10.0.2.2:5000/api/auth/login');
+                var response = await http.post(
+                  url,
+                  headers: {"Content-Type": "application/json"},
+                  body: jsonEncode({"email": email, "password": password}),
+                );
 
-              if (response.statusCode == 200) {
-                var data = jsonDecode(response.body);
-                String token = data["token"];
-                print("Login Successfull, Token: $token");
-
-                Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-                String userId = decodedToken['id'];
-                String userRole = decodedToken['role'];
-                if (userRole == "organization") {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => OrganizationHomePage(data: token),
-                    ),
-                  );
+                if (response.statusCode == 200) {
+                  var data = jsonDecode(response.body);
+                  String token = data["token"];
+                  Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+                  String userRole = decodedToken['role'];
+                  if (userRole == "organization") {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OrganizationHomePage(data: token),
+                      ),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => HomePage(
+                              data: token, // Pass formatted data
+                            ),
+                      ),
+                    );
+                  }
                 } else {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => HomePage(
-                            data: token, // Pass formatted data
-                          ),
-                    ),
-                  );
+                  // ignore: avoid_print
+                  print("Login failed: ${response.body}");
                 }
-              } else {
-                print("Login failed: ${response.body}");
-              }
-            },
-          ),
-          BaseButton(
-            text: "Dont Have an Account? Sign Up",
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ChoosePositions()),
-              );
-            },
-          ),
-          Spacer(flex: 4),
-        ],
+              },
+            ),
+            BaseButton(
+              text: "Dont Have an Account? Sign Up",
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ChoosePositions()),
+                );
+              },
+            ),
+            // Image.asset("assets/images/5.jpg", fit: BoxFit.cover),
+          ],
+        ),
       ),
     );
   }
