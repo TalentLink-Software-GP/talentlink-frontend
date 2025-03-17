@@ -5,7 +5,20 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+  final String country;
+  final String date;
+  final String city;
+  final String gender;
+  final String userRole;
+
+  const SignUpScreen({
+    super.key,
+    required this.country,
+    required this.date,
+    required this.city,
+    required this.gender,
+    required this.userRole,
+  });
 
   @override
   _SignUpScreenState createState() => _SignUpScreenState();
@@ -32,6 +45,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       String username = usernameController.text;
       String phone = phoneController.text;
       String password = passwordController.text;
+      String usercountry = widget.country;
+      String userDate = widget.date;
+      String userCity = widget.city;
+      String userGender = widget.gender;
+      String userRole = widget.userRole;
 
       var url = Uri.parse('http://10.0.2.2:5000/api/auth/register');
 
@@ -44,20 +62,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
           "email": email,
           "phone": phone,
           "password": password,
-          "role": "user",
+          "role": userRole,
+          "date": userDate,
+          "country": usercountry,
+          "city": userCity,
+          "gender": userGender,
         }),
       );
+      String userEmail = email;
 
       if (response.statusCode == 201) {
         var data = jsonDecode(response.body);
+        print("🔍 Full API Response: ${response.body}");
+
         if (data.containsKey("token")) {
           String realToken = data["token"];
 
-          // Navigate to CheckVerificationScreen to check if email is verified
+          print("token: $realToken");
+
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => CheckVerificationScreen(token: realToken),
+              builder:
+                  (context) => CheckVerificationScreen(
+                    token: realToken,
+                    email: userEmail,
+                  ),
             ),
           );
         } else {
@@ -69,20 +99,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  void _handleDeepLink(String link) {
-    Uri uri = Uri.parse(link);
-    if (uri.pathSegments.contains('verify') &&
-        uri.queryParameters.containsKey('token')) {
-      String token = uri.queryParameters['token'] ?? '';
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AccountCreatedScreen(token: token),
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -90,7 +106,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Form(
-          key: _formKey, // Attach form key
+          key: _formKey,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -175,10 +191,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   backgroundColor: Colors.blue,
                   minimumSize: Size(double.infinity, 50),
                 ),
-                onPressed:
-                    agreeToTerms
-                        ? registerUser
-                        : null, // Disable button if terms are not agreed
+                onPressed: () {
+                  if (agreeToTerms) {
+                    registerUser();
+                  } else {
+                    print("❌ You must agree to the terms and conditions.");
+                  }
+                },
                 child: Text("Create Account"),
               ),
             ],
@@ -269,8 +288,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
 class CheckVerificationScreen extends StatefulWidget {
   final String token;
+  final String email;
 
-  const CheckVerificationScreen({super.key, required this.token});
+  const CheckVerificationScreen({
+    super.key,
+    required this.token,
+    required this.email,
+  });
 
   @override
   _CheckVerificationScreenState createState() =>
@@ -284,7 +308,6 @@ class _CheckVerificationScreenState extends State<CheckVerificationScreen> {
   @override
   void initState() {
     super.initState();
-    // Start the timer to check verification periodically
     timer = Timer.periodic(
       Duration(seconds: 3),
       (timer) => checkVerification(),
@@ -293,18 +316,24 @@ class _CheckVerificationScreenState extends State<CheckVerificationScreen> {
 
   Future<void> checkVerification() async {
     var url = Uri.parse(
-      'http://10.0.2.2:5000/api/auth/verify-email/${widget.token}',
+      'http://10.0.2.2:5000/api/auth/isVerified/${widget.email}',
     );
 
     try {
+      print(widget.email);
       var response = await http.get(url);
+      print(response.statusCode);
 
       if (response.statusCode == 200) {
         setState(() {
-          isVerified = true;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => AccountCreatedScreen()),
+          );
         });
-        timer.cancel(); // Stop checking after successful verification
+        timer.cancel();
         print("✅ Email verified successfully!");
+        print(widget.token);
       } else {
         print("❌ Verification failed: ${response.body}");
       }
@@ -331,13 +360,10 @@ class _CheckVerificationScreenState extends State<CheckVerificationScreen> {
                     Text("Verified!"),
                     ElevatedButton(
                       onPressed: () {
-                        // Manually navigate to AccountCreatedScreen
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder:
-                                (context) =>
-                                    AccountCreatedScreen(token: widget.token),
+                            builder: (context) => AccountCreatedScreen(),
                           ),
                         );
                       },
@@ -352,15 +378,13 @@ class _CheckVerificationScreenState extends State<CheckVerificationScreen> {
 }
 
 class AccountCreatedScreen extends StatelessWidget {
-  final String token;
-
-  const AccountCreatedScreen({super.key, required this.token});
+  const AccountCreatedScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Account Created')),
-      body: Center(child: Text('Account successfully created! Token: $token')),
+      body: Center(child: Text('Account successfully created! Token: ')),
     );
   }
 }

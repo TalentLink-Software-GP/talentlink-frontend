@@ -14,6 +14,7 @@ class ChoosePositionsScreen extends State<ChoosePositions> {
   String selectedRole = 'Job Seeker';
   List<String> roles = ['Job Seeker', 'Freelancer', 'Organization'];
 
+  // selectedRole
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,16 +51,23 @@ class ChoosePositionsScreen extends State<ChoosePositions> {
                 ),
               ),
             ),
+
             BaseButton(
               text: "Next",
-              onPressed: () {
+              onPressed: () async {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => UserDetailsScreen()),
+                  MaterialPageRoute(
+                    builder:
+                        (context) =>
+                            UserDetailsScreen(userRole: "$selectedRole"),
+                  ),
                 );
               },
             ),
+
             const SizedBox(height: 10.0),
+
             Center(
               child: TextButton(
                 onPressed: () {

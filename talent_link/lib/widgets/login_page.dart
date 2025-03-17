@@ -66,7 +66,7 @@ class _LoginPageState extends State<LoginPage> {
                   String token = data["token"];
                   Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
                   String userRole = decodedToken['role'];
-                  if (userRole == "organization") {
+                  if (userRole == "Organization") {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -99,7 +99,6 @@ class _LoginPageState extends State<LoginPage> {
                 );
               },
             ),
-            // Image.asset("assets/images/5.jpg", fit: BoxFit.cover),
           ],
         ),
       ),
