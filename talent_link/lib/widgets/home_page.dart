@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:talent_link/widgets/home_page_tabs/profile_tab.dart';
+import 'package:talent_link/widgets/login_page.dart';
 
 class HomePage extends StatefulWidget {
-  final String data;
-  const HomePage({super.key, required this.data});
+  String data; // Token
+  HomePage({super.key, required this.data});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -10,46 +14,85 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+  List<String> userSkills = [];
+  List<String> userEducation = [];
 
-  final List<Widget> _pages = [
-    const Center(child: Text("Home Screen")),
-    const Center(child: Text("Jobs Screen")),
-    const Center(child: Text("Maps Screen")),
-    const Center(child: Text("Profile Screen")),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
+
+  Future<void> fetchUserData() async {
+    const String apiUrl =
+        "http://10.0.2.2:5000/api/skills/get-skills-education";
+    try {
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer ${widget.data}",
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          userSkills = List<String>.from(data["skills"] ?? []);
+          userEducation = List<String>.from(data["education"] ?? []);
+        });
+      } else {
+        print("Failed to fetch data: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error fetching data: $e");
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
+      fetchUserData();
       _selectedIndex = index;
     });
+  }
+
+  void _handleLogout() {
+    setState(() {
+      widget.data = 'Unauthorized';
+    });
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginPage()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Center(child: const Text("Talent Link")),
-        titleTextStyle: TextStyle(
+        title: const Center(child: Text("Talent Link")),
+        titleTextStyle: const TextStyle(
           fontWeight: FontWeight.w900,
           color: Colors.black,
           fontSize: 23,
-        ), // Change title as needed
-        leading: IconButton(
-          icon: const Icon(Icons.message), // Messages icon (top left)
-          onPressed: () {
-            // Handle messages click
-          },
         ),
+        leading: IconButton(icon: const Icon(Icons.message), onPressed: () {}),
         actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.notifications,
-            ), // Notifications icon (top right)
-            onPressed: () {},
+          IconButton(icon: const Icon(Icons.notifications), onPressed: () {}),
+        ],
+      ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          const Center(child: Text("Home Screen")),
+          const Center(child: Text("Jobs Screen")),
+          const Center(child: Text("Maps Screen")),
+          ProfileTab(
+            userEducation: userEducation,
+            userSkills: userSkills,
+            onLogout: _handleLogout,
           ),
         ],
       ),
-      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
