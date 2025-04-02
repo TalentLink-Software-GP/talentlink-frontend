@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:talent_link/widgets/home_page_tabs/profile_tab.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab.dart';
 import 'package:talent_link/widgets/login_widgets/login_page.dart';
 
 class HomePage extends StatefulWidget {
