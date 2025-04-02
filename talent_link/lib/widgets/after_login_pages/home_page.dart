@@ -1,8 +1,10 @@
+// ignore_for_file: must_be_immutable
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:talent_link/widgets/home_page_tabs/profile_tab.dart';
-import 'package:talent_link/widgets/login_page.dart';
+import 'package:talent_link/widgets/login_widgets/login_page.dart';
 
 class HomePage extends StatefulWidget {
   String data; // Token
@@ -41,9 +43,11 @@ class _HomePageState extends State<HomePage> {
           userEducation = List<String>.from(data["education"] ?? []);
         });
       } else {
+        // ignore: avoid_print
         print("Failed to fetch data: ${response.statusCode}");
       }
     } catch (e) {
+      // ignore: avoid_print
       print("Error fetching data: $e");
     }
   }
