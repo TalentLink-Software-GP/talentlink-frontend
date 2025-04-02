@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:talent_link/widgets/button.dart';
-import 'package:talent_link/widgets/login_page.dart';
-import 'package:talent_link/widgets/sign_up_choose_positions.dart';
+import 'package:talent_link/widgets/base_widgets/button.dart';
+import 'package:talent_link/widgets/login_widgets/login_page.dart';
+import 'package:talent_link/widgets/sign_up_widgets/sign_up_choose_positions.dart';
 
-import 'package:talent_link/widgets/ForgotAccountScreen.dart';
+import 'package:talent_link/widgets/forget_account_widgets/forgot_account_screen.dart';
 
 class ChooseAuthPage extends StatefulWidget {
   const ChooseAuthPage({super.key});
@@ -18,7 +18,6 @@ class _ChooseAuthPageState extends State<ChooseAuthPage> {
     return Scaffold(
       appBar: AppBar(),
       body: SingleChildScrollView(
-        // Allow scrolling
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -60,8 +59,8 @@ class _ChooseAuthPageState extends State<ChooseAuthPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                GestureDetector(
-                  onTap: () {
+                TextButton(
+                  onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -72,9 +71,9 @@ class _ChooseAuthPageState extends State<ChooseAuthPage> {
                   child: const Text(
                     "Forgot Account?",
                     style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w500,
+                      // color: Colors.black,
+                      // fontSize: 20,
+                      // fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),

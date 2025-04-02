@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:talent_link/widgets/button.dart';
-import 'package:talent_link/widgets/choose_auth-page.dart';
+import 'package:talent_link/widgets/base_widgets/button.dart';
+import 'package:talent_link/widgets/applicatin_startup/choose_auth_page.dart';
 
 class StartupPage extends StatefulWidget {
   const StartupPage({super.key});

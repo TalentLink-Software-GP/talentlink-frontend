@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-class LoginSignupTextFieled extends StatelessWidget {
+class MyTextFieled extends StatelessWidget {
   final String textHint, textLable;
   final TextEditingController controller;
   final bool obscureText;
-  const LoginSignupTextFieled({
+  const MyTextFieled({
     super.key,
     required this.textHint,
     required this.textLable,

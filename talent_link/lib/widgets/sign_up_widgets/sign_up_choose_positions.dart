@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:talent_link/widgets/button.dart';
-import 'package:talent_link/widgets/login_page.dart';
-import 'package:talent_link/widgets/signup_userDetails.dart';
+import 'package:talent_link/widgets/base_widgets/button.dart';
+import 'package:talent_link/widgets/login_widgets/login_page.dart';
+import 'package:talent_link/widgets/sign_up_widgets/signup_userDetails.dart';
 
 class ChoosePositions extends StatefulWidget {
   const ChoosePositions({super.key});
@@ -78,7 +78,7 @@ class ChoosePositionsScreen extends State<ChoosePositions> {
                 },
                 child: const Text(
                   'Already Registered? Sign in now',
-                  style: TextStyle(color: Colors.blue),
+                  // style: TextStyle(color: Colors.blue),
                 ),
               ),
             ),

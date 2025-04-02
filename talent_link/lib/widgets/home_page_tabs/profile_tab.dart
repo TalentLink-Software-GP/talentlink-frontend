@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:talent_link/widgets/button.dart';
+import 'package:talent_link/widgets/base_widgets/button.dart';
 
 class ProfileTab extends StatelessWidget {
   final List<String> userEducation;
