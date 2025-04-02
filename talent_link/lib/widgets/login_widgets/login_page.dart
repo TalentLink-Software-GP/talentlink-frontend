@@ -103,6 +103,7 @@ class _LoginPageState extends State<LoginPage> {
                             );
                           }
                         } else {
+                          // ignore: avoid_print
                           print("Login failed: ${response.body}");
                         }
                       },

@@ -4,7 +4,7 @@ class BaseButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
   final Color buttonColor;
-  BaseButton({
+  const BaseButton({
     super.key,
     required this.text,
     required this.onPressed,

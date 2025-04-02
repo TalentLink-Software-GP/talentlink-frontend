@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/login_widgets/login_page.dart';
-import 'package:talent_link/widgets/sign_up_widgets/signup_userDetails.dart';
+import 'package:talent_link/widgets/sign_up_widgets/signup_user_details.dart';
 
 class ChoosePositions extends StatefulWidget {
   const ChoosePositions({super.key});
@@ -59,8 +59,7 @@ class ChoosePositionsScreen extends State<ChoosePositions> {
                   context,
                   MaterialPageRoute(
                     builder:
-                        (context) =>
-                            UserDetailsScreen(userRole: "$selectedRole"),
+                        (context) => UserDetailsScreen(userRole: selectedRole),
                   ),
                 );
               },
