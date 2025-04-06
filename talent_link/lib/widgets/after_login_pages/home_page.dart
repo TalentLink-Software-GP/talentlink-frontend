@@ -91,6 +91,7 @@ class _HomePageState extends State<HomePage> {
           const Center(child: Text("Jobs Screen")),
           const Center(child: Text("Maps Screen")),
           ProfileTab(
+            token: widget.data,
             userEducation: userEducation,
             userSkills: userSkills,
             onLogout: _handleLogout,
