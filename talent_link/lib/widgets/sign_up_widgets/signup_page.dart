@@ -100,111 +100,124 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "Let's create your account",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: MyTextFieled(
-                      textHint: "Enter first name",
-                      textLable: "First Name",
-                      controller: firstNameController,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset("assets/images/5.jpg", fit: BoxFit.cover),
+                    Text(
+                      "Let's create your account",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: MyTextFieled(
+                            textHint: "Enter first name",
+                            textLable: "First Name",
+                            controller: firstNameController,
+                            obscureText: false,
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: MyTextFieled(
+                            textHint: "Enter last name",
+                            textLable: "Last Name",
+                            controller: lastNameController,
+                            obscureText: false,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    MyTextFieled(
+                      textHint: "Enter your username",
+                      textLable: "Username",
+                      controller: usernameController,
                       obscureText: false,
                     ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: MyTextFieled(
-                      textHint: "Enter last name",
-                      textLable: "Last Name",
-                      controller: lastNameController,
+                    SizedBox(height: 10),
+                    MyTextFieled(
+                      textHint: "Enter your email",
+                      textLable: "E-Mail",
+                      controller: emailController,
                       obscureText: false,
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              MyTextFieled(
-                textHint: "Enter your username",
-                textLable: "Username",
-                controller: usernameController,
-                obscureText: false,
-              ),
-              SizedBox(height: 10),
-              MyTextFieled(
-                textHint: "Enter your email",
-                textLable: "E-Mail",
-                controller: emailController,
-                obscureText: false,
-              ),
-              SizedBox(height: 10),
-              MyTextFieled(
-                textHint: "Enter your phone number",
-                textLable: "Phone Number",
-                controller: phoneController,
-                obscureText: false,
-              ),
-              SizedBox(height: 10),
-              MyTextFieled(
-                textHint: "Enter your password",
-                textLable: "Password",
-                controller: passwordController,
-                obscureText: _obscurePassword,
-              ),
-              SizedBox(height: 10),
-              Row(
-                children: [
-                  Checkbox(
-                    value: agreeToTerms,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        agreeToTerms = value ?? false;
-                      });
-                    },
-                  ),
-                  Text("I agree to "),
-                  GestureDetector(
-                    onTap: () {},
-                    child: Text(
-                      "Privacy Policy",
-                      style: TextStyle(color: Colors.blue),
+                    SizedBox(height: 10),
+                    MyTextFieled(
+                      textHint: "Enter your phone number",
+                      textLable: "Phone Number",
+                      controller: phoneController,
+                      obscureText: false,
                     ),
-                  ),
-                  Text(" and "),
-                  GestureDetector(
-                    onTap: () {},
-                    child: Text(
-                      "Terms of use",
-                      style: TextStyle(color: Colors.blue),
+                    SizedBox(height: 10),
+                    MyTextFieled(
+                      textHint: "Enter your password",
+                      textLable: "Password",
+                      controller: passwordController,
+                      obscureText: _obscurePassword,
                     ),
-                  ),
-                ],
+                    SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: agreeToTerms,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              agreeToTerms = value ?? false;
+                            });
+                          },
+                        ),
+                        Text("I agree to "),
+                        GestureDetector(
+                          onTap: () {},
+                          child: Text(
+                            "Privacy Policy",
+                            style: TextStyle(color: Colors.blue),
+                          ),
+                        ),
+                        Text(" and "),
+                        GestureDetector(
+                          onTap: () {},
+                          child: Text(
+                            "Terms of use",
+                            style: TextStyle(color: Colors.blue),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    BaseButton(
+                      text: "Create Account",
+                      onPressed: () {
+                        if (agreeToTerms) {
+                          registerUser();
+                        } else {
+                          print(
+                            "❌ You must agree to the terms and conditions.",
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
-              SizedBox(height: 10),
-              BaseButton(
-                text: "Create Account",
-                onPressed: () {
-                  if (agreeToTerms) {
-                    registerUser();
-                  } else {
-                    print("❌ You must agree to the terms and conditions.");
-                  }
-                },
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
