@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Resume extends StatefulWidget {
@@ -16,6 +17,7 @@ class Resume extends StatefulWidget {
 
 class _ResumeState extends State<Resume> {
   String? uploadedCVUrl;
+  bool _isUploading = false;
 
   Future<void> pickAndUploadPDF() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -29,8 +31,11 @@ class _ResumeState extends State<Resume> {
 
       final request = http.MultipartRequest("POST", uri);
       request.headers['Authorization'] = 'Bearer ${widget.token}';
-
       request.files.add(await http.MultipartFile.fromPath('cv', pdfFile.path));
+
+      setState(() {
+        _isUploading = true;
+      });
 
       try {
         final response = await request.send();
@@ -45,65 +50,118 @@ class _ResumeState extends State<Resume> {
             context,
           ).showSnackBar(SnackBar(content: Text('CV uploaded successfully')));
         } else {
-          print("Failed to upload CV: ${response.statusCode}");
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Failed to upload CV')));
         }
       } catch (e) {
-        print("Upload error: $e");
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Upload error: $e')));
+      } finally {
+        setState(() {
+          _isUploading = false;
+        });
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'CV / Resume',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 10),
-          if (uploadedCVUrl != null)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    'Uploaded: ${uploadedCVUrl!.split('/').last}',
-                    overflow: TextOverflow.ellipsis,
+    return Stack(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(
+                  'CV / Resume',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (uploadedCVUrl != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 12,
                   ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.picture_as_pdf, color: Colors.red),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text('CV.pdf', style: TextStyle(fontSize: 16)),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.remove_red_eye, color: Colors.blue),
+                        onPressed: () async {
+                          final url = Uri.parse(uploadedCVUrl!);
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(
+                              url,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Could not open CV')),
+                            );
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          setState(() {
+                            uploadedCVUrl = null;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('CV removed locally')),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                )
+              else
+                BaseButton(
+                  text: "Upload CV (PDF)",
+                  // icon: Icons.upload_file,
+                  onPressed: _isUploading ? () {} : pickAndUploadPDF,
                 ),
-                IconButton(
-                  icon: Icon(Icons.remove_red_eye),
-                  onPressed: () {
-                    // Open CV in browser or PDF viewer
-                    launchUrl(Uri.parse(uploadedCVUrl!));
-                  },
+            ],
+          ),
+        ),
+        if (_isUploading)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 12),
+                    Text(
+                      'Analyzing CV, please wait...',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: Icon(Icons.delete),
-                  onPressed: () {
-                    setState(() {
-                      uploadedCVUrl = null;
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('CV removed locally')),
-                    );
-                    // Optional: also delete from backend
-                  },
-                ),
-              ],
-            )
-          else
-            ElevatedButton.icon(
-              onPressed: pickAndUploadPDF,
-              icon: Icon(Icons.upload_file),
-              label: Text("Upload CV (PDF)"),
+              ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
