@@ -1,14 +1,8 @@
-import 'dart:convert';
-import 'dart:io';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/avatar_username.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/resume.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/skills_education.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/user_data.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ProfileTab extends StatefulWidget {
   final List<String> userEducation;
