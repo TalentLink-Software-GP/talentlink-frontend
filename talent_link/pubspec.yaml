@@ -17,6 +17,8 @@ dependencies:
   googleapis: ^13.1.0
   googleapis_auth: ^1.4.1
   image_picker: ^1.1.2
+  file_picker: ^10.1.1
+  url_launcher: ^6.3.1
    
 
   
