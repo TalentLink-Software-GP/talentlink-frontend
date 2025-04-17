@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/login_widgets/login_page.dart';
+import 'package:talent_link/widgets/sign_up_widgets/organization_signup_screen.dart';
 import 'package:talent_link/widgets/sign_up_widgets/signup_user_details.dart';
 
 class ChoosePositions extends StatefulWidget {
@@ -55,13 +56,23 @@ class ChoosePositionsScreen extends State<ChoosePositions> {
             BaseButton(
               text: "Next",
               onPressed: () async {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (context) => UserDetailsScreen(userRole: selectedRole),
-                  ),
-                );
+                if (selectedRole == 'Organization') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => OrganizationSignupScreen(),
+                    ),
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) =>
+                              UserDetailsScreen(userRole: selectedRole),
+                    ),
+                  );
+                }
               },
             ),
 
