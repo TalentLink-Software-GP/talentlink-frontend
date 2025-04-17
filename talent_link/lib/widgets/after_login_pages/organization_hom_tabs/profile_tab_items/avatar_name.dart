@@ -1,50 +1,107 @@
 import 'dart:convert';
 import 'dart:io';
-
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:flutter/material.dart';
 
-class AvatarUsername extends StatefulWidget {
+class AvatarName extends StatefulWidget {
   final String token;
-  const AvatarUsername({super.key, required this.token});
+  const AvatarName({super.key, required this.token});
 
   @override
-  State<AvatarUsername> createState() => _AvatarUsernameState();
+  State<AvatarName> createState() => _AvatarNameState();
 }
 
-class _AvatarUsernameState extends State<AvatarUsername> {
+class _AvatarNameState extends State<AvatarName> {
   String? uploadedImageUrl;
-
+  String name = '';
   @override
   void initState() {
     super.initState();
-    fetchUserData();
+    fetchOrgData();
   }
 
-  Future<void> fetchUserData() async {
-    Map<String, dynamic> decodedToken = JwtDecoder.decode(widget.token);
-    String username = decodedToken['username'];
-
+  Future<void> fetchOrgData() async {
     try {
+      final uri = Uri.parse("http://10.0.2.2:5000/api/organization/getOrgData");
+
       final response = await http.get(
-        Uri.parse(
-          'http://10.0.2.2:5000/api/users/getUserData?userName=$username',
-        ),
-        headers: {'Content-Type': 'application/json'},
+        uri,
+        headers: {'Authorization': 'Bearer ${widget.token}'},
       );
-      print(username);
+
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final jsonResponse = json.decode(response.body);
         setState(() {
-          uploadedImageUrl = data['avatarUrl'];
+          uploadedImageUrl = jsonResponse['avatarUrl'];
+          name = jsonResponse['name'];
         });
       } else {
         print('Failed to fetch user data: ${response.statusCode}');
       }
     } catch (e) {
       print('Error fetching user data: $e');
+    }
+  }
+
+  Future<String?> uploadImageToBackend(File imageFile) async {
+    final uri = Uri.parse("http://10.0.2.2:5000/api/organization/updateAvatar");
+
+    final request = http.MultipartRequest("POST", uri);
+    request.headers['Authorization'] = 'Bearer ${widget.token}';
+
+    request.files.add(
+      await http.MultipartFile.fromPath('avatar', imageFile.path),
+    );
+
+    try {
+      final response = await request.send();
+
+      if (response.statusCode == 200) {
+        final resBody = await response.stream.bytesToString();
+        final jsonResponse = json.decode(resBody);
+        return jsonResponse['avatarUrl'];
+      } else {
+        print("Failed to upload: ${response.statusCode}");
+        return null;
+      }
+    } catch (e) {
+      print("Upload error: $e");
+      return null;
+    }
+  }
+
+  Future<File?> pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+    );
+    if (pickedFile != null) {
+      return File(pickedFile.path);
+    }
+    return null;
+  }
+
+  Future<void> removeAvatarFromBackend() async {
+    final uri = Uri.parse("http://10.0.2.2:5000/api/organization/deleteAvatar");
+
+    try {
+      final response = await http.delete(
+        uri,
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          uploadedImageUrl = null;
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Profile picture removed')));
+      } else {
+        print("Failed to delete avatar: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Delete avatar error: $e");
     }
   }
 
@@ -102,70 +159,8 @@ class _AvatarUsernameState extends State<AvatarUsername> {
     );
   }
 
-  Future<File?> pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-    );
-    if (pickedFile != null) {
-      return File(pickedFile.path);
-    }
-    return null;
-  }
-
-  Future<String?> uploadImageToBackend(File imageFile) async {
-    final uri = Uri.parse("http://10.0.2.2:5000/api/users/upload-avatar");
-
-    final request = http.MultipartRequest("POST", uri);
-    request.headers['Authorization'] = 'Bearer ${widget.token}';
-
-    request.files.add(
-      await http.MultipartFile.fromPath('avatar', imageFile.path),
-    );
-
-    try {
-      final response = await request.send();
-
-      if (response.statusCode == 200) {
-        final resBody = await response.stream.bytesToString();
-        final jsonResponse = json.decode(resBody);
-        return jsonResponse['avatarUrl'];
-      } else {
-        print("Failed to upload: ${response.statusCode}");
-        return null;
-      }
-    } catch (e) {
-      print("Upload error: $e");
-      return null;
-    }
-  }
-
-  Future<void> removeAvatarFromBackend() async {
-    final uri = Uri.parse("http://10.0.2.2:5000/api/users/remove-avatar");
-
-    try {
-      final response = await http.delete(
-        uri,
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
-
-      if (response.statusCode == 200) {
-        setState(() {
-          uploadedImageUrl = null;
-        });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Profile picture removed')));
-      } else {
-        print("Failed to delete avatar: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("Delete avatar error: $e");
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    Map<String, dynamic> decodedToken = JwtDecoder.decode(widget.token);
     return Column(
       children: [
         Padding(
@@ -191,10 +186,7 @@ class _AvatarUsernameState extends State<AvatarUsername> {
             ),
           ),
         ),
-        Text(
-          decodedToken['username'],
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
+        Text(name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       ],
     );
   }
