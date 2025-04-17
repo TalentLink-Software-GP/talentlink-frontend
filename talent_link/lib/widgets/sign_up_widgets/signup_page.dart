@@ -28,8 +28,9 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  String? errorMessage;
   final _formKey = GlobalKey<FormState>();
-
+  bool isLoading = false;
   bool agreeToTerms = false;
   final bool _obscurePassword = true;
 
@@ -54,45 +55,55 @@ class _SignUpScreenState extends State<SignUpScreen> {
       String userGender = widget.gender;
       String userRole = widget.userRole;
 
-      var url = Uri.parse('http://10.0.2.2:5000/api/auth/register');
+      try {
+        var url = Uri.parse('http://10.0.2.2:5000/api/auth/register');
 
-      var response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "name": "$firstName $lastName",
-          "username": username,
-          "email": email,
-          "phone": phone,
-          "password": password,
-          "role": userRole,
-          "date": userDate,
-          "country": usercountry,
-          "city": userCity,
-          "gender": userGender,
-        }),
-      );
+        var response = await http.post(
+          url,
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({
+            "name": "$firstName $lastName",
+            "username": username,
+            "email": email,
+            "phone": phone,
+            "password": password,
+            "role": userRole,
+            "date": userDate,
+            "country": usercountry,
+            "city": userCity,
+            "gender": userGender,
+          }),
+        );
 
-      if (response.statusCode == 201) {
-        var data = jsonDecode(response.body);
-        print("🔍 Full API Response: ${response.body}");
+        if (response.statusCode == 201) {
+          var data = jsonDecode(response.body);
+          print("🔍 Full API Response: ${response.body}");
 
-        if (data.containsKey("token")) {
-          String realToken = data["token"];
+          if (data.containsKey("token")) {
+            String realToken = data["token"];
 
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) =>
-                      CheckVerificationScreen(token: realToken, email: email),
-            ),
-          );
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) =>
+                        CheckVerificationScreen(token: realToken, email: email),
+              ),
+            );
+          } else {
+            print("❌ Token not received: ${response.body}");
+          }
         } else {
-          print("❌ Token not received: ${response.body}");
+          print("❌ Sign-up failed: ${response.body}");
         }
-      } else {
-        print("❌ Sign-up failed: ${response.body}");
+      } catch (e) {
+        setState(() {
+          errorMessage = "An error occurred. Please try again.";
+        });
+      } finally {
+        setState(() {
+          isLoading = false;
+        });
       }
     }
   }
