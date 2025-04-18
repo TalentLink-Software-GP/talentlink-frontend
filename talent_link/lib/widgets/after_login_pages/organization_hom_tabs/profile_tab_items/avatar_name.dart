@@ -15,6 +15,7 @@ class AvatarName extends StatefulWidget {
 class _AvatarNameState extends State<AvatarName> {
   String? uploadedImageUrl;
   String name = '';
+  String industry = '';
   @override
   void initState() {
     super.initState();
@@ -35,6 +36,7 @@ class _AvatarNameState extends State<AvatarName> {
         setState(() {
           uploadedImageUrl = jsonResponse['avatarUrl'];
           name = jsonResponse['name'];
+          industry = jsonResponse['industry'];
         });
       } else {
         print('Failed to fetch user data: ${response.statusCode}');
@@ -161,33 +163,56 @@ class _AvatarNameState extends State<AvatarName> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Center(
-            child: SizedBox(
-              height: 100,
-              width: 100,
-              child: FloatingActionButton(
-                heroTag: "avatar_fab",
-                onPressed: showAvatarOptions,
-                shape: CircleBorder(),
-                elevation: 10,
-                child: CircleAvatar(
-                  backgroundImage:
-                      uploadedImageUrl != null
-                          ? NetworkImage(uploadedImageUrl!)
-                          : AssetImage('assets/images/avatarPlaceholder.jpg')
-                              as ImageProvider,
-                  radius: 999999,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: SizedBox(
+        height: 120,
+        child: Card(
+          color: Colors.white70,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              SizedBox(
+                height: 100,
+                width: 100,
+                child: FloatingActionButton(
+                  heroTag: "avatar_fab",
+                  onPressed: showAvatarOptions,
+                  shape: CircleBorder(),
+                  elevation: 10,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.white,
+                    backgroundImage:
+                        uploadedImageUrl != null
+                            ? NetworkImage(uploadedImageUrl!)
+                            : AssetImage('assets/images/avatarPlaceholder.jpg')
+                                as ImageProvider,
+                    radius: 999999,
+                  ),
                 ),
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(industry, style: TextStyle(color: Colors.blueGrey)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-        Text(name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      ],
+      ),
     );
   }
 }
