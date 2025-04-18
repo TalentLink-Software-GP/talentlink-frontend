@@ -16,7 +16,6 @@ class _ChooseAuthPageState extends State<ChooseAuthPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
       body: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -68,14 +67,7 @@ class _ChooseAuthPageState extends State<ChooseAuthPage> {
                       ),
                     );
                   },
-                  child: const Text(
-                    "Forgot Account?",
-                    style: TextStyle(
-                      // color: Colors.black,
-                      // fontSize: 20,
-                      // fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  child: const Text("Forgot Account?"),
                 ),
               ],
             ),

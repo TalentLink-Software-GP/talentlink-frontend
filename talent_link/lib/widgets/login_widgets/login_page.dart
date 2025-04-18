@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_home_page.dart';
+import 'package:talent_link/widgets/forget_account_widgets/forgot_account_screen.dart';
 import 'package:talent_link/widgets/sign_up_widgets/sign_up_choose_positions.dart';
 
 import 'package:talent_link/widgets/base_widgets/text_field.dart';
@@ -30,7 +31,6 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      appBar: AppBar(),
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -118,6 +118,17 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         );
                       },
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ForgotAccountScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text("Forgot Account?"),
                     ),
                   ],
                 ),
