@@ -12,6 +12,10 @@ class ProfileTab extends StatefulWidget {
 class _ProfileTabState extends State<ProfileTab> {
   @override
   Widget build(BuildContext context) {
-    return Column(children: [AvatarName(token: widget.token), Divider()]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [AvatarName(token: widget.token), Divider()],
+    );
   }
 }
