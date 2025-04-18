@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:talent_link/models/job.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/add_job_or_post_card.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/add_new_job_screen.dart';
-import 'package:talent_link/widgets/base_widgets/text_field.dart';
 
 class MyJobsTab extends StatefulWidget {
   final String token;
