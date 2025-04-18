@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/user_posts.dart';
 import 'package:talent_link/widgets/login_widgets/login_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -87,9 +88,10 @@ class _HomePageState extends State<HomePage> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          const Center(child: Text("Home Screen")),
+          PostCreator(token: widget.data),
           const Center(child: Text("Jobs Screen")),
           const Center(child: Text("Maps Screen")),
+
           ProfileTab(
             token: widget.data,
             userEducation: userEducation,
