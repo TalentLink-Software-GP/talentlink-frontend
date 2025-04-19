@@ -6,8 +6,8 @@ import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/prof
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/recommended_users_tab.dart';
 
 class OrganizationHomePage extends StatefulWidget {
-  final String data;
-  const OrganizationHomePage({super.key, required this.data});
+  final String token;
+  const OrganizationHomePage({super.key, required this.token});
 
   @override
   State<OrganizationHomePage> createState() => _OrganizationHomePageState();
@@ -41,11 +41,11 @@ class _OrganizationHomePageState extends State<OrganizationHomePage> {
         child: IndexedStack(
           index: _selectedIndex,
           children: [
-            HomeTab(token: widget.data),
-            MyJobsTab(token: widget.data),
-            ApplicationsTab(token: widget.data),
-            RecommendedUsersTab(token: widget.data),
-            ProfileTab(token: widget.data),
+            HomeTab(token: widget.token),
+            MyJobsTab(token: widget.token),
+            ApplicationsTab(token: widget.token),
+            RecommendedUsersTab(token: widget.token),
+            ProfileTab(token: widget.token),
           ],
         ),
       ),

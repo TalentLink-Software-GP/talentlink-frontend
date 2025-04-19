@@ -15,8 +15,8 @@ class PostCreator extends StatefulWidget {
 class _PostCreatorState extends State<PostCreator> {
   final TextEditingController _postController = TextEditingController();
   String? uploadedImageUrl;
-  String? name;
-  List<String> posts = []; // List to store created posts
+  String? fullName;
+  List<Map<String, dynamic>> posts = [];
 
   @override
   void initState() {
@@ -35,17 +35,12 @@ class _PostCreatorState extends State<PostCreator> {
         ),
         headers: {'Content-Type': 'application/json'},
       );
-      print(username);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
           uploadedImageUrl = data['avatarUrl'];
-          String firstName = data['name'];
-          List<String> nameParts = firstName.split(' ');
-          name = nameParts[0];
+          fullName = data['name'];
         });
-      } else {
-        print('Failed to fetch user data: ${response.statusCode}');
       }
     } catch (e) {
       print('Error fetching user data: $e');
@@ -59,7 +54,6 @@ class _PostCreatorState extends State<PostCreator> {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({"author": author, "content": content}),
     );
-
     return response.statusCode == 201;
   }
 
@@ -89,7 +83,7 @@ class _PostCreatorState extends State<PostCreator> {
                     controller: _postController,
                     maxLines: null,
                     decoration: InputDecoration(
-                      hintText: "What’s on your mind, $name?",
+                      hintText: "What’s on your mind, ${fullName ?? '...'}?",
                       filled: true,
                       fillColor: Colors.grey[200],
                       border: OutlineInputBorder(
@@ -107,22 +101,17 @@ class _PostCreatorState extends State<PostCreator> {
               child: ElevatedButton(
                 onPressed: () async {
                   final text = _postController.text.trim();
-                  if (text.isNotEmpty) {
-                    final success = await savingPost(name!, text);
+                  if (text.isNotEmpty && fullName != null) {
+                    final success = await savingPost(fullName!, text);
                     if (success) {
                       setState(() {
-                        posts.add(text); // Add the new post to the list
+                        posts.add({
+                          'text': text,
+                          'author': fullName!,
+                          'time': DateTime.now(),
+                        });
                       });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Post created successfully'),
-                        ),
-                      );
                       _postController.clear();
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Failed to create post')),
-                      );
                     }
                   }
                 },
@@ -130,9 +119,14 @@ class _PostCreatorState extends State<PostCreator> {
               ),
             ),
             const SizedBox(height: 10),
-            ...posts
-                .map((post) => PostCard(postText: post))
-                .toList(), // Display posts dynamically
+            ...posts.map(
+              (post) => PostCard(
+                postText: post['text'],
+                authorName: post['author'],
+                timestamp: post['time'],
+                currentUserName: fullName ?? '',
+              ),
+            ),
           ],
         ),
       ),
@@ -142,7 +136,17 @@ class _PostCreatorState extends State<PostCreator> {
 
 class PostCard extends StatefulWidget {
   final String postText;
-  const PostCard({super.key, required this.postText});
+  final String authorName;
+  final DateTime timestamp;
+  final String currentUserName;
+
+  const PostCard({
+    super.key,
+    required this.postText,
+    required this.authorName,
+    required this.timestamp,
+    required this.currentUserName,
+  });
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -151,12 +155,180 @@ class PostCard extends StatefulWidget {
 class _PostCardState extends State<PostCard> {
   int likeCount = 0;
   bool isLiked = false;
-  bool showCommentField = false;
+  List<Map<String, dynamic>> comments = [];
   final TextEditingController commentController = TextEditingController();
-  List<String> comments = [];
+
+  void _showCommentModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(15),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Comments',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: comments.length,
+                      itemBuilder: (context, index) {
+                        final comment = comments[index];
+                        final replies = comment['replies'] as List<dynamic>;
+                        final visibleReplies =
+                            replies.length <= 2
+                                ? replies
+                                : replies.sublist(replies.length - 2);
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ListTile(
+                              leading: const CircleAvatar(
+                                backgroundImage: NetworkImage(
+                                  'https://randomuser.me/api/portraits/men/1.jpg',
+                                ),
+                              ),
+                              title: Text(comment['author']),
+                              subtitle: Text(comment['text']),
+                              trailing: TextButton(
+                                onPressed:
+                                    () =>
+                                        _showReplyDialog(index, setModalState),
+                                child: const Text("Reply"),
+                              ),
+                            ),
+                            if (replies.length > 2)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 40),
+                                child: TextButton(
+                                  onPressed:
+                                      () => _showReplyDialog(
+                                        index,
+                                        setModalState,
+                                      ),
+                                  child: Text(
+                                    'View all ${replies.length} replies',
+                                  ),
+                                ),
+                              ),
+                            ...visibleReplies.map<Widget>((reply) {
+                              return Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 40,
+                                  bottom: 6,
+                                ),
+                                child: ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: const CircleAvatar(
+                                    radius: 15,
+                                    backgroundImage: NetworkImage(
+                                      'https://randomuser.me/api/portraits/women/1.jpg',
+                                    ),
+                                  ),
+                                  title: Text(reply['author']),
+                                  subtitle: Text(reply['text']),
+                                ),
+                              );
+                            }).toList(),
+                          ],
+                        );
+                      },
+                    ),
+                    const Divider(),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: commentController,
+                            decoration: const InputDecoration(
+                              hintText: "Write a comment...",
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.send),
+                          onPressed: () {
+                            if (commentController.text.trim().isNotEmpty) {
+                              setModalState(() {
+                                comments.add({
+                                  'text': commentController.text.trim(),
+                                  'author': widget.currentUserName,
+                                  'replies': [],
+                                });
+                                commentController.clear();
+                              });
+                              setState(() {});
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showReplyDialog(int commentIndex, StateSetter setModalState) {
+    TextEditingController replyController = TextEditingController();
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text("Reply to comment"),
+            content: TextField(
+              controller: replyController,
+              decoration: const InputDecoration(
+                hintText: "Write your reply...",
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  final replyText = replyController.text.trim();
+                  if (replyText.isNotEmpty) {
+                    setModalState(() {
+                      comments[commentIndex]['replies'].add({
+                        'text': replyText,
+                        'author': widget.currentUserName,
+                      });
+                    });
+                    Navigator.pop(context);
+                  }
+                },
+                child: const Text("Send"),
+              ),
+            ],
+          ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final visibleComments =
+        comments.length <= 2 ? comments : comments.sublist(comments.length - 2);
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -166,22 +338,32 @@ class _PostCardState extends State<PostCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: const [
-                CircleAvatar(
+              children: [
+                const CircleAvatar(
                   backgroundImage: NetworkImage(
                     'https://randomuser.me/api/portraits/men/1.jpg',
                   ),
                   radius: 20,
                 ),
-                SizedBox(width: 10),
-                Text("Ahmed", style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.authorName,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      _timeAgo(widget.timestamp),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
               ],
             ),
             const SizedBox(height: 8),
             Text(widget.postText),
-
             const SizedBox(height: 10),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -204,21 +386,17 @@ class _PostCardState extends State<PostCard> {
                   ),
                 ),
                 InkWell(
-                  onTap: () {
-                    setState(() {
-                      showCommentField = !showCommentField;
-                    });
-                  },
-                  child: Row(
-                    children: const [
+                  onTap: () => _showCommentModal(context),
+                  child: const Row(
+                    children: [
                       Icon(Icons.comment_outlined),
                       SizedBox(width: 4),
                       Text('Comment'),
                     ],
                   ),
                 ),
-                Row(
-                  children: const [
+                const Row(
+                  children: [
                     Icon(Icons.share_outlined),
                     SizedBox(width: 4),
                     Text('Share'),
@@ -226,35 +404,13 @@ class _PostCardState extends State<PostCard> {
                 ),
               ],
             ),
-
-            if (showCommentField) ...[
-              const SizedBox(height: 10),
-              TextField(
-                controller: commentController,
-                onSubmitted: (value) {
-                  if (value.trim().isNotEmpty) {
-                    setState(() {
-                      comments.add(value.trim());
-                      commentController.clear();
-                    });
-                  }
-                },
-                decoration: InputDecoration(
-                  hintText: "Write a comment...",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: const BorderSide(color: Colors.deepPurple),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 15,
-                    vertical: 10,
-                  ),
-                ),
-              ),
-            ],
-
             const SizedBox(height: 10),
-            ...comments.map(
+            if (comments.length > 2)
+              TextButton(
+                onPressed: () => _showCommentModal(context),
+                child: Text('View all ${comments.length} comments'),
+              ),
+            ...visibleComments.map(
               (comment) => Padding(
                 padding: const EdgeInsets.only(top: 6.0),
                 child: Row(
@@ -268,16 +424,34 @@ class _PostCardState extends State<PostCard> {
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          comment,
-                          style: const TextStyle(fontSize: 14),
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            comment['author'],
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Container(
+                            margin: const EdgeInsets.only(top: 2),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(comment['text']),
+                          ),
+                          TextButton(
+                            onPressed:
+                                () => _showReplyDialog(
+                                  comments.indexOf(comment),
+                                  (s) => setState(() {}),
+                                ),
+                            child: const Text(
+                              "Reply",
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -288,5 +462,15 @@ class _PostCardState extends State<PostCard> {
         ),
       ),
     );
+  }
+
+  String _timeAgo(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inSeconds < 60) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} hrs ago';
+    if (diff.inDays < 7) return '${diff.inDays} days ago';
+    return '${date.day}/${date.month}/${date.year}';
   }
 }

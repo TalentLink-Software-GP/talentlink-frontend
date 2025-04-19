@@ -8,12 +8,71 @@ class SkillsEducation extends StatefulWidget {
   const SkillsEducation({super.key, required this.token});
 
   @override
-  State<SkillsEducation> createState() => _SkillsEducationState();
+  State<SkillsEducation> createState() => SkillsEducationState();
 }
 
-class _SkillsEducationState extends State<SkillsEducation> {
+class SkillsEducationState extends State<SkillsEducation> {
   List<String> userEducation = [];
   List<String> userSkills = [];
+  bool _showAllSkills = false;
+  bool _isLoadingSkills = false;
+  bool _isLoadingEducation = false;
+
+  Future<void> refreshSkills() async {
+    setState(() => _isLoadingSkills = true);
+    await fetchUserSkills();
+    setState(() => _isLoadingSkills = false);
+  }
+
+  Future<void> refreshEducation() async {
+    setState(() => _isLoadingEducation = true);
+    await fetchUserEducation();
+    setState(() => _isLoadingEducation = false);
+  }
+
+  Future<void> fetchUserSkills() async {
+    setState(() => _isLoadingSkills = true);
+    try {
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:5000/api/skills/get-all-skills'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final skillsData = data['skills'] ?? [];
+        setState(() {
+          userSkills = List<String>.from(skillsData);
+        });
+      } else {
+        print('Failed to load skills');
+      }
+    } finally {
+      setState(() => _isLoadingSkills = false);
+    }
+  }
+
+  Future<void> fetchUserEducation() async {
+    setState(() => _isLoadingEducation = true);
+    try {
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:5000/api/skills/get-all-education'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final educationData = data['education'] ?? [];
+        setState(() {
+          userEducation = List<String>.from(educationData);
+        });
+      } else {
+        print('Failed to load education');
+      }
+    } finally {
+      setState(() => _isLoadingEducation = false);
+    }
+  }
 
   void showDeleteConfirmation(String item, String type) {
     showDialog(
@@ -109,7 +168,7 @@ class _SkillsEducationState extends State<SkillsEducation> {
                 String value = controller.text.trim();
                 if (value.isNotEmpty) {
                   onSubmit(value);
-                  Navigator.of(context).pop(); // close dialog
+                  Navigator.of(context).pop();
                 }
               },
               child: Text('Add'),
@@ -144,62 +203,21 @@ class _SkillsEducationState extends State<SkillsEducation> {
 
       if (response.statusCode == 201) {
         print("$operation added successfully");
-
-        // Refresh the list after adding
         if (operation == 'skills') {
           fetchUserSkills();
-        } else if (operation == 'education') {
+        } else {
           fetchUserEducation();
         }
-      } else if (response.statusCode == 400) {
-        print("Invalid input");
       } else {
-        print("Unexpected error: ${response.statusCode}");
+        print("Error: ${response.statusCode}");
       }
     } catch (error) {
       print("Exception: $error");
     }
   }
 
-  Future<void> fetchUserEducation() async {
-    final response = await http.get(
-      Uri.parse('http://10.0.2.2:5000/api/skills/get-all-education'),
-      headers: {'Authorization': 'Bearer ${widget.token}'},
-    );
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<dynamic> educationData = data['education'] ?? [];
-      print("Education: $educationData");
-      setState(() {
-        userEducation = educationData.map((e) => e.toString()).toList();
-      });
-    } else {
-      print('Failed to load education');
-    }
-  }
-
-  Future<void> fetchUserSkills() async {
-    final response = await http.get(
-      Uri.parse('http://10.0.2.2:5000/api/skills/get-all-skills'),
-      headers: {'Authorization': 'Bearer ${widget.token}'},
-    );
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      final List<dynamic> skillsData = data['skills'] ?? [];
-      print("Skills: $skillsData");
-      setState(() {
-        userSkills = skillsData.map((e) => e.toString()).toList();
-      });
-    } else {
-      print('Failed to load skills');
-    }
-  }
-
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     fetchUserEducation();
     fetchUserSkills();
@@ -207,6 +225,9 @@ class _SkillsEducationState extends State<SkillsEducation> {
 
   @override
   Widget build(BuildContext context) {
+    final skillsToShow =
+        _showAllSkills ? userSkills : userSkills.take(3).toList();
+
     return Column(
       children: [
         Padding(
@@ -223,18 +244,20 @@ class _SkillsEducationState extends State<SkillsEducation> {
                 spacing: 10,
                 runSpacing: 10,
                 children:
-                    userEducation.map((edu) {
-                      return Chip(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        label: Text(edu),
-                        deleteIcon: Icon(Icons.close),
-                        onDeleted:
-                            () => showDeleteConfirmation(edu, 'education'),
-                        backgroundColor: Colors.green.shade100,
-                      );
-                    }).toList(),
+                    userEducation
+                        .map(
+                          (edu) => Chip(
+                            label: Text(edu),
+                            backgroundColor: Colors.green.shade100,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            deleteIcon: Icon(Icons.close),
+                            onDeleted:
+                                () => showDeleteConfirmation(edu, 'education'),
+                          ),
+                        )
+                        .toList(),
               ),
             ],
           ),
@@ -273,22 +296,38 @@ class _SkillsEducationState extends State<SkillsEducation> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 10),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children:
-                    userSkills.map((skill) {
-                      return Chip(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        label: Text(skill),
-                        deleteIcon: Icon(Icons.close),
-                        onDeleted: () => showDeleteConfirmation(skill, 'skill'),
-                        backgroundColor: Colors.blue.shade100,
-                      );
-                    }).toList(),
-              ),
+              // Add loading check here
+              if (_isLoadingSkills)
+                Center(child: CircularProgressIndicator())
+              else
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children:
+                      skillsToShow
+                          .map(
+                            (skill) => Chip(
+                              label: Text(skill),
+                              backgroundColor: Colors.blue.shade100,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              deleteIcon: Icon(Icons.close),
+                              onDeleted:
+                                  () => showDeleteConfirmation(skill, 'skill'),
+                            ),
+                          )
+                          .toList(),
+                ),
+              if (userSkills.length > 3 && !_isLoadingSkills)
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _showAllSkills = !_showAllSkills;
+                    });
+                  },
+                  child: Text(_showAllSkills ? 'Show Less' : 'Show More'),
+                ),
             ],
           ),
         ),

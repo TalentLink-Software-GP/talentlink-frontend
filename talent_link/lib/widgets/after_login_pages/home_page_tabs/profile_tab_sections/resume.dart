@@ -9,7 +9,13 @@ import 'package:url_launcher/url_launcher.dart';
 
 class Resume extends StatefulWidget {
   final String token;
-  const Resume({super.key, required this.token});
+  final VoidCallback onSkillsExtracted;
+
+  const Resume({
+    super.key,
+    required this.token,
+    required this.onSkillsExtracted,
+  });
 
   @override
   State<Resume> createState() => _ResumeState();
@@ -46,9 +52,18 @@ class _ResumeState extends State<Resume> {
           setState(() {
             uploadedCVUrl = jsonResponse['cvUrl'];
           });
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('CV uploaded successfully')));
+
+          // Wait a moment for the backend to process the CV
+          await Future.delayed(Duration(seconds: 1));
+
+          // Force refresh skills and education
+          widget.onSkillsExtracted();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('CV uploaded successfully. Extracting skills...'),
+            ),
+          );
         } else {
           ScaffoldMessenger.of(
             context,
@@ -133,7 +148,6 @@ class _ResumeState extends State<Resume> {
               else
                 BaseButton(
                   text: "Upload CV (PDF)",
-                  // icon: Icons.upload_file,
                   onPressed: _isUploading ? () {} : pickAndUploadPDF,
                 ),
             ],

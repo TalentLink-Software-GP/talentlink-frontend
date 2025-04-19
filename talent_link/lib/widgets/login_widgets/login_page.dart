@@ -91,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
                               MaterialPageRoute(
                                 builder:
                                     (context) =>
-                                        OrganizationHomePage(data: token),
+                                        OrganizationHomePage(token: token),
                               ),
                             );
                           } else {

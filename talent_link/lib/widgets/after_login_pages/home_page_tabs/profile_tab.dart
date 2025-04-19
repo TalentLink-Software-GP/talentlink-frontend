@@ -23,10 +23,21 @@ class ProfileTab extends StatefulWidget {
 }
 
 class _ProfileTabState extends State<ProfileTab> {
-  String? uploadedCVUrl;
-  @override
-  void initState() {
-    super.initState();
+  final GlobalKey<SkillsEducationState> _skillsEducationKey = GlobalKey();
+
+  Future<void> _refreshSkillsAndEducation() async {
+    try {
+      final state = _skillsEducationKey.currentState;
+      if (state != null && mounted) {
+        await Future.wait([state.refreshSkills(), state.refreshEducation()]);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error refreshing skills: $e')));
+      }
+    }
   }
 
   @override
@@ -42,13 +53,19 @@ class _ProfileTabState extends State<ProfileTab> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     AvatarUsername(token: widget.token),
-                    Divider(),
+                    const Divider(),
                     UserData(),
-                    Divider(),
-                    SkillsEducation(token: widget.token),
-                    Divider(),
-                    Resume(token: widget.token),
-                    Divider(),
+                    const Divider(),
+                    SkillsEducation(
+                      key: _skillsEducationKey,
+                      token: widget.token,
+                    ),
+                    const Divider(),
+                    Resume(
+                      token: widget.token,
+                      onSkillsExtracted: _refreshSkillsAndEducation,
+                    ),
+                    const Divider(),
                   ],
                 ),
               ),
