@@ -347,7 +347,7 @@ class _AddNewJobScreenState extends State<AddNewJobScreen>
       );
       request.headers['Authorization'] = 'Bearer ${widget.token}';
       request.files.add(
-        await http.MultipartFile.fromPath('jobFile', selectedFilePath!),
+        await http.MultipartFile.fromPath('file', selectedFilePath!),
       );
 
       final response = await request.send();
