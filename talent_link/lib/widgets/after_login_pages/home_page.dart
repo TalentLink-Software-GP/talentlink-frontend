@@ -1,11 +1,10 @@
-// ignore_for_file: must_be_immutable
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/user_posts.dart';
 import 'package:talent_link/widgets/login_widgets/login_page.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/mesageProfile.dart';
 
 class HomePage extends StatefulWidget {
   String data; // Token
@@ -44,11 +43,9 @@ class _HomePageState extends State<HomePage> {
           userEducation = List<String>.from(data["education"] ?? []);
         });
       } else {
-        // ignore: avoid_print
         print("Failed to fetch data: ${response.statusCode}");
       }
     } catch (e) {
-      // ignore: avoid_print
       print("Error fetching data: $e");
     }
   }
@@ -70,41 +67,113 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<void> navigateToSearchPage() async {
+    const userApiUrl = 'http://10.0.2.2:5000/api/users/get-user-id';
+
+    try {
+      final response = await http.get(
+        Uri.parse(userApiUrl),
+        headers: {"Authorization": "Bearer ${widget.data}"},
+      );
+
+      if (response.statusCode == 200) {
+        final userData = jsonDecode(response.body);
+        final String userId = userData['userId'];
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SearchUserPage(currentUserId: userId),
+          ),
+        );
+      } else {
+        print("Failed to fetch user ID");
+      }
+    } catch (e) {
+      print("Error navigating to search page: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Center(child: Text("Talent Link")),
-        titleTextStyle: const TextStyle(
-          fontWeight: FontWeight.w900,
-          color: Colors.black,
-          fontSize: 23,
+        title: const Text(
+          "Talent Link",
+          style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
-        leading: IconButton(icon: const Icon(Icons.message), onPressed: () {}),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color.fromARGB(255, 49, 212, 63),
+                const Color.fromARGB(255, 68, 255, 224),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.message),
+          onPressed: navigateToSearchPage,
+          color: Colors.white,
+        ),
         actions: [
-          IconButton(icon: const Icon(Icons.notifications), onPressed: () {}),
-        ],
-      ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          PostCreator(token: widget.data),
-          const Center(child: Text("Jobs Screen")),
-          const Center(child: Text("Maps Screen")),
-
-          ProfileTab(
-            token: widget.data,
-            userEducation: userEducation,
-            userSkills: userSkills,
-            onLogout: _handleLogout,
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: () {},
+            color: Colors.white,
           ),
         ],
       ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blue[50]!, Colors.blue[100]!],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            PostCreator(token: widget.data),
+            const Center(
+              child: Text(
+                "Jobs Screen",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const Center(
+              child: Text(
+                "Maps Screen",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+            ),
+            ProfileTab(
+              token: widget.data,
+              userEducation: userEducation,
+              userSkills: userSkills,
+              onLogout: _handleLogout,
+            ),
+          ],
+        ),
+      ),
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.white,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         selectedItemColor: Colors.teal,
         unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
