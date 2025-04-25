@@ -16,25 +16,88 @@ class _PostCreatorState extends State<PostCreator> {
   final TextEditingController _postController = TextEditingController();
   String? uploadedImageUrl;
   String? fullName;
+  String? username;
   List<Map<String, dynamic>> posts = [];
   final ScrollController _scrollController = ScrollController();
+  int _page = 1;
+  final int _limit = 10;
+  bool _isLoading = false;
+  bool _hasMore = true;
 
   @override
   void initState() {
     super.initState();
     fetchUserData();
+    fetchPosts();
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 200) {
+        fetchPosts();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> fetchPosts() async {
+    if (_isLoading || !_hasMore) return;
+
+    setState(() => _isLoading = true);
+
+    final response = await http.get(
+      Uri.parse(
+        'http://10.0.2.2:5000/api/posts/get-posts?page=$_page&limit=$_limit',
+      ),
+      headers: {'Authorization': widget.token},
+    );
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+      Map<String, dynamic> decodedToken = JwtDecoder.decode(widget.token);
+      String currentUsername = decodedToken['username'];
+
+      final List<dynamic> data = responseData['posts'];
+      setState(() {
+        _page++;
+        _hasMore = data.length == _limit;
+
+        posts.addAll(
+          data.map(
+            (post) => {
+              'text': post['content'],
+              'author': post['author'], // This should be full name from backend
+              'time': DateTime.parse(post['createdAt']),
+              'avatarUrl': post['avatarUrl'] ?? '',
+              'id': post['_id'],
+              'isLiked': false,
+              'likeCount': 0,
+              'isOwner': post['isOwner'] ?? false, // Ensure boolean
+            },
+          ),
+        );
+      });
+    }
+
+    setState(() => _isLoading = false);
   }
 
   Future<void> fetchUserData() async {
     Map<String, dynamic> decodedToken = JwtDecoder.decode(widget.token);
-    String username = decodedToken['username'];
+    username = decodedToken['username'];
 
     try {
       final response = await http.get(
         Uri.parse(
           'http://10.0.2.2:5000/api/users/getUserData?userName=$username',
         ),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': widget.token,
+        },
       );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -51,36 +114,22 @@ class _PostCreatorState extends State<PostCreator> {
   Future<bool> savingPost(String author, String content) async {
     const url = 'http://10.0.2.2:5000/api/posts/createPost';
     try {
-      print('Sending token: ${widget.token}');
       final response = await http.post(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': widget.token,
         },
-        body: jsonEncode({
-          "author": author,
-          "content": content,
-          "avatarUrl": uploadedImageUrl,
-        }),
+        body: jsonEncode({"content": content}),
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
       if (response.statusCode == 201) {
-        final newPost = json.decode(response.body);
         setState(() {
-          posts.insert(0, {
-            'text': content,
-            'author': author,
-            'time': DateTime.now(),
-            'avatarUrl': uploadedImageUrl,
-            'id': newPost['id'],
-            'isLiked': false,
-            'likeCount': 0,
-          });
+          _page = 1;
+          posts.clear();
         });
+        await fetchPosts();
+
         return true;
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -103,13 +152,10 @@ class _PostCreatorState extends State<PostCreator> {
       Uri.parse(url),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.token}',
+        'Authorization': widget.token,
       },
       body: jsonEncode({"content": newContent}),
     );
-
-    print("Status code: ${response.statusCode}");
-    print("Response body: ${response.body}");
 
     return response.statusCode == 200;
   }
@@ -120,12 +166,9 @@ class _PostCreatorState extends State<PostCreator> {
       Uri.parse(url),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.token}',
+        'Authorization': widget.token,
       },
     );
-
-    print("Status code: ${response.statusCode}");
-    print("Response body: ${response.body}");
 
     return response.statusCode == 200;
   }
@@ -316,18 +359,24 @@ class _PostCreatorState extends State<PostCreator> {
                     ),
                   ),
                   const SizedBox(height: 10),
+                  if (_isLoading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 20),
+                      child: CircularProgressIndicator(),
+                    ),
+
                   ...posts.asMap().entries.map(
                     (entry) => PostCard(
                       postText: entry.value['text'],
                       authorName: entry.value['author'],
                       timestamp: entry.value['time'],
-                      currentUserName: fullName ?? '',
-                      authorAvatarUrl: entry.value['avatarUrl'] ?? '',
+                      authorAvatarUrl: entry.value['avatarUrl'],
                       postId: entry.value['id'],
                       onDelete: () => _handlePostDeleted(entry.key),
                       onUpdate:
                           (newText) => _handlePostUpdated(entry.key, newText),
-                      isCurrentUser: fullName == entry.value['author'],
+                      isOwner:
+                          entry.value['isOwner'], // This is now properly set
                       isLiked: entry.value['isLiked'],
                       likeCount: entry.value['likeCount'],
                       onLike: () => _handlePostLiked(entry.key),
@@ -347,12 +396,11 @@ class PostCard extends StatefulWidget {
   final String postText;
   final String authorName;
   final DateTime timestamp;
-  final String currentUserName;
   final String authorAvatarUrl;
   final String postId;
   final VoidCallback onDelete;
   final Function(String) onUpdate;
-  final bool isCurrentUser;
+  final bool isOwner;
   final bool isLiked;
   final int likeCount;
   final VoidCallback onLike;
@@ -362,12 +410,11 @@ class PostCard extends StatefulWidget {
     required this.postText,
     required this.authorName,
     required this.timestamp,
-    required this.currentUserName,
     required this.authorAvatarUrl,
     required this.postId,
     required this.onDelete,
     required this.onUpdate,
-    required this.isCurrentUser,
+    required this.isOwner,
     required this.isLiked,
     required this.likeCount,
     required this.onLike,
@@ -391,25 +438,27 @@ class _PostCardState extends State<PostCard> {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Icons.edit),
-              title: const Text('Edit Post'),
-              onTap: () {
-                Navigator.pop(context);
-                _showEditDialog();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text(
-                'Delete Post',
-                style: TextStyle(color: Colors.red),
+            if (widget.isOwner)
+              ListTile(
+                leading: const Icon(Icons.edit),
+                title: const Text('Edit Post'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showEditDialog();
+                },
               ),
-              onTap: () {
-                Navigator.pop(context);
-                _confirmDelete();
-              },
-            ),
+            if (widget.isOwner)
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text(
+                  'Delete Post',
+                  style: TextStyle(color: Colors.red),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _confirmDelete();
+                },
+              ),
           ],
         );
       },
@@ -690,7 +739,7 @@ class _PostCardState extends State<PostCard> {
                                 setModalState(() {
                                   comments.add({
                                     'text': commentController.text.trim(),
-                                    'author': widget.currentUserName,
+                                    'author': widget.authorName,
                                     'replies': [],
                                   });
                                   commentController.clear();
@@ -797,7 +846,7 @@ class _PostCardState extends State<PostCard> {
                               setModalState(() {
                                 comments[commentIndex]['replies'].add({
                                   'text': replyText,
-                                  'author': widget.currentUserName,
+                                  'author': widget.authorName,
                                 });
                               });
                               Navigator.pop(context);
@@ -886,7 +935,7 @@ class _PostCardState extends State<PostCard> {
                   ],
                 ),
                 const Spacer(),
-                if (widget.isCurrentUser)
+                if (widget.isOwner)
                   IconButton(
                     icon: const Icon(Icons.more_vert, color: Colors.grey),
                     onPressed: () => _showPostOptions(context),

@@ -14,7 +14,10 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   int _selectedIndex = 0;
   List<String> userSkills = [];
   List<String> userEducation = [];
@@ -96,93 +99,107 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Talent Link",
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                const Color.fromARGB(255, 49, 212, 63),
-                const Color.fromARGB(255, 68, 255, 224),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+    super.build(context);
+
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).unfocus();
+      },
+      behavior: HitTestBehavior.opaque,
+
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+
+        appBar: AppBar(
+          title: const Text(
+            "Talent Link",
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.message),
-          onPressed: navigateToSearchPage,
-          color: Colors.white,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {},
-            color: Colors.white,
-          ),
-        ],
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blue[50]!, Colors.blue[100]!],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: [
-            PostCreator(token: widget.data),
-            const Center(
-              child: Text(
-                "Jobs Screen",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color.fromARGB(255, 49, 212, 63),
+                  const Color.fromARGB(255, 68, 255, 224),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
-            const Center(
-              child: Text(
-                "Maps Screen",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-            ),
-            ProfileTab(
-              token: widget.data,
-              userEducation: userEducation,
-              userSkills: userSkills,
-              onLogout: _handleLogout,
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.message),
+            onPressed: navigateToSearchPage,
+            color: Colors.white,
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.notifications),
+              onPressed: () {},
+              color: Colors.white,
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.white,
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: Colors.teal,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.find_in_page),
-            label: "Jobs",
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue[50]!, Colors.blue[100]!],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: "Map"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-        ],
+          child: IndexedStack(
+            index: _selectedIndex,
+            children: [
+              PostCreator(token: widget.data),
+              const Center(
+                child: Text(
+                  "Jobs Screen",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const Center(
+                child: Text(
+                  "Maps Screen",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+              ),
+              ProfileTab(
+                token: widget.data,
+                userEducation: userEducation,
+                userSkills: userSkills,
+                onLogout: _handleLogout,
+              ),
+            ],
+          ),
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          backgroundColor: Colors.white,
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          selectedItemColor: Colors.teal,
+          unselectedItemColor: Colors.grey,
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.find_in_page),
+              label: "Jobs",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.map_outlined),
+              label: "Map",
+            ),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+          ],
+        ),
       ),
     );
   }
