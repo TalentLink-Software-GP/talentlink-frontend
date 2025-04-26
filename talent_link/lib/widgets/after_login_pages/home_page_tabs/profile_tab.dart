@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/avatar_username.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/resume.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/skills_education.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/user_data.dart';
 
 class ProfileTab extends StatefulWidget {
   final List<String> userEducation;
@@ -54,7 +53,6 @@ class _ProfileTabState extends State<ProfileTab> {
                   children: [
                     AvatarUsername(token: widget.token),
                     const Divider(),
-                    UserData(),
                     const Divider(),
                     SkillsEducation(
                       key: _skillsEducationKey,
