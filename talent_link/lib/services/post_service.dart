@@ -1,0 +1,159 @@
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:jwt_decoder/jwt_decoder.dart';
+
+class PostService {
+  final String token;
+  final String baseUrl = 'http://10.0.2.2:5000/api';
+
+  PostService(this.token);
+
+  // User Data
+  Future<Map<String, dynamic>> fetchUserData() async {
+    final decodedToken = JwtDecoder.decode(token);
+    final username = decodedToken['username'];
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/getUserData?userName=$username'),
+        headers: {'Content-Type': 'application/json', 'Authorization': token},
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      throw Exception('Failed to fetch user data: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Error fetching user data: $e');
+    }
+  }
+
+  // Posts
+  Future<Map<String, dynamic>> fetchPosts(int page, int limit) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/posts/get-posts?page=$page&limit=$limit'),
+        headers: {'Authorization': token},
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception('Failed to load posts: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Error fetching posts: $e');
+    }
+  }
+
+  Future<bool> createPost(String content) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/posts/createPost'),
+        headers: {'Content-Type': 'application/json', 'Authorization': token},
+        body: jsonEncode({"content": content}),
+      );
+      return response.statusCode == 201;
+    } catch (e) {
+      throw Exception('Error creating post: $e');
+    }
+  }
+
+  Future<bool> updatePost(String postId, String newContent) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/posts/updatePost/$postId'),
+        headers: {'Content-Type': 'application/json', 'Authorization': token},
+        body: jsonEncode({"content": newContent}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      throw Exception('Error updating post: $e');
+    }
+  }
+
+  Future<bool> deletePost(String postId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/posts/deletePost/$postId'),
+        headers: {'Content-Type': 'application/json', 'Authorization': token},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      throw Exception('Error deleting post: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchPostById(String postId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/posts/getPostById/$postId'),
+        headers: {'Authorization': token},
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception('Failed to fetch post: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Error fetching post: $e');
+    }
+  }
+
+  // Comments
+  Future<List<Map<String, dynamic>>> fetchComments(String postId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/posts/$postId/comments'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return List<Map<String, dynamic>>.from(responseData['comments'] ?? []);
+      }
+      throw Exception('Failed to fetch comments: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Error fetching comments: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> addComment(String postId, String text) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/posts/$postId/comments'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'text': text}),
+      );
+
+      if (response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+      throw Exception('Failed to add comment: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Error adding comment: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> addReply(String commentId, String text) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/posts/comments/$commentId/replies'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'text': text}),
+      );
+
+      if (response.statusCode == 201) {
+        return jsonDecode(response.body);
+      }
+      throw Exception('Failed to add reply: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Error adding reply: $e');
+    }
+  }
+}

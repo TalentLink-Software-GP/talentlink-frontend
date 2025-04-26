@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/user_posts.dart';
+// import 'package:talent_link/widgets/after_login_pages/home_page_tabs/user_posts.dart';
 import 'package:talent_link/widgets/login_widgets/login_page.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/mesageProfile.dart';
+import '../after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_creator.dart';
 
 class HomePage extends StatefulWidget {
   String data; // Token
