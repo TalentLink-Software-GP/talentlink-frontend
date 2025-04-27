@@ -26,13 +26,13 @@ class Job {
   factory Job.fromJson(Map<String, dynamic> json) {
     return Job(
       id: json['_id'],
-      title: json['title'],
-      description: json['description'],
-      location: json['location'],
-      salary: json['salary'],
-      jobType: json['jobType'],
-      category: json['category'],
-      deadline: json['deadline'],
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      location: json['location'] ?? '',
+      salary: json['salary']?.toString() ?? '', // 🔥 Force salary to String
+      jobType: json['jobType'] ?? '',
+      category: json['category'] ?? '',
+      deadline: json['deadline'] ?? '',
       requirements: List<String>.from(json['requirements'] ?? []),
       responsibilities: List<String>.from(json['responsibilities'] ?? []),
     );
