@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:talent_link/models/job.dart';
+import 'package:talent_link/services/job_service.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/add_job_or_post_card.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/add_new_job_screen.dart';
 
@@ -17,43 +16,35 @@ class _MyJobsTabState extends State<MyJobsTab> {
   List<Job> jobs = [];
   int? expandedIndex;
 
+  late JobService jobService;
+
   @override
   void initState() {
     super.initState();
+    jobService = JobService(token: widget.token);
     fetchJobs();
   }
 
   Future<void> fetchJobs() async {
     try {
-      final response = await http.get(
-        Uri.parse('http://10.0.2.2:5000/api/job/getorgjobs'),
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        setState(() {
-          jobs = data.map((json) => Job.fromJson(json)).toList();
-        });
-      }
+      final fetchedJobs = await jobService.fetchJobs();
+      setState(() {
+        jobs = fetchedJobs;
+      });
     } catch (e) {
-      print("Error fetching jobs: $e");
+      print('Error: $e');
     }
   }
 
   Future<void> deleteJob(String jobId) async {
     try {
-      final response = await http.delete(
-        Uri.parse('http://10.0.2.2:5000/api/job/deletejob?jobId=$jobId'),
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Job deleted successfully")));
-        fetchJobs();
-      }
+      await jobService.deleteJob(jobId);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Job deleted successfully")));
+      fetchJobs();
     } catch (e) {
-      print("Error deleting job: $e");
+      print('Error: $e');
     }
   }
 
@@ -69,9 +60,7 @@ class _MyJobsTabState extends State<MyJobsTab> {
       ),
     );
     if (result == true) {
-      setState(() {
-        fetchJobs();
-      });
+      fetchJobs();
     }
   }
 
