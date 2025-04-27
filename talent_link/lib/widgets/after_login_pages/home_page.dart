@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tab.dart';
 import 'dart:convert';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab.dart';
 // import 'package:talent_link/widgets/after_login_pages/home_page_tabs/user_posts.dart';
@@ -160,12 +161,7 @@ class _HomePageState extends State<HomePage>
             index: _selectedIndex,
             children: [
               PostCreator(token: widget.data),
-              const Center(
-                child: Text(
-                  "Jobs Screen",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-              ),
+              JobsScreenTab(token: widget.data),
               const Center(
                 child: Text(
                   "Maps Screen",

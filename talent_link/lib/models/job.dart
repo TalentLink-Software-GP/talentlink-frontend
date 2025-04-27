@@ -9,6 +9,7 @@ class Job {
   final String deadline;
   final List<String> requirements;
   final List<String> responsibilities;
+  final double? matchScore;
 
   Job({
     required this.id,
@@ -21,6 +22,7 @@ class Job {
     required this.deadline,
     required this.requirements,
     required this.responsibilities,
+    this.matchScore,
   });
 
   factory Job.fromJson(Map<String, dynamic> json) {
@@ -29,14 +31,19 @@ class Job {
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       location: json['location'] ?? '',
-      salary: json['salary']?.toString() ?? '', // 🔥 Force salary to String
+      salary: json['salary']?.toString() ?? '',
       jobType: json['jobType'] ?? '',
       category: json['category'] ?? '',
       deadline: json['deadline'] ?? '',
       requirements: List<String>.from(json['requirements'] ?? []),
       responsibilities: List<String>.from(json['responsibilities'] ?? []),
+      matchScore:
+          json['matchScore'] != null
+              ? (json['matchScore'] as num).toDouble()
+              : null,
     );
   }
+
   Map<String, dynamic> toJson() {
     return {
       '_id': id,
@@ -49,6 +56,7 @@ class Job {
       'deadline': deadline,
       'requirements': requirements,
       'responsibilities': responsibilities,
+      'matchScore': matchScore,
     };
   }
 }

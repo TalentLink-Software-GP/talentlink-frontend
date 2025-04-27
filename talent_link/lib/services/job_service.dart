@@ -41,4 +41,25 @@ class JobService {
       throw e;
     }
   }
+
+  Future<List<Job>> fetchUserJobs() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/getAllJobsUser'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => Job.fromJson(json)).toList();
+      } else if (response.statusCode == 204) {
+        return []; // No available jobs
+      } else {
+        throw Exception('Failed to load jobs');
+      }
+    } catch (e) {
+      print("Error fetching user jobs: $e");
+      throw e;
+    }
+  }
 }
