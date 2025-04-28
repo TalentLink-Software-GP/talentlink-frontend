@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:talent_link/models/job.dart';
-import 'package:flutter/services.dart'; // For clipboard copying
+import 'package:talent_link/widgets/base_widgets/button.dart';
 
 class JobDetailsScreen extends StatelessWidget {
   final Job job;
@@ -11,98 +11,126 @@ class JobDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(job.title)),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Job Title
-              Text(job.title, style: Theme.of(context).textTheme.headlineSmall),
-              SizedBox(height: 8),
-
-              // Job Location
-              Text(
-                'Location: ${job.location}',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              SizedBox(height: 8),
-
-              // Job Description
-              Text(
-                'Description: ${job.description}',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              SizedBox(height: 8),
-
-              // Job Salary
-              Text(
-                'Salary: ${job.salary}',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              SizedBox(height: 8),
-
-              // Job Type
-              Text(
-                'Job Type: ${job.jobType}',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              SizedBox(height: 8),
-
-              // Job Category
-              Text(
-                'Category: ${job.category}',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              SizedBox(height: 8),
-
-              // Job Requirements
-              Text(
-                'Requirements: ${job.requirements.join(", ")}',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              SizedBox(height: 8),
-
-              // Job Responsibilities
-              Text(
-                'Responsibilities: ${job.responsibilities.join(", ")}',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              SizedBox(height: 20),
-
-              // Apply Button
-              ElevatedButton(
-                onPressed: () {
-                  // Implement the application submission logic here
-                  // For now, show a simple snackbar for demo
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Applying for ${job.title}...')),
-                  );
-                },
-                child: Text('Apply for this Job'),
-              ),
-              SizedBox(height: 20),
-
-              // Share Button
-              ElevatedButton.icon(
-                onPressed: () {
-                  // Shareable link logic here
-                  final String shareableLink =
-                      'https://yourapp.com/job/${job.id}';
-                  Clipboard.setData(ClipboardData(text: shareableLink));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Shareable link copied to clipboard!'),
-                    ),
-                  );
-                },
-                icon: Icon(Icons.share),
-                label: Text('Share this Job'),
-              ),
-            ],
-          ),
+      appBar: AppBar(
+        title: Text(
+          "Job Details",
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Job Title
+                    Text(
+                      job.title,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Salary Section
+                    _buildSectionTitle(context, 'Salary'),
+                    Text(
+                      job.salary,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Job Type Section
+                    _buildSectionTitle(context, 'Job Type'),
+                    Text(
+                      job.jobType,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Category Section
+                    _buildSectionTitle(context, 'Category'),
+                    Text(
+                      job.category,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Job Location Text only
+                    _buildSectionTitle(context, 'Location'),
+                    Text(
+                      job.location,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Description Section
+                    _buildSectionTitle(context, 'Description'),
+                    Text(
+                      job.description,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Requirements Section
+                    _buildSectionTitle(context, 'Requirements'),
+                    Text(
+                      job.requirements.join(", "),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Responsibilities Section
+                    _buildSectionTitle(context, 'Responsibilities'),
+                    Text(
+                      job.responsibilities.join(", "),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Apply Button (stays at the bottom if possible)
+                    SizedBox(
+                      width: double.infinity,
+                      child: BaseButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Applying for ${job.title}...'),
+                            ),
+                          );
+                        },
+                        text: 'Apply for this Job',
+                        buttonColor: Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // Helper method for creating section titles
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.bold,
+        color: Colors.black87,
       ),
     );
   }

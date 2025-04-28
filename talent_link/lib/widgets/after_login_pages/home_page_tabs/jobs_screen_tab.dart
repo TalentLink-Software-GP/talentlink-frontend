@@ -31,13 +31,22 @@ class _JobsScreenTabState extends State<JobsScreenTab>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TabBar(
-        controller: _tabController,
-        tabs: const [
-          Tab(text: 'All Jobs'),
-          Tab(text: 'Best Matches'),
-          Tab(text: 'Filter Jobs'),
-        ],
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: Container(
+          color: Colors.white,
+          child: TabBar(
+            controller: _tabController,
+            labelColor: Colors.black,
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: Colors.green,
+            tabs: const [
+              Tab(text: 'All Jobs'),
+              Tab(text: 'Best Matches'),
+              Tab(text: 'Filter Jobs'),
+            ],
+          ),
+        ),
       ),
       body: TabBarView(
         controller: _tabController,
