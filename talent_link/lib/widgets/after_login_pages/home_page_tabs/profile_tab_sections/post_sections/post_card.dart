@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/ProfileWidgetForAnotherUsers%20.dart';
 import 'comment_sections/comments_modal.dart';
 import 'comment_sections/comments_section.dart';
 import 'package:http/http.dart' as http;
@@ -11,8 +12,8 @@ class PostCard extends StatefulWidget {
   final String authorName;
   final DateTime timestamp;
   final String authorAvatarUrl;
-  final VoidCallback onDelete;
-  final Function(String) onUpdate;
+  final VoidCallback? onDelete;
+  final Function(String)? onUpdate;
   final bool isOwner;
   final bool isLiked;
   final int likeCount;
@@ -22,16 +23,22 @@ class PostCard extends StatefulWidget {
   final String currentUserAvatar;
   final String currentUserName;
   final String token;
+  final String username;
+  final GlobalKey<_PostCardState> _key;
 
-  const PostCard({
-    super.key,
+  void handleLike() {
+    _key.currentState?.handleLike();
+  }
+
+  PostCard({
+    Key? key,
     required this.postText,
     required this.authorName,
     required this.timestamp,
     required this.authorAvatarUrl,
     required this.postId,
-    required this.onDelete,
-    required this.onUpdate,
+    this.onDelete,
+    this.onUpdate,
     required this.isOwner,
     required this.isLiked,
     required this.likeCount,
@@ -41,7 +48,9 @@ class PostCard extends StatefulWidget {
     required this.currentUserName,
     required this.token,
     this.initialComments = const [],
-  });
+    required this.username,
+  }) : _key = GlobalKey<_PostCardState>(),
+       super(key: key);
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -135,7 +144,7 @@ class _PostCardState extends State<PostCard> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  widget.onUpdate(controller.text);
+                  widget.onUpdate!(controller.text);
                   Navigator.pop(context);
                 },
                 child: const Text('Save'),
@@ -159,7 +168,7 @@ class _PostCardState extends State<PostCard> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  widget.onDelete();
+                  widget.onDelete!();
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -171,7 +180,7 @@ class _PostCardState extends State<PostCard> {
   }
   //      'http://10.0.2.2:5000/api/posts/${widget.postId}/like-post',
 
-  Future<void> _handleLike() async {
+  Future<void> handleLike() async {
     final url = Uri.parse(
       'http://10.0.2.2:5000/api/posts/${widget.postId}/like-post',
     );
@@ -240,12 +249,27 @@ class _PostCardState extends State<PostCard> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      ///text button
-                      widget.authorName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    TextButton(
+                      onPressed: () {
+                        print("username: ${widget.username}");
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => ProfileWidgetForAnotherUsers(
+                                  username: widget.username,
+                                  token: widget.token, // user
+                                ),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        widget.authorName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.black,
+                        ),
                       ),
                     ),
                     Text(
@@ -276,7 +300,7 @@ class _PostCardState extends State<PostCard> {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 InkWell(
-                  onTap: _handleLike,
+                  onTap: handleLike,
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -322,7 +346,7 @@ class _PostCardState extends State<PostCard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 InkWell(
-                  onTap: _handleLike,
+                  onTap: handleLike,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
