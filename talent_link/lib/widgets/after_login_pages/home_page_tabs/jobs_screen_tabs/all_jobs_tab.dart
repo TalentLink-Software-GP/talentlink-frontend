@@ -40,7 +40,6 @@ class _AllJobsTabState extends State<AllJobsTab> {
     );
   }
 
-  @override
   Widget build(BuildContext context) {
     if (isLoading && allJobs.isEmpty) {
       return const Center(child: CircularProgressIndicator());
@@ -50,10 +49,30 @@ class _AllJobsTabState extends State<AllJobsTab> {
       itemCount: allJobs.length,
       itemBuilder: (context, index) {
         final job = allJobs[index];
-        return ListTile(
-          title: Text(job.title),
-          subtitle: Text(job.location),
-          onTap: () => _navigateToJobDetail(job),
+        return Card(
+          color: Colors.white,
+          elevation: 3,
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: ListTile(
+            trailing: const Icon(Icons.arrow_circle_right, color: Colors.green),
+            title: Text(
+              job.title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            subtitle: Text(
+              job.location,
+              style: const TextStyle(color: Colors.blueGrey),
+              textAlign: TextAlign.center,
+            ),
+            onTap: () => _navigateToJobDetail(job),
+          ),
         );
       },
     );
