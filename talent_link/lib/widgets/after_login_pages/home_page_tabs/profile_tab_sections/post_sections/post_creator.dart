@@ -217,6 +217,32 @@ class _PostCreatorState extends State<PostCreator> {
     if (mounted) setState(() {});
   }
 
+  Future<void> fetchPostAuthors() async {
+    if (_isLoading || !_hasMore) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await _postService.fetchPosts(_page, _limit);
+      final List<dynamic> data = response['posts'];
+
+      setState(() {
+        _page++;
+        _hasMore = data.length == _limit;
+
+        posts.addAll(
+          data.map((post) => {'authorUsername': post['author']['username']}),
+        );
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching post authors: $e')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -259,7 +285,10 @@ class _PostCreatorState extends State<PostCreator> {
                     final post = entry.value;
                     return PostCard(
                       postText: post['text'],
-                      authorName: post['author'],
+                      authorName:
+                          post['author'] is Map<String, dynamic>
+                              ? post['author']['fullName'] ?? 'Unknown'
+                              : post['author'],
                       timestamp: post['time'],
                       authorAvatarUrl: post['avatarUrl'],
                       postId: post['id'],
@@ -274,6 +303,8 @@ class _PostCreatorState extends State<PostCreator> {
                       currentUserAvatar: uploadedImageUrl ?? '',
                       currentUserName: fullName ?? 'Anonymous',
                       token: widget.token,
+                      username: post['author'] ?? '',
+
                       initialComments: List<Map<String, dynamic>>.from(
                         post['comments']?.map(
                               (c) => {

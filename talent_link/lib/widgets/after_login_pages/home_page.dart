@@ -91,7 +91,7 @@ class _HomePageState extends State<HomePage>
           ),
         );
       } else {
-        print("Failed to fetch user ID");
+        print("Failed to fetch user ID${response.statusCode}");
       }
     } catch (e) {
       print("Error navigating to search page: $e");

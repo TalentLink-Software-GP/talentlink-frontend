@@ -37,6 +37,7 @@ class PostService {
       );
 
       if (response.statusCode == 200) {
+        print(response.body);
         return jsonDecode(response.body);
       }
       throw Exception('Failed to load posts: ${response.statusCode}');
@@ -154,6 +155,57 @@ class PostService {
       throw Exception('Failed to add reply: ${response.statusCode}');
     } catch (e) {
       throw Exception('Error adding reply: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchUserByUsername(String username) async {
+    print('Fetching user with username: $username');
+    // username = 'ahmadmsaadeh';
+    if (username == null || username.isEmpty) {
+      throw Exception('Username is null or empty');
+    }
+
+    final url = Uri.parse('$baseUrl/users/byusername/$username');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {'Content-Type': 'application/json', 'Authorization': token},
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to load user data');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Fetch posts by username
+  Future<List<Map<String, dynamic>>> fetchPostsByUsername(
+    String username,
+    int page,
+    int limit,
+  ) async {
+    final url = Uri.parse(
+      '$baseUrl/posts/getuser-posts-byusername/$username?page=$page&limit=$limit',
+    );
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return List<Map<String, dynamic>>.from(data['posts']);
+    } else {
+      throw Exception('Failed to load posts: ${response.statusCode}');
     }
   }
 }
