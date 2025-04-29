@@ -168,12 +168,7 @@ class _HomePageState extends State<HomePage>
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ),
-              ProfileTab(
-                token: widget.data,
-                userEducation: userEducation,
-                userSkills: userSkills,
-                onLogout: _handleLogout,
-              ),
+              ProfileTab(token: widget.data, onLogout: _handleLogout),
             ],
           ),
         ),
