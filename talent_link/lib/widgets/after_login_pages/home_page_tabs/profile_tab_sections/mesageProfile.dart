@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:intl/intl.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/messageNotifications.dart';
 
 class SearchUserPage extends StatefulWidget {
   final String currentUserId;
@@ -17,7 +19,7 @@ class _SearchUserPageState extends State<SearchUserPage> {
   TextEditingController searchController = TextEditingController();
   List<dynamic> searchResults = [];
   List<dynamic> chatHistory = [];
-  final String baseUrl = 'http://10.0.2.2:5000/api';
+  final String baseUrl = 'http://10.0.2.2:5000/api'; //or 192.168.1.54
 
   bool isSearching = false;
   Timer? timer;
@@ -91,8 +93,8 @@ class _SearchUserPageState extends State<SearchUserPage> {
 
   Future<void> deleteChatHistory(String userId) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/chat-history/${widget.currentUserId}/$userId'),
+      final response = await http.put(
+        Uri.parse('$baseUrl/delete-message/${widget.currentUserId}/$userId'),
       );
 
       if (response.statusCode == 200) {
@@ -101,12 +103,31 @@ class _SearchUserPageState extends State<SearchUserPage> {
               chatHistory.where((user) => user['_id'] != userId).toList();
         });
       } else {
-        print(
-          'Failed to delete chat history. Status code: ${response.statusCode}',
-        );
+        print('Failed to hide chat. Status: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error deleting chat history: $e');
+      print('Error hiding chat: $e');
+    }
+  }
+
+  Future<int> fetchUnreadMessageCount() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/unread-count/${widget.currentUserId}'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['unreadCount'] ?? 0;
+      } else {
+        print(
+          'Failed to fetch unread message count. Status code: ${response.statusCode}',
+        );
+        return 0;
+      }
+    } catch (e) {
+      print('Error fetching unread message count: $e');
+      return 0;
     }
   }
 
@@ -206,12 +227,41 @@ class _SearchUserPageState extends State<SearchUserPage> {
             ),
             elevation: 4,
             child: ListTile(
-              leading: CircleAvatar(
-                backgroundImage:
-                    user['avatarUrl'] != null && user['avatarUrl'].isNotEmpty
-                        ? NetworkImage(user['avatarUrl'])
-                        : AssetImage('assets/placeholder.png') as ImageProvider,
+              leading: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 25,
+                    backgroundImage:
+                        user['avatarUrl'] != null &&
+                                user['avatarUrl'].isNotEmpty
+                            ? NetworkImage(user['avatarUrl'])
+                            : AssetImage('assets/placeholder.png')
+                                as ImageProvider,
+                  ),
+                  if ((user['unreadCount'] ?? 0) > 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: BoxConstraints(
+                          minWidth: 20,
+                          minHeight: 20,
+                        ),
+                        child: Text(
+                          '${user['unreadCount']}',
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
               ),
+
               title: Text(
                 user['username'],
                 style: TextStyle(fontWeight: FontWeight.bold),
@@ -236,6 +286,7 @@ class _SearchUserPageState extends State<SearchUserPage> {
                   ),
                 );
               },
+              trailing: MessageNotification(count: 5),
             ),
           ),
         );
@@ -288,7 +339,7 @@ class _SearchUserPageState extends State<SearchUserPage> {
                           peerUserId: user['_id'],
                           peerUsername: user['username'],
                           onChatClosed: () {
-                            fetchChatHistory(); // Refresh chat history on return
+                            fetchChatHistory();
                           },
                         ),
                   ),
@@ -320,19 +371,82 @@ class ChatPage extends StatefulWidget {
   _ChatPageState createState() => _ChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> {
+class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   TextEditingController messageController = TextEditingController();
   List<Map<String, dynamic>> messages = [];
+  bool show = true;
   String peerUsername = '';
   String peerAvatar = '';
-
   final String baseUrl = 'http://10.0.2.2:5000/api';
+  late IO.Socket socket;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (!socket.connected) {
+        socket.connect();
+      }
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     fetchPeerInfo();
     fetchMessages();
+    connect();
+  }
+
+  void connect() {
+    socket = IO.io("http://192.168.1.5:5000", <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': false,
+      'reconnection': true,
+      'reconnectionDelay': 1000,
+      'reconnectionAttempts': 200000, // Maximum reconnection attempts
+      'timeout': 20000,
+    });
+
+    socket.connect();
+
+    socket.onConnect((_) {
+      print("Socket connected");
+    });
+
+    socket.onDisconnect((_) {
+      print("Socket disconnected");
+    });
+    socket.onConnectError((err) => print("Connect error: $err"));
+    socket.onError((err) => print("Error: $err"));
+
+    socket.onReconnect((attempt) {
+      print("Reconnected after $attempt attempts");
+    });
+
+    socket.onError((err) {
+      print("Socket error: $err");
+    });
+
+    socket.on("receiveMessage", (data) {
+      final alreadyExists = messages.any(
+        (msg) =>
+            msg['senderId'] == data['senderId'] &&
+            msg['receiverId'] == data['receiverId'] &&
+            msg['message'] == data['message'],
+      );
+
+      if (!alreadyExists) {
+        setState(() {
+          messages.add({
+            "senderId": data["senderId"],
+            "receiverId": data["receiverId"],
+            "message": data["message"],
+            "timestamp": DateTime.now().toIso8601String(),
+          });
+        });
+      }
+    });
   }
 
   Future<void> fetchPeerInfo() async {
@@ -371,24 +485,51 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  bool isSending = false;
+
   Future<void> sendMessage() async {
+    if (isSending) return;
+    isSending = true;
+
     final text = messageController.text.trim();
-    if (text.isEmpty) return;
-
-    final res = await http.post(
-      Uri.parse('$baseUrl/messages'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'senderId': widget.currentUserId,
-        'receiverId': widget.peerUserId,
-        'message': text,
-      }),
-    );
-
-    if (res.statusCode == 201) {
-      messageController.clear();
-      fetchMessages();
+    if (text.length < 1) {
+      isSending = false;
+      return;
     }
+
+    final messageData = {
+      'senderId': widget.currentUserId,
+      'receiverId': widget.peerUserId,
+      'message': text,
+    };
+
+    try {
+      if (socket.disconnected) {
+        socket.connect();
+        await Future.delayed(Duration(milliseconds: 500));
+      }
+
+      socket.emit("sendMessage", messageData);
+
+      messageController.clear();
+
+      await http.post(
+        Uri.parse('$baseUrl/messages'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(messageData),
+      );
+    } catch (e) {
+      print("Error sending message: $e");
+    } finally {
+      isSending = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    socket.dispose();
+    super.dispose();
+    WidgetsBinding.instance.removeObserver(this);
   }
 
   void _showUserOptions(BuildContext context) {
@@ -448,6 +589,19 @@ class _ChatPageState extends State<ChatPage> {
       },
     );
   }
+
+  // Future<int> fetchUnreadCount(String userId) async {
+  //   final response = await http.get(
+  //     Uri.parse('http://10.0.2.2:5000//api/messages/unread-count/$userId'),
+  //   );
+
+  //   if (response.statusCode == 200) {
+  //     final data = jsonDecode(response.body);
+  //     return data['unreadCount'] ?? 0;
+  //   } else {
+  //     throw Exception('Failed to load unread count');
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
