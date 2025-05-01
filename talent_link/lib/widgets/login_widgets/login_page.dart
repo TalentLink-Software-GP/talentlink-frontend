@@ -67,7 +67,7 @@ class _LoginPageState extends State<LoginPage> {
                         String email = emailController.text;
                         String password = passwordController.text;
                         var url = Uri.parse(
-                          'http://10.0.2.2:5000/api/auth/login',
+                          'http://10.0.2.2:5000/api/auth/login', //https://talentlink-backend-c01n.onrender.com
                         );
                         var response = await http.post(
                           url,

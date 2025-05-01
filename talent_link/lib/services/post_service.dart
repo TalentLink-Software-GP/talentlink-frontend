@@ -4,7 +4,8 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 
 class PostService {
   final String token;
-  final String baseUrl = 'http://10.0.2.2:5000/api';
+  final String baseUrl =
+      'http://10.0.2.2:5000/api'; //https://talentlink-backend-c01n.onrender.com
 
   PostService(this.token);
 

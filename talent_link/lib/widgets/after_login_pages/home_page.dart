@@ -32,7 +32,7 @@ class _HomePageState extends State<HomePage>
 
   Future<void> fetchUserData() async {
     const String apiUrl =
-        "http://10.0.2.2:5000/api/skills/get-skills-education";
+        "http://10.0.2.2:5000/api/skills/get-skills-education"; //https://talentlink-backend-c01n.onrender.com
     try {
       final response = await http.get(
         Uri.parse(apiUrl),
@@ -73,7 +73,8 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> navigateToSearchPage() async {
-    const userApiUrl = 'http://10.0.2.2:5000/api/users/get-user-id';
+    const userApiUrl =
+        'http://10.0.2.2:5000/api/users/get-user-id'; //https://talentlink-backend-c01n.onrender.com
 
     try {
       final response = await http.get(

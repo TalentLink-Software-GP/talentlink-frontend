@@ -33,6 +33,7 @@ class SkillsEducationState extends State<SkillsEducation> {
   Future<void> fetchUserSkills() async {
     setState(() => _isLoadingSkills = true);
     try {
+      //https://talentlink-backend-c01n.onrender.com
       final response = await http.get(
         Uri.parse('http://10.0.2.2:5000/api/skills/get-all-skills'),
         headers: {'Authorization': 'Bearer ${widget.token}'},

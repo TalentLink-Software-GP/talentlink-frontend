@@ -4,7 +4,8 @@ import 'package:talent_link/models/job.dart';
 
 class JobService {
   final String token;
-  static const String baseUrl = 'http://10.0.2.2:5000/api/job';
+  static const String baseUrl =
+      'http://10.0.2.2:5000/api/job'; //https://talentlink-backend-c01n.onrender.com
 
   JobService({required this.token});
 
