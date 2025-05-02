@@ -1,13 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/messageNotifications.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/CallNotification.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/videoCall.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/videoWidget.dart';
 
 class SearchUserPage extends StatefulWidget {
   final String currentUserId;
@@ -22,8 +20,7 @@ class _SearchUserPageState extends State<SearchUserPage> {
   TextEditingController searchController = TextEditingController();
   List<dynamic> searchResults = [];
   List<dynamic> chatHistory = [];
-  final String baseUrl =
-      'http://10.0.2.2:5000/api'; //https://talentlink-backend-c01n.onrender.com
+  final String baseUrl = 'http://10.0.2.2:5000/api'; //or 192.168.1.54
 
   bool isSearching = false;
   Timer? timer;
@@ -375,16 +372,12 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
-  bool showCallNotification = false;
-  Map<String, dynamic>? incomingCallData;
   TextEditingController messageController = TextEditingController();
   List<Map<String, dynamic>> messages = [];
   bool show = true;
-
   String peerUsername = '';
   String peerAvatar = '';
-  final String baseUrl =
-      'http://10.0.2.2:5000/api'; //https://talentlink-backend-c01n.onrender.com
+  final String baseUrl = 'http://10.0.2.2:5000/api';
   late IO.Socket socket;
 
   @override
@@ -403,14 +396,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     fetchPeerInfo();
     fetchMessages();
     connect();
-    print("DEBUG - socket in initState: $socket");
   }
+
 
   void connect() {
     // Extract the base URL without the /api part
     final socketUrl = baseUrl.replaceAll('/api', '');
 
     socket = IO.io(socketUrl, <String, dynamic>{
+
       'transports': ['websocket'],
       'autoConnect': false,
       'reconnection': true,
@@ -420,12 +414,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     });
 
     socket.connect();
-    socket.onConnect((_) {
-      print("Socket connected");
-      // Register the user's socket connection
-      socket.emit('register', widget.currentUserId);
-      print("Registering user ID: ${widget.currentUserId}");
-    });
 
     socket.onConnect((_) {
       print("Socket connected");
@@ -461,59 +449,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             "message": data["message"],
             "timestamp": DateTime.now().toIso8601String(),
           });
-        });
-      }
-    });
-
-    socket.on('registrationSuccess', (data) {
-      print("Socket registration successful: $data");
-    });
-
-    socket.on('callFailed', (data) {
-      print("Call failed: $data");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Call failed: ${data['reason']}"),
-          backgroundColor: Colors.red,
-        ),
-      );
-    });
-    socket.on("callRequest", (data) {
-      print("Received call request: $data");
-
-      if (data == null) {
-        print("WARNING: Received null call request data");
-        return;
-      }
-
-      if (data['receiverId'] == widget.currentUserId) {
-        if (data['callerId'] == null) {
-          print("WARNING: Received call request without callerId");
-          return;
-        }
-
-        final completeData = {
-          'callerId': data['callerId'],
-          'receiverId': data['receiverId'],
-          'callerName': data['callerName'] ?? 'Unknown Caller',
-          'conferenceId': data['conferenceId'] ?? 'default_conference',
-          'timestamp': data['timestamp'] ?? DateTime.now().toIso8601String(),
-        };
-
-        print("Setting call notification with data: $completeData");
-
-        setState(() {
-          showCallNotification = true;
-          incomingCallData = completeData;
-        });
-      }
-    });
-
-    socket.on("callEnded", (data) {
-      if (data['receiverId'] == widget.currentUserId) {
-        setState(() {
-          showCallNotification = false;
-          incomingCallData = null;
         });
       }
     });
@@ -673,197 +608,44 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   //   }
   // }
 
-  void _initiateVideoCall() {
-    final ids = [widget.currentUserId, widget.peerUserId]..sort();
-    final conferenceID =
-        "${widget.currentUserId}_${widget.peerUserId}_${DateTime.now().millisecondsSinceEpoch}";
-
-    final callData = {
-      'callerId': widget.currentUserId,
-      'receiverId': widget.peerUserId,
-      'callerName': peerUsername,
-      'conferenceId': conferenceID,
-      'timestamp': DateTime.now().toIso8601String(),
-    };
-
-    print("Initiating video call with data: $callData");
-
-    socket.emit('callRequest', callData);
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder:
-            (context) => VideoWidget(
-              currentUserId: widget.currentUserId,
-              peerUserId: widget.peerUserId,
-              peerUsername: peerUsername,
-              socket: socket,
-              isInitiator: true,
-              conferenceID:
-                  "${widget.currentUserId}_${widget.peerUserId}_${DateTime.now().millisecondsSinceEpoch}",
-            ),
-      ),
-    );
-  }
-
-  void _acceptCall() {
-    print("DEBUG - Accepting call with data: $incomingCallData");
-
-    try {
-      if (incomingCallData == null) {
-        print("ERROR - No incoming call data available");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("No active call to accept"),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      final callerId = incomingCallData?['callerId'];
-      final callerName = incomingCallData?['callerName'] ?? 'Unknown Caller';
-      final conferenceId =
-          incomingCallData?['conferenceId'] ?? 'default_conference';
-
-      print("DEBUG - callerId: $callerId, callerName: $callerName");
-
-      if (callerId == null) {
-        throw Exception("Caller ID is missing from call data");
-      }
-
-      setState(() {
-        showCallNotification = false;
-        incomingCallData = null;
-      });
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder:
-              (context) => VideoWidget(
-                currentUserId: widget.currentUserId,
-                peerUserId: callerId,
-                peerUsername: callerName,
-                socket: socket,
-                isInitiator: false,
-                conferenceID: conferenceId,
-              ),
-        ),
-      );
-    } catch (e, stackTrace) {
-      print("ERROR in _acceptCall: $e");
-      print("Stack trace: $stackTrace");
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error accepting call: ${e.toString()}"),
-          backgroundColor: Colors.red,
-        ),
-      );
-
-      setState(() {
-        showCallNotification = false;
-        incomingCallData = null;
-      });
-    }
-  }
-
-  void _rejectCall() {
-    if (incomingCallData != null) {
-      final callData = {
-        'callerId': incomingCallData!['callerId'],
-        'receiverId': widget.currentUserId,
-        'timestamp': DateTime.now().toIso8601String(),
-      };
-
-      socket.emit('callRejected', callData);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.indigo.shade800,
+        backgroundColor: Colors.blueAccent,
         foregroundColor: Colors.white,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-        ),
+        elevation: 2,
         title: GestureDetector(
           onTap: () => _showUserOptions(context),
           child: Row(
             children: [
-              Hero(
-                tag: 'avatar-${peerUsername}',
-                child: Container(
-                  padding: EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 8,
-                        offset: Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundImage:
-                        peerAvatar.isNotEmpty
-                            ? NetworkImage(peerAvatar)
-                            : AssetImage('assets/placeholder.png')
-                                as ImageProvider,
-                  ),
-                ),
+              CircleAvatar(
+                backgroundImage:
+                    peerAvatar.isNotEmpty
+                        ? NetworkImage(peerAvatar)
+                        : AssetImage('assets/placeholder.png') as ImageProvider,
               ),
-              SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    peerUsername.isNotEmpty ? peerUsername : 'Loading...',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Text(
-                    'Online',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.greenAccent,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
+              SizedBox(width: 10),
+              Text(
+                peerUsername.isNotEmpty ? peerUsername : 'Loading...',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
               ),
             ],
           ),
         ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, size: 22),
+          icon: Icon(Icons.arrow_back),
           onPressed: () {
             widget.onChatClosed();
             Navigator.pop(context);
           },
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.videocam, color: Colors.white),
-            onPressed: _initiateVideoCall,
-          ),
-          IconButton(
-            icon: Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () => _showChatOptions(context),
-          ),
-        ],
       ),
+
       body: Stack(
         // Changed from Container to Stack
         children: [
@@ -1028,218 +810,65 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                           color: Colors.white70,
                         ),
                         onPressed: () => _showAttachmentOptions(context),
+
                       ),
-                      Expanded(
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          child: TextField(
-                            controller: messageController,
-                            style: TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              hintText: 'Type a message...',
-                              hintStyle: TextStyle(color: Colors.white70),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 12,
-                              ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            msg['message'],
+                            style: TextStyle(
+                              color: isMe ? Colors.white : Colors.black,
+                              fontSize: 16,
                             ),
-                            maxLines: null,
                           ),
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.indigoAccent, Colors.purpleAccent],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.purpleAccent.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: Offset(0, 3),
+                          const SizedBox(height: 4),
+                          Text(
+                            time,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color:
+                                  isMe ? Colors.white70 : Colors.grey.shade600,
                             ),
-                          ],
-                        ),
-                        child: IconButton(
-                          icon: Icon(Icons.send_rounded, color: Colors.white),
-                          onPressed: sendMessage,
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Now the call notification is properly placed in the Stack
-          if (showCallNotification && incomingCallData != null)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: SafeArea(
-                child: CallNotification(
-                  callData: Map<String, dynamic>.from(
-                    incomingCallData!,
-                  ), // Create a copy to avoid modification issues
-                  onDismiss: () {
-                    setState(() {
-                      showCallNotification = false;
-                      incomingCallData = null;
-                    });
-                  },
-                  onReject: _rejectCall,
-                  onAccept: _acceptCall,
-                ),
+                    ),
+                  );
+                },
               ),
             ),
-        ],
-      ),
-    );
-  }
-
-  // Add these helper methods to your class
-  void _showChatOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder:
-          (context) => Container(
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.indigo.shade900,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: Icon(Icons.search, color: Colors.white),
-                  title: Text(
-                    'Search in conversation',
-                    style: TextStyle(color: Colors.white),
+            const Divider(height: 1, color: Colors.white),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: messageController,
+                      style: TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.2),
+                        hintText: 'Type a message...',
+                        hintStyle: TextStyle(color: Colors.white70),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
                   ),
-                  onTap: () => Navigator.pop(context),
-                ),
-                ListTile(
-                  leading: Icon(Icons.notifications, color: Colors.white),
-                  title: Text(
-                    'Mute notifications',
-                    style: TextStyle(color: Colors.white),
+                  IconButton(
+                    icon: Icon(Icons.send, color: Colors.white),
+                    onPressed: sendMessage,
                   ),
-                  onTap: () => Navigator.pop(context),
-                ),
-                ListTile(
-                  leading: Icon(Icons.delete_outline, color: Colors.redAccent),
-                  title: Text(
-                    'Clear chat',
-                    style: TextStyle(color: Colors.redAccent),
-                  ),
-                  onTap: () => Navigator.pop(context),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-    );
-  }
-
-  void _showAttachmentOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder:
-          (context) => Container(
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.indigo.shade900,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _attachmentOption(
-                      context,
-                      Icons.photo,
-                      'Gallery',
-                      Colors.green,
-                    ),
-                    _attachmentOption(
-                      context,
-                      Icons.camera_alt,
-                      'Camera',
-                      Colors.blue,
-                    ),
-                    _attachmentOption(
-                      context,
-                      Icons.insert_drive_file,
-                      'Document',
-                      Colors.orange,
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _attachmentOption(
-                      context,
-                      Icons.location_on,
-                      'Location',
-                      Colors.red,
-                    ),
-                    _attachmentOption(
-                      context,
-                      Icons.person,
-                      'Contact',
-                      Colors.purple,
-                    ),
-                    _attachmentOption(
-                      context,
-                      Icons.music_note,
-                      'Audio',
-                      Colors.teal,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-    );
-  }
-
-  Widget _attachmentOption(
-    BuildContext context,
-    IconData icon,
-    String label,
-    Color color,
-  ) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: color, size: 30),
+          ],
         ),
-        SizedBox(height: 8),
-        Text(label, style: TextStyle(color: Colors.white70)),
-      ],
+      ),
     );
   }
 }
