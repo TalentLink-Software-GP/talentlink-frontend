@@ -236,8 +236,7 @@ class _SearchUserPageState extends State<SearchUserPage> {
                         user['avatarUrl'] != null &&
                                 user['avatarUrl'].isNotEmpty
                             ? NetworkImage(user['avatarUrl'])
-                            : AssetImage('assets/placeholder.png')
-                                as ImageProvider,
+                            : AssetImage('') as ImageProvider,
                   ),
                   if ((user['unreadCount'] ?? 0) > 0)
                     Positioned(
@@ -399,15 +398,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     connect();
   }
 
-  Future<void> connect() async {
-    final ip =
-        (await NetworkInterface.list())
-            .expand((i) => i.addresses)
-            .firstWhere(
-              (a) => a.type == InternetAddressType.IPv4 && !a.isLoopback,
-            )
-            .address;
-    socket = IO.io("http://$ip:5000", <String, dynamic>{
+
+  void connect() {
+    // Extract the base URL without the /api part
+    final socketUrl = baseUrl.replaceAll('/api', '');
+
+    socket = IO.io(socketUrl, <String, dynamic>{
+
       'transports': ['websocket'],
       'autoConnect': false,
       'reconnection': true,
@@ -648,46 +645,172 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           },
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blueAccent, Colors.purpleAccent],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                reverse: true,
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  var msg = messages[messages.length - 1 - index];
-                  var isMe = msg['senderId'] == widget.currentUserId;
-                  var time =
-                      msg['timestamp'] != null
-                          ? DateFormat(
-                            'hh:mm a',
-                          ).format(DateTime.parse(msg['timestamp']))
-                          : "";
 
-                  return Align(
-                    alignment:
-                        isMe ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        gradient:
-                            isMe
-                                ? LinearGradient(
-                                  colors: [Colors.blueAccent, Colors.lightBlue],
-                                )
-                                : LinearGradient(
-                                  colors: [Colors.grey, Colors.grey.shade400],
+      body: Stack(
+        // Changed from Container to Stack
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF1A237E),
+                  Color(0xFF3949AB),
+                  Color(0xFF5C6BC0),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: Column(
+              children: [
+                // Date indicator
+                Container(
+                  margin: EdgeInsets.symmetric(vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Today',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    reverse: true,
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      var msg = messages[messages.length - 1 - index];
+                      var isMe = msg['senderId'] == widget.currentUserId;
+                      var time =
+                          msg['timestamp'] != null
+                              ? DateFormat(
+                                'hh:mm a',
+                              ).format(DateTime.parse(msg['timestamp']))
+                              : "";
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          mainAxisAlignment:
+                              isMe
+                                  ? MainAxisAlignment.end
+                                  : MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            if (!isMe)
+                              CircleAvatar(
+                                radius: 12,
+                                backgroundImage:
+                                    peerAvatar.isNotEmpty
+                                        ? NetworkImage(peerAvatar)
+                                        : AssetImage('assets/placeholder.png')
+                                            as ImageProvider,
+                              ),
+                            if (!isMe) SizedBox(width: 8),
+                            Container(
+                              constraints: BoxConstraints(
+                                maxWidth:
+                                    MediaQuery.of(context).size.width * 0.7,
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    isMe
+                                        ? Colors.indigoAccent.shade400
+                                        : Colors.white.withOpacity(0.9),
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(18),
+                                  topRight: Radius.circular(18),
+                                  bottomLeft:
+                                      isMe
+                                          ? Radius.circular(18)
+                                          : Radius.circular(0),
+                                  bottomRight:
+                                      isMe
+                                          ? Radius.circular(0)
+                                          : Radius.circular(18),
                                 ),
-                        borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 3,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    msg['message'],
+                                    style: TextStyle(
+                                      color:
+                                          isMe ? Colors.white : Colors.black87,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        time,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color:
+                                              isMe
+                                                  ? Colors.white70
+                                                  : Colors.black54,
+                                        ),
+                                      ),
+                                      if (isMe)
+                                        Padding(
+                                          padding: EdgeInsets.only(left: 4),
+                                          child: Icon(
+                                            Icons.done_all,
+                                            size: 14,
+                                            color: Colors.white70,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (isMe) SizedBox(width: 8),
+                            if (isMe) CircleAvatar(radius: 12),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.attach_file_rounded,
+                          color: Colors.white70,
+                        ),
+                        onPressed: () => _showAttachmentOptions(context),
+
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:talent_link/models/job.dart';
+import 'package:talent_link/services/applicationService.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 
 class JobDetailsScreen extends StatelessWidget {
@@ -7,6 +8,41 @@ class JobDetailsScreen extends StatelessWidget {
   final String token;
 
   const JobDetailsScreen({super.key, required this.job, required this.token});
+
+  Future<void> _applyForJob(BuildContext context) async {
+    try {
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Submitting application...')),
+      );
+
+      // Call API to apply for job
+      await ApplicationService.applyForJob(
+        token: token,
+        jobId: job.id,
+        jobTitle: job.title,
+
+        matchScore: job.matchScore?.toDouble() ?? 0.0,
+        organizationId: job.organizationId, // Get this from the job object
+      );
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Successfully applied for ${job.title}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error applying for job: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,21 +135,30 @@ class JobDetailsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
 
-                    // Apply Button (stays at the bottom if possible)
                     SizedBox(
                       width: double.infinity,
                       child: BaseButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Applying for ${job.title}...'),
-                            ),
-                          );
-                        },
+                        onPressed: () => _applyForJob(context),
                         text: 'Apply for this Job',
                         buttonColor: Colors.green,
                       ),
                     ),
+                    // Apply Button (stays at the bottom if possible)
+                    // SizedBox(
+                    //   width: double.infinity,
+                    //   child: BaseButton(
+                    //     onPressed: () {
+                    //       ScaffoldMessenger.of(context).showSnackBar(
+                    //         SnackBar(
+                    //           content: Text('Applying for ${job.title}...'),
+                    //         ),
+                    //       );
+                    //     },
+
+                    //     text: 'Apply for this Job',
+                    //     buttonColor: Colors.green,
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
