@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:talent_link/models/user_profile_data.dart';
 import 'package:talent_link/services/post_service.dart';
+import 'package:talent_link/services/profile_service.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_card.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
 
 class ProfileWidgetForAnotherUsers extends StatefulWidget {
   final String username;
@@ -23,7 +24,10 @@ class _ProfileWidgetForAnotherUsersState
   late PostService _postService;
   late PostCard _postCardState;
   Map<String, dynamic>? userData;
+  Map<String, bool> expandedSections = {};
+  Map<String, bool> collapsedSections = {};
   List<Map<String, dynamic>> userPosts = [];
+  bool isLoading = true;
   bool _isLoading = true;
   int _page = 1;
   final int _limit = 10;
@@ -31,12 +35,26 @@ class _ProfileWidgetForAnotherUsersState
   String? username;
   String? uploadedImageUrl;
   String? fullName;
+  UserProfileData? userProfileData;
 
   @override
   void initState() {
     super.initState();
+    fetchProfileData();
     _postService = PostService(widget.token);
     fetchUserDataAndPosts();
+  }
+
+  Future<void> fetchProfileData() async {
+    try {
+      final data = await ProfileService.getProfileData(widget.token);
+      setState(() {
+        userProfileData = data;
+        isLoading = false;
+      });
+    } catch (e) {
+      print("Error fetching profile: $e");
+    }
   }
 
   Future<void> fetchUserDataAndPosts() async {
@@ -102,6 +120,78 @@ class _ProfileWidgetForAnotherUsersState
     }
   }
 
+  Widget buildExpandableListViewOnly(String title, List<String> items) {
+    final isCollapsed = collapsedSections[title] ?? true;
+    final isExpanded = expandedSections[title] ?? false;
+    final displayedItems = isExpanded ? items : items.take(3).toList();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 4,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: Icon(
+                      isCollapsed
+                          ? Icons.label_important_outline
+                          : Icons.label_important,
+                      color: Colors.blueAccent,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        collapsedSections[title] =
+                            !(collapsedSections[title] ?? false);
+                      });
+                    },
+                  ),
+                ],
+              ),
+              if (!isCollapsed) ...[
+                const SizedBox(height: 10),
+                if (displayedItems.isEmpty)
+                  const Text(
+                    "No data available.",
+                    style: TextStyle(fontStyle: FontStyle.italic),
+                  ),
+                ...displayedItems.map(
+                  (item) => ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(item),
+                  ),
+                ),
+                if (items.length > 3)
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        expandedSections[title] = !isExpanded;
+                      });
+                    },
+                    child: Text(isExpanded ? "Show Less ▲" : "Show More ▼"),
+                  ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -139,6 +229,30 @@ class _ProfileWidgetForAnotherUsersState
                       style: const TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                     const SizedBox(height: 20),
+                    const Divider(),
+                    if (userProfileData != null) ...[
+                      buildExpandableListViewOnly(
+                        "Education",
+                        userProfileData!.education,
+                      ),
+                      buildExpandableListViewOnly(
+                        "Skills",
+                        userProfileData!.skills,
+                      ),
+                      buildExpandableListViewOnly(
+                        "Experience",
+                        userProfileData!.experience,
+                      ),
+                      buildExpandableListViewOnly(
+                        "Certifications",
+                        userProfileData!.certifications,
+                      ),
+                      buildExpandableListViewOnly(
+                        "Languages",
+                        userProfileData!.languages,
+                      ),
+                    ],
+
                     const Divider(),
                     const SizedBox(height: 10),
                     if (userPosts.isEmpty)
