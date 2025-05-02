@@ -97,18 +97,25 @@ class _VideoWidgetState extends State<VideoWidget> {
 
     // Listen for call ended event
     widget.socket.on('callEnded', (data) {
+      if (!mounted) return;
+
       if ((data['callerId'] == widget.currentUserId &&
               data['receiverId'] == widget.peerUserId) ||
           (data['callerId'] == widget.peerUserId &&
               data['receiverId'] == widget.currentUserId)) {
-        setState(() {
-          isCallEnded = true;
-          callStatus = 'Call Ended';
-        });
-        // Navigate back after a short delay
-        Future.delayed(Duration(seconds: 2), () {
-          Navigator.pop(context);
-        });
+        if (!isCallEnded) {
+          // Prevent duplicate handling
+          setState(() {
+            isCallEnded = true;
+            callStatus = 'Call Ended';
+          });
+
+          Future.delayed(Duration(seconds: 1), () {
+            if (mounted && Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+          });
+        }
       }
     });
   }
@@ -148,14 +155,63 @@ class _VideoWidgetState extends State<VideoWidget> {
     widget.socket.emit('callRejected', callData);
   }
 
-  void _sendCallEnded() {
-    final callData = {
-      'callerId': widget.currentUserId,
-      'receiverId': widget.peerUserId,
-      'timestamp': DateTime.now().toIso8601String(),
-    };
+  void _sendCallEnded() async {
+    if (isCallEnded) return;
 
-    widget.socket.emit('callEnded', callData);
+    try {
+      if (mounted) {
+        setState(() {
+          isCallEnded = true;
+          callStatus = 'Call Ended';
+        });
+      }
+
+      final callData = {
+        'callerId': widget.currentUserId,
+        'receiverId': widget.peerUserId,
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+
+      // Add retry logic
+      bool sentSuccessfully = false;
+      int attempts = 0;
+
+      while (!sentSuccessfully && attempts < 3) {
+        try {
+          if (widget.socket.connected) {
+            widget.socket.emit('callEnded', callData);
+            print("Call ended event emitted successfully");
+            sentSuccessfully = true;
+          } else {
+            print(
+              "Attempt ${attempts + 1}: Socket not connected, trying to reconnect",
+            );
+            widget.socket.connect();
+            await Future.delayed(Duration(milliseconds: 500 * (attempts + 1)));
+          }
+        } catch (e) {
+          print("Attempt ${attempts + 1} failed: $e");
+          attempts++;
+          await Future.delayed(Duration(milliseconds: 500 * (attempts + 1)));
+        }
+      }
+
+      if (!sentSuccessfully) {
+        print("Failed to send call ended event after 3 attempts");
+      }
+
+      if (mounted) {
+        await Future.delayed(Duration(milliseconds: 300));
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      }
+    } catch (e, stackTrace) {
+      print("Error in _sendCallEnded: $e\n$stackTrace");
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    }
   }
 
   void _startCallTimeoutTimer() {
@@ -174,7 +230,19 @@ class _VideoWidgetState extends State<VideoWidget> {
 
   @override
   void dispose() {
+    // Cancel any pending timers
     callTimer?.cancel();
+
+    // Remove socket listeners to prevent duplicate calls
+    widget.socket.off('callAccepted');
+    widget.socket.off('callRejected');
+    widget.socket.off('callEnded');
+
+    // Ensure call is properly ended if widget disposes
+    if (!isCallEnded) {
+      _sendCallEnded();
+    }
+
     super.dispose();
   }
 
@@ -182,8 +250,15 @@ class _VideoWidgetState extends State<VideoWidget> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        _sendCallEnded();
-        return true;
+        try {
+          _sendCallEnded();
+          // Add a small delay to ensure the event is sent
+          await Future.delayed(Duration(milliseconds: 300));
+          return true;
+        } catch (e) {
+          print("Error in WillPopScope: $e");
+          return true; // Still allow navigation
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -199,8 +274,29 @@ class _VideoWidgetState extends State<VideoWidget> {
                 conferenceID: widget.conferenceID,
                 config: ZegoUIKitPrebuiltVideoConferenceConfig(
                   onLeaveConfirmation: (context) async {
-                    _sendCallEnded();
-                    return true;
+                    try {
+                      // Just set the state, don't navigate here
+                      setState(() {
+                        isCallEnded = true;
+                        callStatus = 'Call Ended';
+                      });
+
+                      // Send call ended event if socket is connected
+                      if (widget.socket.connected) {
+                        final callData = {
+                          'callerId': widget.currentUserId,
+                          'receiverId': widget.peerUserId,
+                          'timestamp': DateTime.now().toIso8601String(),
+                        };
+
+                        widget.socket.emit('callEnded', callData);
+                      }
+
+                      return true;
+                    } catch (e) {
+                      print("Error in onLeaveConfirmation: $e");
+                      return true; // Still allow leaving
+                    }
                   },
                   audioVideoViewConfig: ZegoPrebuiltAudioVideoViewConfig(
                     foregroundBuilder: (
@@ -264,8 +360,13 @@ class _VideoWidgetState extends State<VideoWidget> {
                     if (widget.isInitiator)
                       GestureDetector(
                         onTap: () {
-                          _sendCallEnded();
-                          Navigator.pop(context);
+                          try {
+                            _sendCallEnded();
+                          } catch (e) {
+                            print("Error ending call: $e");
+                            // Ensure we still navigate back
+                            Navigator.pop(context);
+                          }
                         },
                         child: Container(
                           padding: EdgeInsets.all(16),

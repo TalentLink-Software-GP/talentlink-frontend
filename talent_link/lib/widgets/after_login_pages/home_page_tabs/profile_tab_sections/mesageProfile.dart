@@ -239,8 +239,7 @@ class _SearchUserPageState extends State<SearchUserPage> {
                         user['avatarUrl'] != null &&
                                 user['avatarUrl'].isNotEmpty
                             ? NetworkImage(user['avatarUrl'])
-                            : AssetImage('assets/placeholder.png')
-                                as ImageProvider,
+                            : AssetImage('') as ImageProvider,
                   ),
                   if ((user['unreadCount'] ?? 0) > 0)
                     Positioned(
@@ -408,8 +407,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   void connect() {
-    //https://talentlink-backend-c01n.onrender.com
-    socket = IO.io("http://192.168.1.3:5000", <String, dynamic>{
+    // Extract the base URL without the /api part
+    final socketUrl = baseUrl.replaceAll('/api', '');
+
+    socket = IO.io(socketUrl, <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
       'reconnection': true,
@@ -1004,13 +1005,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                               ),
                             ),
                             if (isMe) SizedBox(width: 8),
-                            if (isMe)
-                              CircleAvatar(
-                                radius: 12,
-                                backgroundImage: AssetImage(
-                                  'assets/your_avatar.png',
-                                ),
-                              ),
+                            if (isMe) CircleAvatar(radius: 12),
                           ],
                         ),
                       );

@@ -10,6 +10,7 @@ class Job {
   final List<String> requirements;
   final List<String> responsibilities;
   final double? matchScore;
+  final String organizationId;
 
   Job({
     required this.id,
@@ -23,6 +24,7 @@ class Job {
     required this.requirements,
     required this.responsibilities,
     this.matchScore,
+    required this.organizationId,
   });
 
   factory Job.fromJson(Map<String, dynamic> json) {
@@ -41,6 +43,7 @@ class Job {
           json['matchScore'] != null
               ? (json['matchScore'] as num).toDouble()
               : null,
+      organizationId: json['companyId'] ?? '',
     );
   }
 
@@ -57,6 +60,7 @@ class Job {
       'requirements': requirements,
       'responsibilities': responsibilities,
       'matchScore': matchScore,
+      'companyId': organizationId,
     };
   }
 }
