@@ -29,7 +29,7 @@ class _ProfileWidgetForAnotherUsersState
   List<Map<String, dynamic>> userPosts = [];
   bool isLoading = true;
   bool _isLoading = true;
-  int _page = 1;
+  final int _page = 1;
   final int _limit = 10;
   bool _hasMore = true;
   String? username;

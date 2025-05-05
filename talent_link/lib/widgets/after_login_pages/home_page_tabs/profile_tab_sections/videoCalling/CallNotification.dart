@@ -7,12 +7,12 @@ class CallNotification extends StatelessWidget {
   final Function onAccept;
 
   const CallNotification({
-    Key? key,
+    super.key,
     required this.callData,
     required this.onDismiss,
     required this.onReject,
     required this.onAccept,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

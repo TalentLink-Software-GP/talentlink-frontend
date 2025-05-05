@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:jwt_decoder/jwt_decoder.dart';
@@ -7,6 +8,51 @@ class PostService {
   final String baseUrl = 'http://10.0.2.2:5000/api';
 
   PostService(this.token);
+  //organization
+  Future<Map<String, dynamic>> fetchOrganizationData() async {
+    final decodedToken = JwtDecoder.decode(token);
+    final username = decodedToken['username'];
+    print('🏢 Fetching org data for $username');
+
+    try {
+      final uri = Uri.parse(
+        '$baseUrl/organization/getOrgDataWithuserName?userName=${Uri.encodeComponent(username)}',
+      );
+      final response = await http
+          .get(
+            uri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token,
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+
+      print('📦 Response status: ${response.statusCode}');
+
+      // Perform JSON decoding in an isolate
+      final jsonData = await compute(_parseJsonIsolate, response.body);
+
+      // Just get the avatar URL without trying to precache it
+      final avatarUrl = jsonData['avatarUrl']?.toString() ?? '';
+
+      // REMOVE THIS LINE - it's causing the crash:
+      // precacheImage(NetworkImage(avatarUrl), "awwad" as BuildContext);
+
+      return {
+        'name': jsonData['name']?.toString() ?? 'Organization',
+        'avatarUrl': avatarUrl,
+      };
+    } catch (e) {
+      print('❌ Org data error: $e');
+      return {'name': 'Organization', 'avatarUrl': 'assets/default_org.png'};
+    }
+  }
+
+  // Helper function to run in isolate
+  static Map<String, dynamic> _parseJsonIsolate(String body) {
+    return json.decode(body);
+  }
 
   // User Data
   Future<Map<String, dynamic>> fetchUserData() async {
@@ -161,7 +207,7 @@ class PostService {
   Future<Map<String, dynamic>> fetchUserByUsername(String username) async {
     print('Fetching user with username: $username');
     // username = 'ahmadmsaadeh';
-    if (username == null || username.isEmpty) {
+    if (username.isEmpty) {
       throw Exception('Username is null or empty');
     }
 

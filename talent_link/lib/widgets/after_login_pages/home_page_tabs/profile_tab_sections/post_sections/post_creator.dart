@@ -5,6 +5,7 @@ import './post_input_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:talent_link/services/post_service.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:flutter/scheduler.dart';
 
 class PostCreator extends StatefulWidget {
   final String token;
@@ -27,14 +28,18 @@ class _PostCreatorState extends State<PostCreator> {
   final int _limit = 10;
   bool _isLoading = false;
   bool _hasMore = true;
+  bool _hasInitialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    _postService = PostService(widget.token);
-    fetchUserData();
-    fetchPosts();
-    _scrollController.addListener(_scrollListener);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hasInitialized) {
+      _postService = PostService(widget.token);
+      fetchUserData();
+      fetchPosts();
+      _scrollController.addListener(_scrollListener);
+      _hasInitialized = true;
+    }
   }
 
   @override
@@ -103,17 +108,30 @@ class _PostCreatorState extends State<PostCreator> {
 
   Future<void> fetchUserData() async {
     try {
-      final Map<String, dynamic> decodedToken = JwtDecoder.decode(widget.token);
+      final decodedToken = JwtDecoder.decode(widget.token);
+      final role = decodedToken['role'];
       username = decodedToken['username'];
-      final data = await _postService.fetchUserData();
+
+      late Map<String, dynamic> data;
+
+      if (role == 'Job Seeker') {
+        data = await _postService.fetchUserData();
+      } else if (role == 'Organization') {
+        data = await _postService.fetchOrganizationData();
+      }
+
+      if (!mounted) return;
+
       setState(() {
         uploadedImageUrl = data['avatarUrl'];
-        fullName = data['name'];
+        fullName = data['name'] ?? 'Unknown ${role}';
       });
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error fetching user data: $e')));
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Profile load error: ${e.toString()}')),
+      );
     }
   }
 
@@ -231,7 +249,12 @@ class _PostCreatorState extends State<PostCreator> {
         _hasMore = data.length == _limit;
 
         posts.addAll(
-          data.map((post) => {'authorUsername': post['author']['username']}),
+          data.map(
+            (post) => {
+              'authorUsername': post['author']['username'],
+              'avatarUrl': post['author']['avatarUrl'],
+            },
+          ),
         );
       });
     } catch (e) {
@@ -290,7 +313,7 @@ class _PostCreatorState extends State<PostCreator> {
                               ? post['author']['fullName'] ?? 'Unknown'
                               : post['author'],
                       timestamp: post['time'],
-                      authorAvatarUrl: post['avatarUrl'],
+                      authorAvatarUrl: post['avatarUrl'] ?? '',
                       postId: post['id'],
                       onDelete: () => _handlePostDeleted(entry.key),
                       onUpdate:

@@ -23,7 +23,7 @@ class JobService {
       }
     } catch (e) {
       print("Error fetching jobs: $e");
-      throw e;
+      rethrow;
     }
   }
 
@@ -38,7 +38,7 @@ class JobService {
       }
     } catch (e) {
       print("Error deleting job: $e");
-      throw e;
+      rethrow;
     }
   }
 
@@ -59,7 +59,7 @@ class JobService {
       }
     } catch (e) {
       print("Error fetching user jobs: $e");
-      throw e;
+      rethrow;
     }
   }
 }
