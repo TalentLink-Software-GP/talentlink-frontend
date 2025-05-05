@@ -25,6 +25,9 @@ dependencies:
   web_socket_channel: ^3.0.3
   zego_uikit_prebuilt_video_conference: ^2.9.9
   permission_handler: ^11.4.0
+  google_maps_flutter: ^2.12.1
+  geolocator: ^14.0.0
+  flutter_polyline_points: ^1.0.0
  
 dev_dependencies:
   flutter_test:
