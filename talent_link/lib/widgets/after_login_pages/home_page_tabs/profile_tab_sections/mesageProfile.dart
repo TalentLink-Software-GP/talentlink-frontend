@@ -33,6 +33,7 @@ class _SearchUserPageState extends State<SearchUserPage> {
   String? uploadedImageUrl;
   final SearchPageService _service = SearchPageService();
 
+
   bool isSearching = false;
   Timer? timer;
 
