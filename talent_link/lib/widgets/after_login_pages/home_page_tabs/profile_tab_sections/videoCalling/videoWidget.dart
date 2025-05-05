@@ -12,14 +12,14 @@ class VideoWidget extends StatefulWidget {
   final String conferenceID;
 
   const VideoWidget({
-    Key? key,
+    super.key,
     required this.currentUserId,
     required this.peerUserId,
     required this.peerUsername,
     required this.socket,
     this.isInitiator = true,
     required this.conferenceID,
-  }) : super(key: key);
+  });
 
   @override
   _VideoWidgetState createState() => _VideoWidgetState();

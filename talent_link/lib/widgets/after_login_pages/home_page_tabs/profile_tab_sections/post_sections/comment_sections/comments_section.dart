@@ -27,7 +27,6 @@ class CommentsSection extends StatefulWidget {
   State<CommentsSection> createState() => _CommentsSectionState();
 }
 
-
 class _CommentsSectionState extends State<CommentsSection> {
   final TextEditingController _commentController = TextEditingController();
   int? _replyingToCommentIndex;
@@ -150,7 +149,7 @@ class _CommentsSectionState extends State<CommentsSection> {
                 ),
             ],
           );
-        }).toList(),
+        }),
 
         // Global comment box
         if (_replyingToCommentIndex == null)

@@ -40,6 +40,7 @@ class _AllJobsTabState extends State<AllJobsTab> {
     );
   }
 
+  @override
   Widget build(BuildContext context) {
     if (isLoading && allJobs.isEmpty) {
       return const Center(child: CircularProgressIndicator());

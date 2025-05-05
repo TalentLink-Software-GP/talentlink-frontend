@@ -28,12 +28,16 @@ class _OrganizationSignupScreenState extends State<OrganizationSignupScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
+  final TextEditingController organizationuserNameController =
+      TextEditingController();
 
   bool isLoading = false;
   String? errorMessage;
 
   Future<void> signupOrganization() async {
     final name = organizationNameController.text.trim();
+    final username = organizationuserNameController.text.trim();
+
     final industry = industryController.text.trim();
     final website = websiteController.text.trim();
     final country = countryController.text.trim();
@@ -77,6 +81,7 @@ class _OrganizationSignupScreenState extends State<OrganizationSignupScreen> {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           "name": name,
+          "username": username,
           "industry": industry,
           "website": website,
           "country": country,
@@ -153,6 +158,18 @@ class _OrganizationSignupScreenState extends State<OrganizationSignupScreen> {
                         textHint: "Enter Your Organization Name",
                         textLable: "Organization Name",
                         controller: organizationNameController,
+                        obscureText: false,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 8,
+                      ),
+                      child: MyTextFieled(
+                        textHint: "Enter Your Organization userName",
+                        textLable: "Organization userName",
+                        controller: organizationuserNameController,
                         obscureText: false,
                       ),
                     ),

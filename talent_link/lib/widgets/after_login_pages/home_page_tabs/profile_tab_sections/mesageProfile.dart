@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:talent_link/services/searchPageServices.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/messageNotifications.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/CallNotification.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/videoCall.dart';
@@ -11,8 +12,13 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab
 
 class SearchUserPage extends StatefulWidget {
   final String currentUserId;
+  final String avatarUrl;
 
-  const SearchUserPage({super.key, required this.currentUserId});
+  const SearchUserPage({
+    super.key,
+    required this.currentUserId,
+    required this.avatarUrl,
+  });
 
   @override
   _SearchUserPageState createState() => _SearchUserPageState();
@@ -24,6 +30,9 @@ class _SearchUserPageState extends State<SearchUserPage> {
   List<dynamic> chatHistory = [];
   final String baseUrl =
       'http://10.0.2.2:5000/api'; //https://talentlink-backend-c01n.onrender.com
+  String? uploadedImageUrl;
+  final SearchPageService _service = SearchPageService();
+
 
   bool isSearching = false;
   Timer? timer;
@@ -48,91 +57,34 @@ class _SearchUserPageState extends State<SearchUserPage> {
   }
 
   Future<void> fetchChatHistory() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/chat-history/${widget.currentUserId}'),
-      );
-
-      if (response.statusCode == 200) {
-        List<dynamic> fetchedHistory = json.decode(response.body);
-
-        fetchedHistory.sort((a, b) {
-          DateTime timeA = DateTime.parse(a['lastMessageTimestamp']);
-          DateTime timeB = DateTime.parse(b['lastMessageTimestamp']);
-          return timeB.compareTo(timeA);
-        });
-
-        setState(() {
-          chatHistory = fetchedHistory;
-        });
-      } else {
-        print(
-          'Failed to fetch chat history. Status code: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      print('Error fetching chat history: $e');
-    }
+    final history = await _service.fetchChatHistory(widget.currentUserId);
+    setState(() {
+      chatHistory = history;
+    });
   }
 
   Future<void> searchUsers(String query) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/search?q=$query'),
-      );
-
-      if (response.statusCode == 200) {
-        setState(() {
-          searchResults = json.decode(response.body);
-        });
-      } else {
-        print(
-          'Failed to fetch search results. Status code: ${response.statusCode}',
-        );
-      }
-    } catch (e) {
-      print('Error searching users: $e');
-    }
+    final results = await _service.searchUsers(query);
+    setState(() {
+      searchResults = results;
+    });
   }
 
   Future<void> deleteChatHistory(String userId) async {
-    try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/delete-message/${widget.currentUserId}/$userId'),
-      );
-
-      if (response.statusCode == 200) {
-        setState(() {
-          chatHistory =
-              chatHistory.where((user) => user['_id'] != userId).toList();
-        });
-      } else {
-        print('Failed to hide chat. Status: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error hiding chat: $e');
+    bool success = await _service.deleteChatHistory(
+      widget.currentUserId,
+      userId,
+    );
+    if (success) {
+      setState(() {
+        chatHistory =
+            chatHistory.where((user) => user['_id'] != userId).toList();
+      });
     }
   }
 
   Future<int> fetchUnreadMessageCount() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/unread-count/${widget.currentUserId}'),
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data['unreadCount'] ?? 0;
-      } else {
-        print(
-          'Failed to fetch unread message count. Status code: ${response.statusCode}',
-        );
-        return 0;
-      }
-    } catch (e) {
-      print('Error fetching unread message count: $e');
-      return 0;
-    }
+    return await _service.fetchUnreadMessageCount(widget.currentUserId);
   }
 
   @override
@@ -282,8 +234,11 @@ class _SearchUserPageState extends State<SearchUserPage> {
                           currentUserId: widget.currentUserId,
                           peerUserId: user['_id'],
                           peerUsername: user['username'],
+                          currentuserAvatarUrl: widget.avatarUrl,
                           onChatClosed: () {
                             fetchChatHistory();
+
+                            // currentuserAvatarUrl:widget.avatarUrl;
                           },
                         ),
                   ),
@@ -322,9 +277,8 @@ class _SearchUserPageState extends State<SearchUserPage> {
             return ListTile(
               leading: CircleAvatar(
                 backgroundImage:
-                    user['profilePhoto'] != null &&
-                            user['profilePhoto'].isNotEmpty
-                        ? NetworkImage(user['profilePhoto'])
+                    user['avatarUrl'] != null && user['avatarUrl'].isNotEmpty
+                        ? NetworkImage(user['avatarUrl'])
                         : AssetImage('assets/placeholder.png') as ImageProvider,
               ),
               title: Text(
@@ -341,6 +295,8 @@ class _SearchUserPageState extends State<SearchUserPage> {
                           currentUserId: widget.currentUserId,
                           peerUserId: user['_id'],
                           peerUsername: user['username'],
+
+                          currentuserAvatarUrl: widget.avatarUrl,
                           onChatClosed: () {
                             fetchChatHistory();
                           },
@@ -362,6 +318,7 @@ class ChatPage extends StatefulWidget {
   final String peerUserId;
   final String peerUsername;
   final VoidCallback onChatClosed;
+  final String currentuserAvatarUrl;
 
   const ChatPage({
     super.key,
@@ -369,6 +326,7 @@ class ChatPage extends StatefulWidget {
     required this.peerUserId,
     required this.peerUsername,
     required this.onChatClosed,
+    required this.currentuserAvatarUrl,
   });
 
   @override
@@ -1006,7 +964,17 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                               ),
                             ),
                             if (isMe) SizedBox(width: 8),
-                            if (isMe) CircleAvatar(radius: 12),
+                            if (isMe)
+                              CircleAvatar(
+                                radius: 12,
+                                backgroundImage:
+                                    widget.currentuserAvatarUrl.isNotEmpty
+                                        ? NetworkImage(
+                                          widget.currentuserAvatarUrl,
+                                        )
+                                        : AssetImage('assets/placeholder.png')
+                                            as ImageProvider,
+                              ),
                           ],
                         ),
                       );
