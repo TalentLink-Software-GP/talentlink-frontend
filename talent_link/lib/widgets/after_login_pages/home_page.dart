@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:talent_link/services/message_service.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/map_screen.dart';
 import 'dart:convert';
@@ -24,11 +25,13 @@ class _HomePageState extends State<HomePage>
   int _selectedIndex = 0;
   List<String> userSkills = [];
   List<String> userEducation = [];
+  late MessageService _messageService;
 
   @override
   void initState() {
     super.initState();
     fetchUserData();
+    _messageService = MessageService(widget.data);
   }
 
   Future<void> fetchUserData() async {
@@ -73,31 +76,34 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  Future<void> navigateToSearchPage() async {
-    const userApiUrl = 'http://10.0.2.2:5000/api/users/get-user-id';
+  // Future<void> navigateToSearchPage() async {
+  //   const userApiUrl = 'http://10.0.2.2:5000/api/users/get-user-id';
 
-    try {
-      final response = await http.get(
-        Uri.parse(userApiUrl),
-        headers: {"Authorization": "Bearer ${widget.data}"},
-      );
+  //   try {
+  //     final response = await http.get(
+  //       Uri.parse(userApiUrl),
+  //       headers: {"Authorization": "Bearer ${widget.data}"},
+  //     );
 
-      if (response.statusCode == 200) {
-        final userData = jsonDecode(response.body);
-        final String userId = userData['userId'];
+  //     if (response.statusCode == 200) {
+  //       final userData = jsonDecode(response.body);
+  //       final String userId = userData['userId'];
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => SearchUserPage(currentUserId: userId),
-          ),
-        );
-      } else {
-        print("Failed to fetch user ID${response.statusCode}");
-      }
-    } catch (e) {
-      print("Error navigating to search page: $e");
-    }
+  //       Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (_) => SearchUserPage(currentUserId: userId),
+  //         ),
+  //       );
+  //     } else {
+  //       print("Failed to fetch user ID${response.statusCode}");
+  //     }
+  //   } catch (e) {
+  //     print("Error navigating to search page: $e");
+  //   }
+  // }
+  void _handleSearchNavigation() {
+    _messageService.navigateToSearchPage(context);
   }
 
   @override
@@ -139,7 +145,7 @@ class _HomePageState extends State<HomePage>
           ),
           leading: IconButton(
             icon: const Icon(Icons.message),
-            onPressed: navigateToSearchPage,
+            onPressed: _handleSearchNavigation,
             color: Colors.white,
           ),
           actions: [

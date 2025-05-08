@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class MessageNotification extends StatelessWidget {
   final int count;
 
-  const MessageNotification({required this.count});
+  const MessageNotification({super.key, required this.count});
 
   @override
   Widget build(BuildContext context) {

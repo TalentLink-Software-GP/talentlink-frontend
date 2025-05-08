@@ -31,7 +31,7 @@ class PostCard extends StatefulWidget {
   }
 
   PostCard({
-    Key? key,
+    super.key,
     required this.postText,
     required this.authorName,
     required this.timestamp,
@@ -49,8 +49,7 @@ class PostCard extends StatefulWidget {
     required this.token,
     this.initialComments = const [],
     required this.username,
-  }) : _key = GlobalKey<_PostCardState>(),
-       super(key: key);
+  }) : _key = GlobalKey<_PostCardState>();
 
   @override
   State<PostCard> createState() => _PostCardState();

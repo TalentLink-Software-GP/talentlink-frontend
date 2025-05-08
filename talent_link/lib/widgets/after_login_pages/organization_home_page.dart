@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:talent_link/services/message_service.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/applications_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/home_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/my_jobs_tab.dart';
@@ -16,10 +17,21 @@ class OrganizationHomePage extends StatefulWidget {
 class _OrganizationHomePageState extends State<OrganizationHomePage> {
   int _selectedIndex = 0;
 
+  late MessageService _messageService;
+  @override
+  void initState() {
+    super.initState();
+    _messageService = MessageService(widget.token);
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  void _handleSearchNavigation() {
+    _messageService.navigateToSearchPage(context);
   }
 
   @override
@@ -32,7 +44,13 @@ class _OrganizationHomePageState extends State<OrganizationHomePage> {
           color: Colors.black,
           fontSize: 23,
         ),
-        leading: IconButton(icon: const Icon(Icons.message), onPressed: () {}),
+
+        ////work here
+        leading: IconButton(
+          icon: const Icon(Icons.message),
+          onPressed: _handleSearchNavigation,
+          color: Colors.white,
+        ),
         actions: [
           IconButton(icon: const Icon(Icons.notifications), onPressed: () {}),
         ],

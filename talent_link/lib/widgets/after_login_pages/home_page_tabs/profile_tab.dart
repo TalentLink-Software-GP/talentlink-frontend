@@ -27,7 +27,7 @@ class _ProfileTabState extends State<ProfileTab> {
   Map<String, bool> collapsedSections = {};
   List<Map<String, dynamic>> userPosts = [];
   String? fullName;
-  int _page = 1;
+  final int _page = 1;
   final int _limit = 10;
   String? uploadedImageUrl;
   bool _hasMore = true;
@@ -250,7 +250,7 @@ class _ProfileTabState extends State<ProfileTab> {
       debugPrint('Error in fetchUserDataAndPosts: $e');
       // Add this to see the full URL being called
       debugPrint(
-        'Attempted URL: ${_postService.baseUrl}/posts/getuser-posts-byusername/${username}?page=$_page&limit=$_limit',
+        'Attempted URL: ${_postService.baseUrl}/posts/getuser-posts-byusername/$username?page=$_page&limit=$_limit',
       );
     } finally {
       setState(() {

@@ -30,6 +30,7 @@ dependencies:
   flutter_polyline_points: ^1.0.0
   flutter_typeahead: ^4.3.7
   geocoding: ^2.1.0
+
  
 dev_dependencies:
   flutter_test:
