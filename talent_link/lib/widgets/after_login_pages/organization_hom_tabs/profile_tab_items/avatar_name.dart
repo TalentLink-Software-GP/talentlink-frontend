@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:talent_link/services/organization_service.dart';
 
 class AvatarName extends StatefulWidget {
   final String token;
@@ -16,33 +17,30 @@ class _AvatarNameState extends State<AvatarName> {
   String? uploadedImageUrl;
   String name = '';
   String industry = '';
+  late final OrganizationService _orgService;
+
   @override
   void initState() {
     super.initState();
+    _orgService = OrganizationService(
+      // ← Add this
+      baseUrl: 'http://10.0.2.2:5000/api/organization',
+      token: widget.token,
+    );
     fetchOrgData();
   }
 
   Future<void> fetchOrgData() async {
     try {
-      final uri = Uri.parse("http://10.0.2.2:5000/api/organization/getOrgData");
-
-      final response = await http.get(
-        uri,
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
-
-      if (response.statusCode == 200) {
-        final jsonResponse = json.decode(response.body);
-        setState(() {
-          uploadedImageUrl = jsonResponse['avatarUrl'];
-          name = jsonResponse['name'];
-          industry = jsonResponse['industry'];
-        });
-      } else {
-        print('Failed to fetch user data: ${response.statusCode}');
-      }
+      final data =
+          await _orgService.getOrganizationProfile(); // no ID → current user
+      setState(() {
+        uploadedImageUrl = data['avatarUrl'];
+        name = data['name'];
+        industry = data['industry'];
+      });
     } catch (e) {
-      print('Error fetching user data: $e');
+      print('Error fetching organization profile: $e');
     }
   }
 
