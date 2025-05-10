@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:talent_link/services/location_service.dart';
+import 'package:talent_link/services/organization_service.dart';
 
 class MapScreen extends StatefulWidget {
+  final String token;
+
+  const MapScreen({super.key, required this.token});
+
   @override
   _MapScreenState createState() => _MapScreenState();
 }
@@ -12,15 +18,21 @@ class _MapScreenState extends State<MapScreen> {
   LatLng? _userLocation;
   final Set<Marker> _markers = {};
 
-  // Example org locations
-  final List<LatLng> _orgLocations = [
-    LatLng(37.42796133580664, -122.085749655962), // Replace with real data
-    LatLng(37.424, -122.092),
-  ];
+  late final LocationService _locationService;
+  late final OrganizationService _orgService;
 
   @override
   void initState() {
     super.initState();
+    _locationService = LocationService(
+      baseUrl: 'http://10.0.2.2:5000',
+      token: widget.token,
+    );
+    _orgService = OrganizationService(
+      // ← Add this
+      baseUrl: 'http://10.0.2.2:5000/api/organization',
+      token: widget.token,
+    );
     _getUserLocation();
   }
 
@@ -41,29 +53,87 @@ class _MapScreenState extends State<MapScreen> {
     }
 
     final position = await Geolocator.getCurrentPosition();
+    final currentLatLng = LatLng(position.latitude, position.longitude);
+
     setState(() {
-      _userLocation = LatLng(position.latitude, position.longitude);
+      _userLocation = currentLatLng;
       _markers.add(
         Marker(
           markerId: MarkerId("user"),
-          position: _userLocation!,
+          position: currentLatLng,
           infoWindow: InfoWindow(title: "You are here"),
           icon: BitmapDescriptor.defaultMarkerWithHue(
             BitmapDescriptor.hueAzure,
           ),
         ),
       );
+    });
 
-      for (int i = 0; i < _orgLocations.length; i++) {
+    await _loadOrganizationMarkers();
+  }
+
+  Future<void> _onMarkerTapped(String organizationId) async {
+    try {
+      final data = await _orgService.getOrganizationProfile(
+        organizationId: organizationId,
+      );
+
+      showDialog(
+        context: context,
+        builder:
+            (_) => AlertDialog(
+              title: Text(data['name'] ?? 'No Name'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (data['industry'] != null)
+                    Text('Industry: ${data['industry']}'),
+                  if (data['email'] != null) Text('Email: ${data['email']}'),
+                  if (data['description'] != null)
+                    Text('About: ${data['description']}'),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Close'),
+                ),
+              ],
+            ),
+      );
+    } catch (e) {
+      print('Failed to load organization details: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load organization info')),
+      );
+    }
+  }
+
+  Future<void> _loadOrganizationMarkers() async {
+    try {
+      final locations = await _locationService.getAllCompaniesLocations();
+      print("Fetched locations: $locations");
+      for (int i = 0; i < locations.length; i++) {
+        final org = locations[i];
+        final lat = (org['lat'] as num).toDouble();
+        final lng = (org['lng'] as num).toDouble();
+        final name = org['organization']['name'] ?? 'Organization #$i';
+
         _markers.add(
           Marker(
-            markerId: MarkerId("org_$i"),
-            position: _orgLocations[i],
-            infoWindow: InfoWindow(title: "Organization #$i"),
+            markerId: MarkerId(org['organization']['id']),
+            position: LatLng(lat, lng),
+            infoWindow: InfoWindow(title: name),
+            onTap: () => _onMarkerTapped(org['organization']['id']),
           ),
         );
       }
-    });
+
+      setState(() {});
+    } catch (e) {
+      print("Failed to load organization markers: $e");
+    }
   }
 
   @override
