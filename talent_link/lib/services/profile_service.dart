@@ -3,16 +3,25 @@ import 'package:http/http.dart' as http;
 import '../models/user_profile_data.dart';
 
 class ProfileService {
-  static Future<UserProfileData> getProfileData(String token) async {
-    final response = await http.get(
-      Uri.parse('http://10.0.2.2:5000/api/skills/get-all'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+  static Future<UserProfileData> getProfileData(
+    String token, {
+    String? username,
+  }) async {
+    final uri = Uri.parse('http://10.0.2.2:5000/api/skills/get-all');
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+
+    final body = username != null ? json.encode({'username': username}) : null;
+
+    final response = await http.post(uri, headers: headers, body: body);
 
     if (response.statusCode == 200) {
       return UserProfileData.fromJson(json.decode(response.body));
     } else {
-      throw Exception('Failed to load profile data');
+      throw Exception('Failed to load profile data: ${response.body}');
     }
   }
 
