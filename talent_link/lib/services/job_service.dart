@@ -62,4 +62,21 @@ class JobService {
       rethrow;
     }
   }
+
+  Future<List<dynamic>> fetchMatchedUsers(String jobId) async {
+    final response = await http.post(
+      Uri.parse('http://10.0.2.2:5000/api/jobMatch/getMatchSortedByScore'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'jobId': jobId}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load matched users');
+    }
+  }
 }
