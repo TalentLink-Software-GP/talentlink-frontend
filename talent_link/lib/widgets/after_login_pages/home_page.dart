@@ -76,32 +76,6 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // Future<void> navigateToSearchPage() async {
-  //   const userApiUrl = 'http://10.0.2.2:5000/api/users/get-user-id';
-
-  //   try {
-  //     final response = await http.get(
-  //       Uri.parse(userApiUrl),
-  //       headers: {"Authorization": "Bearer ${widget.data}"},
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       final userData = jsonDecode(response.body);
-  //       final String userId = userData['userId'];
-
-  //       Navigator.push(
-  //         context,
-  //         MaterialPageRoute(
-  //           builder: (_) => SearchUserPage(currentUserId: userId),
-  //         ),
-  //       );
-  //     } else {
-  //       print("Failed to fetch user ID${response.statusCode}");
-  //     }
-  //   } catch (e) {
-  //     print("Error navigating to search page: $e");
-  //   }
-  // }
   void _handleSearchNavigation() {
     _messageService.navigateToSearchPage(context);
   }

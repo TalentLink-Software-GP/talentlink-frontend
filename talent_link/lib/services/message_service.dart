@@ -63,9 +63,45 @@ class MessageService {
               (_) => SearchUserPage(
                 currentUserId: userInfo['userId'],
                 avatarUrl: userInfo['avatarUrl'],
+                token: token,
               ),
         ),
       );
     }
+  }
+}
+
+class MessageService2 {
+  final String baseUrl = 'http://10.0.2.2:5000/api';
+
+  Future<Map<String, dynamic>?> fetchPeerInfo(String username) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/users/getUserData?userName=$username'),
+    );
+    if (res.statusCode == 200) {
+      return json.decode(res.body);
+    }
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>> fetchMessages(
+    String currentUserId,
+    String peerUserId,
+  ) async {
+    final res = await http.get(
+      Uri.parse('$baseUrl/messages/$currentUserId/$peerUserId'),
+    );
+    if (res.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(json.decode(res.body));
+    }
+    return [];
+  }
+
+  Future<void> sendMessage(Map<String, dynamic> message) async {
+    await http.post(
+      Uri.parse('$baseUrl/messages'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(message),
+    );
   }
 }
