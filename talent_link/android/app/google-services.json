@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "108057330755",
+    "project_id": "talentlink-187ca",
+    "storage_bucket": "talentlink-187ca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:108057330755:android:92fad410aa954c5e6780f6",
+        "android_client_info": {
+          "package_name": "com.example.talent_link"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAy8dOXM5Eu8TmuU8kUjL9ERtebGdpzvIQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,14 +1,17 @@
+// login_page.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Add this import
+import 'package:talent_link/utils/AppLifecycleManager.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_home_page.dart';
 import 'package:talent_link/widgets/forget_account_widgets/forgot_account_screen.dart';
 import 'package:talent_link/widgets/sign_up_widgets/sign_up_choose_positions.dart';
-
 import 'package:talent_link/widgets/base_widgets/text_field.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,6 +23,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
   @override
   void dispose() {
     emailController.dispose();
@@ -84,26 +88,46 @@ class _LoginPageState extends State<LoginPage> {
                           Map<String, dynamic> decodedToken = JwtDecoder.decode(
                             token,
                           );
+                          String userId = decodedToken['id'];
                           String userRole = decodedToken['role'];
-                          if (userRole == "Organization") {
-                            Navigator.push(
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setString('token', token);
+
+                          final manager =
+                              context
+                                  .findAncestorWidgetOfExactType<
+                                    AppLifecycleManager
+                                  >();
+                          if (manager != null) {
+                            Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
                                 builder:
-                                    (context) =>
-                                        OrganizationHomePage(token: token),
+                                    (context) => AppLifecycleManager(
+                                      userId: userId,
+                                      token: token,
+                                      child:
+                                          userRole == "Organization"
+                                              ? OrganizationHomePage(
+                                                token: token,
+                                              )
+                                              : HomePage(data: token),
+                                    ),
                               ),
                             );
                           } else {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => HomePage(data: token),
+                                builder:
+                                    (context) =>
+                                        userRole == "Organization"
+                                            ? OrganizationHomePage(token: token)
+                                            : HomePage(data: token),
                               ),
                             );
                           }
                         } else {
-                          // ignore: avoid_print
                           print("Login failed: ${response.body}");
                         }
                       },

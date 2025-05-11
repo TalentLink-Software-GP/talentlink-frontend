@@ -4,8 +4,12 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:talent_link/services/SocketService.dart';
+import 'package:talent_link/services/message_service.dart';
 import 'package:talent_link/services/searchPageServices.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/messageNotifications.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/messageUserOption.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/ProfileWidgetForAnotherUsers%20.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/CallNotification.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/videoCall.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/videoWidget.dart';
@@ -13,11 +17,13 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab
 class SearchUserPage extends StatefulWidget {
   final String currentUserId;
   final String avatarUrl;
+  final String token;
 
   const SearchUserPage({
     super.key,
     required this.currentUserId,
     required this.avatarUrl,
+    required this.token,
   });
 
   @override
@@ -32,7 +38,6 @@ class _SearchUserPageState extends State<SearchUserPage> {
       'http://10.0.2.2:5000/api'; //https://talentlink-backend-c01n.onrender.com
   String? uploadedImageUrl;
   final SearchPageService _service = SearchPageService();
-
 
   bool isSearching = false;
   Timer? timer;
@@ -235,6 +240,7 @@ class _SearchUserPageState extends State<SearchUserPage> {
                           peerUserId: user['_id'],
                           peerUsername: user['username'],
                           currentuserAvatarUrl: widget.avatarUrl,
+                          token: widget.token,
                           onChatClosed: () {
                             fetchChatHistory();
 
@@ -295,6 +301,7 @@ class _SearchUserPageState extends State<SearchUserPage> {
                           currentUserId: widget.currentUserId,
                           peerUserId: user['_id'],
                           peerUsername: user['username'],
+                          token: widget.token,
 
                           currentuserAvatarUrl: widget.avatarUrl,
                           onChatClosed: () {
@@ -319,6 +326,7 @@ class ChatPage extends StatefulWidget {
   final String peerUsername;
   final VoidCallback onChatClosed;
   final String currentuserAvatarUrl;
+  final String token;
 
   const ChatPage({
     super.key,
@@ -327,6 +335,7 @@ class ChatPage extends StatefulWidget {
     required this.peerUsername,
     required this.onChatClosed,
     required this.currentuserAvatarUrl,
+    required this.token,
   });
 
   @override
@@ -339,19 +348,47 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   TextEditingController messageController = TextEditingController();
   List<Map<String, dynamic>> messages = [];
   bool show = true;
+  bool isOnline = false;
+  DateTime? lastSeen;
 
+  late final SocketService socketService;
+  late final MessageService2 messageService;
   String peerUsername = '';
   String peerAvatar = '';
   final String baseUrl =
       'http://10.0.2.2:5000/api'; //https://talentlink-backend-c01n.onrender.com
-  late IO.Socket socket;
 
+  // @override
+  // void didChangeAppLifecycleState(AppLifecycleState state) {
+  //   if (state == AppLifecycleState.resumed) {
+  //     if (!socketService.isChatConnected) {
+  //       socketService.chatSocket?.connect();
+  //     }
+  //     if (!socketService.isCallConnected) {
+  //       socketService.callSocket?.connect();
+  //     }
+  //   } else if (state == AppLifecycleState.paused) {
+  //     // Optionally disconnect to save resources
+  //     socketService.chatSocket?.disconnect();
+  //     socketService.callSocket?.disconnect();
+  //   }
+  // }
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      if (!socket.connected) {
-        socket.connect();
-      }
+    switch (state) {
+      case AppLifecycleState.resumed:
+        // App is in foreground - mark as online
+        socketService.updatePresence(true);
+        break;
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+        // App is in background - mark as offline
+        socketService.updatePresence(false);
+        break;
+      case AppLifecycleState.hidden:
+        // TODO: Handle this case.
+        throw UnimplementedError();
     }
   }
 
@@ -359,164 +396,156 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    socketService = SocketService();
+    messageService = MessageService2();
+    socketService.startHealthChecks();
+
     fetchPeerInfo();
     fetchMessages();
-    connect();
-    print("DEBUG - socket in initState: $socket");
+    initSocket();
+
+    // Initialize status tracking
+    _initializePresence();
   }
 
-  void connect() {
-    // Extract the base URL without the /api part
+  void _initializePresence() {
+    // Listen for status updates
+    socketService.listenForStatusUpdates((userId, onlineStatus) {
+      if (userId == widget.peerUserId) {
+        setState(() {
+          isOnline = onlineStatus;
+          if (!onlineStatus) {
+            lastSeen = DateTime.now();
+          }
+        });
+      }
+    });
+
+    // Fetch initial status
+    _fetchInitialStatus();
+  }
+
+  Future<void> initSocket() async {
     final socketUrl = baseUrl.replaceAll('/api', '');
+    if (socketService.isChatConnected) {
+      socketService.chatSocket?.disconnect();
+    }
+    await socketService.connect(
+      url: socketUrl,
+      userId: widget.currentUserId,
+      onMessage: (data) {
+        final isDuplicate = messages.any(
+          (msg) =>
+              msg['message'] == data['message'] &&
+              msg['senderId'] == data['senderId'] &&
+              (msg['timestamp'] == data['timestamp'] ||
+                  DateTime.parse(msg['timestamp'])
+                          .difference(DateTime.parse(data['timestamp']))
+                          .inSeconds
+                          .abs() <
+                      5),
+        );
 
-    socket = IO.io(socketUrl, <String, dynamic>{
-      'transports': ['websocket'],
-      'autoConnect': false,
-      'reconnection': true,
-      'reconnectionDelay': 1000,
-      'reconnectionAttempts': 200000,
-      'timeout': 20000,
-    });
-
-    socket.connect();
-    socket.onConnect((_) {
-      print("Socket connected");
-      // Register the user's socket connection
-      socket.emit('register', widget.currentUserId);
-      print("Registering user ID: ${widget.currentUserId}");
-    });
-
-    socket.onConnect((_) {
-      print("Socket connected");
-    });
-
-    socket.onDisconnect((_) {
-      print("Socket disconnected");
-    });
-    socket.onConnectError((err) => print("Connect error: $err"));
-    socket.onError((err) => print("Error: $err"));
-
-    socket.onReconnect((attempt) {
-      print("Reconnected after $attempt attempts");
-    });
-
-    socket.onError((err) {
-      print("Socket error: $err");
-    });
-
-    socket.on("receiveMessage", (data) {
-      final alreadyExists = messages.any(
-        (msg) =>
-            msg['senderId'] == data['senderId'] &&
-            msg['receiverId'] == data['receiverId'] &&
-            msg['message'] == data['message'],
-      );
-
-      if (!alreadyExists) {
-        setState(() {
-          messages.add({
-            "senderId": data["senderId"],
-            "receiverId": data["receiverId"],
-            "message": data["message"],
-            "timestamp": DateTime.now().toIso8601String(),
-          });
-        });
-      }
-    });
-
-    socket.on('registrationSuccess', (data) {
-      print("Socket registration successful: $data");
-    });
-
-    socket.on('callFailed', (data) {
-      print("Call failed: $data");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Call failed: ${data['reason']}"),
-          backgroundColor: Colors.red,
-        ),
-      );
-    });
-    socket.on("callRequest", (data) {
-      print("Received call request: $data");
-
-      if (data == null) {
-        print("WARNING: Received null call request data");
-        return;
-      }
-
-      if (data['receiverId'] == widget.currentUserId) {
-        if (data['callerId'] == null) {
-          print("WARNING: Received call request without callerId");
-          return;
+        if (!isDuplicate) {
+          _handleIncomingMessage(data);
         }
+      },
 
-        final completeData = {
-          'callerId': data['callerId'],
-          'receiverId': data['receiverId'],
-          'callerName': data['callerName'] ?? 'Unknown Caller',
-          'conferenceId': data['conferenceId'] ?? 'default_conference',
-          'timestamp': data['timestamp'] ?? DateTime.now().toIso8601String(),
-        };
-
-        print("Setting call notification with data: $completeData");
-
-        setState(() {
-          showCallNotification = true;
-          incomingCallData = completeData;
-        });
-      }
-    });
-
-    socket.on("callEnded", (data) {
-      if (data['receiverId'] == widget.currentUserId) {
+      onCallRequest: (data) {
+        if (data['receiverId'] == widget.currentUserId) {
+          setState(() {
+            showCallNotification = true;
+            incomingCallData = {
+              'callerId': data['callerId'],
+              'receiverId': data['receiverId'],
+              'callerName': data['callerName'] ?? 'Unknown Caller',
+              'conferenceId': data['conferenceId'] ?? 'default_conference',
+              'timestamp':
+                  data['timestamp'] ?? DateTime.now().toIso8601String(),
+            };
+          });
+        }
+      },
+      onCallEnded: () {
         setState(() {
           showCallNotification = false;
           incomingCallData = null;
         });
+      },
+      onCallFailed: (reason) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Call failed: $reason"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _fetchInitialStatus() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/${widget.peerUserId}/status'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          isOnline = data['online'] ?? false;
+          lastSeen =
+              data['lastSeen'] != null
+                  ? DateTime.parse(data['lastSeen'])
+                  : null;
+        });
       }
-    });
+    } catch (e) {
+      print('Error fetching initial status: $e');
+    }
   }
 
   Future<void> fetchPeerInfo() async {
-    try {
-      final res = await http.get(
-        Uri.parse('$baseUrl/users/getUserData?userName=${widget.peerUsername}'),
-      );
-
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body);
-        setState(() {
-          peerUsername = data['name'] ?? 'Unknown';
-          peerAvatar = data['avatarUrl'] ?? '';
-        });
-      } else {
-        print('Failed to fetch peer info. Status code: ${res.statusCode}');
-      }
-    } catch (e) {
-      print('Error fetching peer info: $e');
+    final data = await messageService.fetchPeerInfo(widget.peerUsername);
+    if (data != null) {
+      setState(() {
+        peerUsername = data['name'] ?? 'Unknown';
+        peerAvatar = data['avatarUrl'] ?? '';
+      });
+    } else {
+      print('Failed to fetch peer info.');
     }
   }
 
-  Future<void> fetchMessages() async {
-    final res = await http.get(
-      Uri.parse(
-        '$baseUrl/messages/${widget.currentUserId}/${widget.peerUserId}',
-      ),
-    );
-
-    if (res.statusCode == 200) {
+  void _handleIncomingMessage(Map<String, dynamic> data) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() {
-        messages = List<Map<String, dynamic>>.from(json.decode(res.body));
+        messages.add({
+          "senderId": data["senderId"],
+          "receiverId": data["receiverId"],
+          "message": data["message"],
+          "timestamp": DateTime.now().toIso8601String(),
+        });
       });
-    } else {
-      print("Failed to load messages");
-    }
+    });
+  }
+
+  Future<void> fetchMessages() async {
+    final msgs = await messageService.fetchMessages(
+      widget.currentUserId,
+      widget.peerUserId,
+    );
+    setState(() {
+      messages = msgs;
+    });
   }
 
   bool isSending = false;
 
   Future<void> sendMessage() async {
+    if (isSending || !socketService.isChatConnected) return;
+
     if (isSending) return;
     isSending = true;
 
@@ -526,29 +555,29 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       return;
     }
 
-    final messageData = {
-      'senderId': widget.currentUserId,
-      'receiverId': widget.peerUserId,
-      'message': text,
-    };
-
     try {
-      if (socket.disconnected) {
-        socket.connect();
-        await Future.delayed(Duration(milliseconds: 500));
+      if (!socketService.isChatConnected ||
+          socketService.chatSocket?.disconnected == true) {
+        await initSocket();
+        await Future.delayed(Duration(seconds: 1)); // Give time to reconnect
       }
 
-      socket.emit("sendMessage", messageData);
+      final messageData = {
+        'senderId': widget.currentUserId,
+        'receiverId': widget.peerUserId,
+        'message': text,
+        'timestamp': DateTime.now().toIso8601String(), // Add timestamp
+      };
 
+      socketService.emitChat("sendMessage", messageData);
       messageController.clear();
 
-      await http.post(
-        Uri.parse('$baseUrl/messages'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(messageData),
-      );
+      // Optimistically add to UI
+      _handleIncomingMessage(messageData);
+
+      await messageService.sendMessage(messageData);
     } catch (e) {
-      print("Error sending message: $e");
+      // Error handling
     } finally {
       isSending = false;
     }
@@ -556,67 +585,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    socket.dispose();
-    super.dispose();
     WidgetsBinding.instance.removeObserver(this);
-  }
-
-  void _showUserOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 10),
-            ListTile(
-              leading: const Icon(Icons.person, color: Colors.blueAccent),
-              title: const Text('View Profile'),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Go to user profile')),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.volume_off, color: Colors.blueAccent),
-              title: const Text('Mute'),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('Muted user')));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.block, color: Colors.redAccent),
-              title: const Text('Block'),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('User blocked')));
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.report, color: Colors.orangeAccent),
-              title: const Text('Report'),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('Reported user')));
-              },
-            ),
-            const SizedBox(height: 10),
-          ],
-        );
-      },
-    );
+    socketService.dispose();
+    super.dispose();
   }
 
   // Future<int> fetchUnreadCount(String userId) async {
@@ -632,7 +603,20 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   //   }
   // }
 
-  void _initiateVideoCall() {
+  void _initiateVideoCall() async {
+    if (!socketService.isCallConnected) {
+      print("⚠️ Call socket not connected, attempting to reconnect...");
+      socketService.callSocket?.connect();
+      await Future.delayed(Duration(seconds: 1));
+
+      if (!socketService.isCallConnected) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to connect to call service")),
+        );
+        return;
+      }
+    }
+
     final ids = [widget.currentUserId, widget.peerUserId]..sort();
     final conferenceID =
         "${widget.currentUserId}_${widget.peerUserId}_${DateTime.now().millisecondsSinceEpoch}";
@@ -647,7 +631,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
     print("Initiating video call with data: $callData");
 
-    socket.emit('callRequest', callData);
+    // Emit the call request through the call namespace
+    socketService.emitCall('callRequest', callData);
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -656,10 +642,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               currentUserId: widget.currentUserId,
               peerUserId: widget.peerUserId,
               peerUsername: peerUsername,
-              socket: socket,
+              socket: socketService.callSocket!, // ✅ Call namespace socket
               isInitiator: true,
-              conferenceID:
-                  "${widget.currentUserId}_${widget.peerUserId}_${DateTime.now().millisecondsSinceEpoch}",
+              conferenceID: conferenceID,
             ),
       ),
     );
@@ -685,8 +670,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       final conferenceId =
           incomingCallData?['conferenceId'] ?? 'default_conference';
 
-      print("DEBUG - callerId: $callerId, callerName: $callerName");
-
       if (callerId == null) {
         throw Exception("Caller ID is missing from call data");
       }
@@ -704,7 +687,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 currentUserId: widget.currentUserId,
                 peerUserId: callerId,
                 peerUsername: callerName,
-                socket: socket,
+                socket: socketService.callSocket!, // ✅ Call namespace socket
                 isInitiator: false,
                 conferenceID: conferenceId,
               ),
@@ -736,9 +719,21 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         'timestamp': DateTime.now().toIso8601String(),
       };
 
-      socket.emit('callRejected', callData);
+      // Emit the rejection through the call namespace
+      socketService.emitCall('callRejected', callData);
+      print("Call rejected with data: $callData");
     }
   }
+
+  //checl status of user
+  // void checkStatus() async {
+  //   print("Checking status of user: $widget.peerUserId");
+
+  //   bool online = await socketService.checkUserOnline(widget.peerUserId);
+  //   setState(() {
+  //     isOnline = online;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -752,7 +747,18 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
         ),
         title: GestureDetector(
-          onTap: () => _showUserOptions(context),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => ProfileWidgetForAnotherUsers(
+                      username: widget.peerUsername,
+                      token: widget.token,
+                    ),
+              ),
+            );
+          },
           child: Row(
             children: [
               Hero(
@@ -793,10 +799,14 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     ),
                   ),
                   Text(
-                    'Online',
+                    isOnline
+                        ? 'Online'
+                        : lastSeen != null
+                        ? 'Last seen ${DateFormat.jm().format(lastSeen!)}'
+                        : 'Offline',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.greenAccent,
+                      color: isOnline ? Colors.greenAccent : Colors.grey,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
