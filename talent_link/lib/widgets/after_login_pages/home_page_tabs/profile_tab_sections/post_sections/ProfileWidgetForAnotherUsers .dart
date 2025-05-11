@@ -47,7 +47,10 @@ class _ProfileWidgetForAnotherUsersState
 
   Future<void> fetchProfileData() async {
     try {
-      final data = await ProfileService.getProfileData(widget.token);
+      final data = await ProfileService.getProfileData(
+        widget.token,
+        username: widget.username,
+      );
       setState(() {
         userProfileData = data;
         isLoading = false;

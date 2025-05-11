@@ -143,7 +143,7 @@ class _HomePageState extends State<HomePage>
             children: [
               PostCreator(token: widget.data),
               JobsScreenTab(token: widget.data),
-              MapScreen(),
+              MapScreen(token: widget.data),
               ProfileTab(token: widget.data, onLogout: _handleLogout),
             ],
           ),
