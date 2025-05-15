@@ -21,8 +21,6 @@ class PushNotificationsFirebase {
       sound: true,
     );
 
-    // Get token
-
     // Initialize local notifications (for Android foreground notifications)
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');

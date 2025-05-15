@@ -7,6 +7,26 @@ class JobService {
   static const String baseUrl = 'http://10.0.2.2:5000/api/job';
 
   JobService({required this.token});
+  Future<Job> fetchJobById(String jobId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/job/$jobId'),
+        // headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return Job.fromJson(data);
+      } else if (response.statusCode == 404) {
+        throw Exception('Job not found');
+      } else {
+        throw Exception('Failed to load job');
+      }
+    } catch (e) {
+      print("Error fetching job: $e");
+      rethrow;
+    }
+  }
 
   Future<List<Job>> fetchJobs() async {
     try {

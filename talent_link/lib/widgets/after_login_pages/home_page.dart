@@ -5,9 +5,8 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/map_screen.dart';
 import 'dart:convert';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab.dart';
-// import 'package:talent_link/widgets/after_login_pages/home_page_tabs/user_posts.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notificationsForUser.dart';
 import 'package:talent_link/widgets/login_widgets/login_page.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/mesageProfile.dart';
 import '../after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_creator.dart';
 
 class HomePage extends StatefulWidget {
@@ -125,8 +124,13 @@ class _HomePageState extends State<HomePage>
           actions: [
             IconButton(
               icon: const Icon(Icons.notifications),
-              onPressed: () {},
               color: Colors.white,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => NotificationsPage()),
+                );
+              },
             ),
           ],
         ),
