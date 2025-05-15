@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:talent_link/services/message_service.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notificationsForOrg.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/applications_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/home_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/my_jobs_tab.dart';
@@ -52,7 +53,16 @@ class _OrganizationHomePageState extends State<OrganizationHomePage> {
           color: Colors.white,
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.notifications), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            color: Colors.black,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => orgNotificationsPage()),
+              );
+            },
+          ),
         ],
       ),
       body: Center(

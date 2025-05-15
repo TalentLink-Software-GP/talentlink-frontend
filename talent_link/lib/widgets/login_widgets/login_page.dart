@@ -89,9 +89,12 @@ class _LoginPageState extends State<LoginPage> {
                             token,
                           );
                           String userId = decodedToken['id'];
-                          String userRole = decodedToken['role'];
+                          String role = decodedToken['role'];
+                          String username = decodedToken['username'];
                           final prefs = await SharedPreferences.getInstance();
                           await prefs.setString('token', token);
+                          await prefs.setString('username', username);
+                          await prefs.setString('role', role);
 
                           final manager =
                               context
@@ -107,7 +110,7 @@ class _LoginPageState extends State<LoginPage> {
                                       userId: userId,
                                       token: token,
                                       child:
-                                          userRole == "Organization"
+                                          role == "Organization"
                                               ? OrganizationHomePage(
                                                 token: token,
                                               )
@@ -121,7 +124,7 @@ class _LoginPageState extends State<LoginPage> {
                               MaterialPageRoute(
                                 builder:
                                     (context) =>
-                                        userRole == "Organization"
+                                        role == "Organization"
                                             ? OrganizationHomePage(token: token)
                                             : HomePage(data: token),
                               ),
