@@ -39,6 +39,7 @@ class SearchUserPageState extends State<SearchUserPage> {
 
   bool isSearching = false;
   Timer? timer;
+  int finalcount = 0;
 
   @override
   void initState() {
@@ -61,8 +62,20 @@ class SearchUserPageState extends State<SearchUserPage> {
 
   Future<void> fetchChatHistory() async {
     final history = await _service.fetchChatHistory(widget.currentUserId);
+
+    // Get unread counts for each conversation
+    final updatedHistory = await Future.wait(
+      history.map((user) async {
+        finalcount = await _service.getUnreadCount(
+          widget.currentUserId,
+          user['_id'],
+        );
+        return {...user, 'unreadCount': finalcount};
+      }),
+    );
+
     setState(() {
-      chatHistory = history;
+      chatHistory = updatedHistory;
     });
   }
 
@@ -84,10 +97,6 @@ class SearchUserPageState extends State<SearchUserPage> {
             chatHistory.where((user) => user['_id'] != userId).toList();
       });
     }
-  }
-
-  Future<int> fetchUnreadMessageCount() async {
-    return await _service.fetchUnreadMessageCount(widget.currentUserId);
   }
 
   @override
@@ -197,7 +206,9 @@ class SearchUserPageState extends State<SearchUserPage> {
                             : AssetImage('assets/images/avatarPlaceholder.jpg')
                                 as ImageProvider,
                   ),
-                  if ((user['unreadCount'] ?? 0) > 0)
+
+                  //TODO: when user1 send a message to user2 i need the Count of notification (finalcount or unReadCount) to be in realTime that dont need to refresh the page to show the notifications
+                  if ((user['unreadCount'] ?? 0) > 0) // here's
                     Positioned(
                       right: 0,
                       top: 0,
@@ -249,7 +260,6 @@ class SearchUserPageState extends State<SearchUserPage> {
                   ),
                 );
               },
-              trailing: MessageNotification(count: 5),
             ),
           ),
         );
@@ -393,6 +403,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
     // Initialize status tracking
     _initializePresence();
+    _markMessagesAsRead(); // Add this line
   }
 
   void _initializePresence() {
@@ -694,6 +705,26 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
+  void _markMessagesAsRead() async {
+    bool success = await messageService.markMessagesAsRead(
+      widget.currentUserId,
+      widget.peerUserId,
+    );
+
+    if (success) {
+      // Update local state to reflect read status
+      setState(() {
+        messages =
+            messages.map((msg) {
+              if (msg['receiverId'] == widget.currentUserId) {
+                return {...msg, 'isRead': true};
+              }
+              return msg;
+            }).toList();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -921,12 +952,18 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                         ),
                                       ),
                                       if (isMe)
+                                        // TODO: when user1 send message to user2 and user2 is in chat i need to show for user 1 that user2 seen the message, i do that but i need it in realTime
                                         Padding(
                                           padding: EdgeInsets.only(left: 4),
                                           child: Icon(
-                                            Icons.done_all,
+                                            msg['isRead'] == true
+                                                ? Icons.done_all
+                                                : Icons.done,
                                             size: 14,
-                                            color: Colors.white70,
+                                            color:
+                                                msg['isRead'] == true
+                                                    ? Colors.blue[200]
+                                                    : Colors.white70,
                                           ),
                                         ),
                                     ],
