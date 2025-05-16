@@ -39,7 +39,9 @@ class SearchUserPageState extends State<SearchUserPage> {
 
   bool isSearching = false;
   Timer? timer;
+
   int finalcount = 0;
+
 
   @override
   void initState() {
@@ -63,6 +65,7 @@ class SearchUserPageState extends State<SearchUserPage> {
   Future<void> fetchChatHistory() async {
     final history = await _service.fetchChatHistory(widget.currentUserId);
 
+
     // Get unread counts for each conversation
     final updatedHistory = await Future.wait(
       history.map((user) async {
@@ -76,6 +79,7 @@ class SearchUserPageState extends State<SearchUserPage> {
 
     setState(() {
       chatHistory = updatedHistory;
+
     });
   }
 
@@ -98,6 +102,7 @@ class SearchUserPageState extends State<SearchUserPage> {
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -207,8 +212,10 @@ class SearchUserPageState extends State<SearchUserPage> {
                                 as ImageProvider,
                   ),
 
+
                   //TODO: when user1 send a message to user2 i need the Count of notification (finalcount or unReadCount) to be in realTime that dont need to refresh the page to show the notifications
                   if ((user['unreadCount'] ?? 0) > 0) // here's
+
                     Positioned(
                       right: 0,
                       top: 0,
@@ -260,6 +267,7 @@ class SearchUserPageState extends State<SearchUserPage> {
                   ),
                 );
               },
+
             ),
           ),
         );
@@ -403,7 +411,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
     // Initialize status tracking
     _initializePresence();
+
     _markMessagesAsRead(); // Add this line
+
   }
 
   void _initializePresence() {
@@ -705,6 +715,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
+
   void _markMessagesAsRead() async {
     bool success = await messageService.markMessagesAsRead(
       widget.currentUserId,
@@ -724,6 +735,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
