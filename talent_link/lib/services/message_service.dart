@@ -16,7 +16,7 @@ class MessageService {
     final username = decodedToken['username'];
     //IM HERE
     String userApiUrl;
-    if (role == 'Job Seeker') {
+    if (role == 'Job Seeker' || role == 'Freelancer') {
       userApiUrl = 'http://10.0.2.2:5000/api/users/get-user-id';
     } else if (role == 'Organization') {
       userApiUrl =
