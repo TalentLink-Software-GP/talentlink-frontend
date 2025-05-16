@@ -28,6 +28,7 @@ dependencies:
   google_maps_flutter: ^2.12.1
   geolocator: ^14.0.0
   flutter_polyline_points: ^1.0.0
+  logger: ^2.0.2+1
 
   firebase_core: ^2.24.0
   firebase_messaging: ^14.7.4

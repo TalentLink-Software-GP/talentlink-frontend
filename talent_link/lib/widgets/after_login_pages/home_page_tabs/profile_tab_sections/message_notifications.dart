@@ -1,26 +1,27 @@
-import 'package:flutter/material.dart';
 
-class MessageNotification extends StatelessWidget {
-  final int count;
+// import 'package:flutter/material.dart';
 
-  const MessageNotification({super.key, required this.count});
+// class MessageNotification extends StatelessWidget {
+//   final int count;
 
-  @override
-  Widget build(BuildContext context) {
-    final int countTest = 5;
-    // count = countTest;
-    return countTest > 0
-        ? Container(
-          padding: EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: Colors.redAccent,
-            shape: BoxShape.circle,
-          ),
-          child: Text(
-            '$countTest',
-            style: TextStyle(color: Colors.white, fontSize: 12),
-          ),
-        )
-        : SizedBox();
-  }
-}
+//   const MessageNotification({super.key, required this.count});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     // count = countTest;
+//     return count > 0
+//         ? Container(
+//           padding: EdgeInsets.all(6),
+//           decoration: BoxDecoration(
+//             color: Colors.redAccent,
+//             shape: BoxShape.circle,
+//           ),
+//           child: Text(
+//             '$count',
+//             style: TextStyle(color: Colors.white, fontSize: 12),
+//           ),
+//         )
+//         : SizedBox();
+//   }
+// }
+
