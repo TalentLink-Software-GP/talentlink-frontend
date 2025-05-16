@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/user_profile_data.dart';
+import 'package:logger/logger.dart';
 
 class ProfileService {
+  static final _logger = Logger();
+
   static Future<UserProfileData> getProfileData(
     String token, {
     String? username,
@@ -30,7 +33,7 @@ class ProfileService {
     String value,
     String token,
   ) async {
-    print('field: $field value: $value token: $token');
+    _logger.i('Deleting item:', error: {'field': field, 'value': value});
     final response = await http.delete(
       Uri.parse('http://10.0.2.2:5000/api/skills/delete-$field'),
       headers: {
@@ -41,13 +44,13 @@ class ProfileService {
     );
 
     if (response.statusCode != 200) {
-      print(response.statusCode);
+      _logger.e('Delete failed:', error: response.statusCode);
       throw Exception('Failed to delete $field');
     }
   }
 
   static Future<void> addItem(String field, String value, String token) async {
-    print('field: $field value: $value token: $token');
+    _logger.i('Adding item:', error: {'field': field, 'value': value});
     final response = await http.post(
       Uri.parse('http://10.0.2.2:5000/api/skills/add-$field'),
       headers: {

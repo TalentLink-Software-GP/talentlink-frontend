@@ -26,7 +26,7 @@ class CommentWidget extends StatelessWidget {
             shape: BoxShape.circle,
             border: Border.all(
               color: (isMainComment ? Colors.blueAccent : Colors.greenAccent)
-                  .withOpacity(0.5),
+                  .withAlpha(128),
               width: 1.5,
             ),
           ),

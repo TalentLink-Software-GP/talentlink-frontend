@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 
 class Application {
   final String id;
@@ -32,6 +33,8 @@ class Application {
 }
 
 class ApplicationService {
+  static final _logger = Logger();
+
   static Future<void> applyForJob({
     required String token,
     required String jobId,
@@ -63,7 +66,7 @@ class ApplicationService {
         throw Exception('Failed to apply for job: ${response.body}');
       }
     } catch (e) {
-      print('Exception during API call: $e');
+      _logger.e('Exception during API call:', error: e);
       rethrow;
     }
   }

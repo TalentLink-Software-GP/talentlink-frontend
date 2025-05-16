@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:talent_link/models/job.dart';
-import 'package:talent_link/services/applicationService.dart';
+import 'package:talent_link/services/application_service.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 
 class JobDetailsScreen extends StatelessWidget {

@@ -4,8 +4,7 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab
 class ViewSinglePostCard extends StatelessWidget {
   final PostCard postCard;
 
-  const ViewSinglePostCard({required this.postCard, Key? key})
-    : super(key: key);
+  const ViewSinglePostCard({required this.postCard, super.key});
 
   @override
   Widget build(BuildContext context) {

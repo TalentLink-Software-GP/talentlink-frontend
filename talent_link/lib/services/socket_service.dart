@@ -1,10 +1,12 @@
 import 'dart:async';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:logger/logger.dart';
 
 class SocketService {
-  IO.Socket? chatSocket;
-  IO.Socket? callSocket;
-  IO.Socket? _presenceSocket;
+  io.Socket? chatSocket;
+  io.Socket? callSocket;
+  io.Socket? _presenceSocket;
+  final _logger = Logger();
 
   Future<void> initializePresence({
     required String url,
@@ -13,7 +15,7 @@ class SocketService {
   }) async {
     final completer = Completer<void>();
 
-    _presenceSocket = IO.io('$url/presence', <String, dynamic>{
+    _presenceSocket = io.io('$url/presence', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': true,
       'reconnection': true,
@@ -24,20 +26,22 @@ class SocketService {
 
     _presenceSocket!.onConnect((_) {
       _presenceSocket!.emit('register', userId);
-      print('Presence socket connected');
+      _logger.i('Presence socket connected');
       if (!completer.isCompleted) {
         completer.complete();
       }
     });
 
     _presenceSocket!.on('registrationSuccess', (data) {
-      print('Presence registration successful: $data');
+      _logger.i('Presence registration successful: $data');
     });
 
-    _presenceSocket!.onDisconnect((_) => print('Presence socket disconnected'));
+    _presenceSocket!.onDisconnect(
+      (_) => _logger.w('Presence socket disconnected'),
+    );
 
     _presenceSocket!.onError((err) {
-      print('Presence socket error: $err');
+      _logger.e('Presence socket error:', error: err);
       if (!completer.isCompleted) {
         completer.completeError(err);
       }
@@ -58,7 +62,7 @@ class SocketService {
 
     try {
       // Initialize chat socket
-      chatSocket = IO.io('$url/chat', <String, dynamic>{
+      chatSocket = io.io('$url/chat', <String, dynamic>{
         'transports': ['websocket'],
         'autoConnect': false,
         'reconnection': true,
@@ -68,7 +72,7 @@ class SocketService {
       });
 
       // Initialize call socket
-      callSocket = IO.io('$url/calls', <String, dynamic>{
+      callSocket = io.io('$url/calls', <String, dynamic>{
         'transports': ['websocket'],
         'autoConnect': false,
         'reconnection': true,
@@ -79,12 +83,12 @@ class SocketService {
 
       // Chat socket listeners
       chatSocket!.onConnect((_) {
-        print("Chat socket connected");
+        _logger.i("Chat socket connected");
         chatSocket!.emit('register', userId);
       });
 
       chatSocket!.on('registrationSuccess', (data) {
-        print("Chat socket registration successful: $data");
+        _logger.i("Chat socket registration successful: $data");
         if (!completer.isCompleted) {
           completer.complete();
         }
@@ -94,21 +98,19 @@ class SocketService {
         onMessage(Map<String, dynamic>.from(data));
       });
 
-      chatSocket!.onDisconnect((_) => print("Chat socket disconnected"));
+      chatSocket!.onDisconnect((_) => _logger.w("Chat socket disconnected"));
 
       chatSocket!.onConnectError((err) {
-        print("Chat connect error: $err");
-        // Don't complete with error here as we still want to try the call socket
+        _logger.e("Chat connect error:", error: err);
       });
 
       chatSocket!.onError((err) {
-        print("Chat error: $err");
-        // Don't complete with error here as we still want to try the call socket
+        _logger.e("Chat error:", error: err);
       });
 
       // Call socket listeners
       callSocket!.onConnect((_) {
-        print("Call socket connected");
+        _logger.i("Call socket connected");
         callSocket!.emit('register', userId);
       });
 
@@ -122,11 +124,13 @@ class SocketService {
         onCallFailed(data['reason'] ?? 'Unknown error');
       });
 
-      callSocket!.onDisconnect((_) => print("Call socket disconnected"));
+      callSocket!.onDisconnect((_) => _logger.w("Call socket disconnected"));
 
-      callSocket!.onConnectError((err) => print("Call connect error: $err"));
+      callSocket!.onConnectError(
+        (err) => _logger.e("Call connect error:", error: err),
+      );
 
-      callSocket!.onError((err) => print("Call error: $err"));
+      callSocket!.onError((err) => _logger.e("Call error:", error: err));
 
       // Connect both sockets after setting up all listeners
       chatSocket!.connect();
@@ -148,7 +152,7 @@ class SocketService {
     }
   }
 
-  IO.Socket getCallSocket() {
+  io.Socket getCallSocket() {
     if (callSocket == null) {
       throw StateError(
         'Call socket is not initialized. Call initializeCall() first.',
@@ -187,7 +191,7 @@ class SocketService {
     chatSocket?.on('userStatusUpdate', (data) {
       final userId = data['userId'];
       final isOnline = data['isOnline'];
-      print(
+      _logger.i(
         "Status update for user $userId: ${isOnline ? 'Online' : 'Offline'}",
       );
       onStatusChange(userId, isOnline);
@@ -222,7 +226,7 @@ class SocketService {
     required String senderName,
   }) async {
     if (!isChatConnected) {
-      print('Chat socket not connected');
+      _logger.w('Chat socket not connected');
       return;
     }
 

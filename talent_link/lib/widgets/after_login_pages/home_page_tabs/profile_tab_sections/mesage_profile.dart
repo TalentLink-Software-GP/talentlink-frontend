@@ -3,16 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:intl/intl.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:talent_link/services/SocketService.dart';
+import 'package:logger/logger.dart';
+import 'package:talent_link/services/socket_service.dart';
 import 'package:talent_link/services/message_service.dart';
-import 'package:talent_link/services/searchPageServices.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/messageNotifications.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/messageUserOption.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/ProfileWidgetForAnotherUsers%20.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/CallNotification.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/videoCall.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/videoWidget.dart';
+import 'package:talent_link/services/search_page_services.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/message_notifications.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/profile_widget_for_another_users.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/call_notification.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/video_widget.dart';
 
 class SearchUserPage extends StatefulWidget {
   final String currentUserId;
@@ -27,10 +25,10 @@ class SearchUserPage extends StatefulWidget {
   });
 
   @override
-  _SearchUserPageState createState() => _SearchUserPageState();
+  SearchUserPageState createState() => SearchUserPageState();
 }
 
-class _SearchUserPageState extends State<SearchUserPage> {
+class SearchUserPageState extends State<SearchUserPage> {
   TextEditingController searchController = TextEditingController();
   List<dynamic> searchResults = [];
   List<dynamic> chatHistory = [];
@@ -119,7 +117,7 @@ class _SearchUserPageState extends State<SearchUserPage> {
                   decoration: InputDecoration(
                     hintText: "Search users...",
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.8),
+                    fillColor: Colors.white.withAlpha(204),
                     prefixIcon: Icon(Icons.search, color: Colors.blueAccent),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -196,7 +194,8 @@ class _SearchUserPageState extends State<SearchUserPage> {
                         user['avatarUrl'] != null &&
                                 user['avatarUrl'].isNotEmpty
                             ? NetworkImage(user['avatarUrl'])
-                            : AssetImage('') as ImageProvider,
+                            : AssetImage('assets/images/avatarPlaceholder.jpg')
+                                as ImageProvider,
                   ),
                   if ((user['unreadCount'] ?? 0) > 0)
                     Positioned(
@@ -266,7 +265,7 @@ class _SearchUserPageState extends State<SearchUserPage> {
       bottom: 0,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.white.withAlpha(51),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -285,7 +284,8 @@ class _SearchUserPageState extends State<SearchUserPage> {
                 backgroundImage:
                     user['avatarUrl'] != null && user['avatarUrl'].isNotEmpty
                         ? NetworkImage(user['avatarUrl'])
-                        : AssetImage('assets/placeholder.png') as ImageProvider,
+                        : AssetImage('assets/images/avatarPlaceholder.jpg')
+                            as ImageProvider,
               ),
               title: Text(
                 user['username'],
@@ -339,10 +339,11 @@ class ChatPage extends StatefulWidget {
   });
 
   @override
-  _ChatPageState createState() => _ChatPageState();
+  State<ChatPage> createState() => _ChatPageState();
 }
 
 class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
+  final _logger = Logger();
   bool showCallNotification = false;
   Map<String, dynamic>? incomingCallData;
   TextEditingController messageController = TextEditingController();
@@ -358,21 +359,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   final String baseUrl =
       'http://10.0.2.2:5000/api'; //https://talentlink-backend-c01n.onrender.com
 
-  // @override
-  // void didChangeAppLifecycleState(AppLifecycleState state) {
-  //   if (state == AppLifecycleState.resumed) {
-  //     if (!socketService.isChatConnected) {
-  //       socketService.chatSocket?.connect();
-  //     }
-  //     if (!socketService.isCallConnected) {
-  //       socketService.callSocket?.connect();
-  //     }
-  //   } else if (state == AppLifecycleState.paused) {
-  //     // Optionally disconnect to save resources
-  //     socketService.chatSocket?.disconnect();
-  //     socketService.callSocket?.disconnect();
-  //   }
-  // }
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
@@ -502,7 +488,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         });
       }
     } catch (e) {
-      print('Error fetching initial status: $e');
+      _logger.e('Error fetching initial status', error: e);
     }
   }
 
@@ -514,7 +500,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         peerAvatar = data['avatarUrl'] ?? '';
       });
     } else {
-      print('Failed to fetch peer info.');
+      _logger.w('Failed to fetch peer info');
     }
   }
 
@@ -590,22 +576,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  // Future<int> fetchUnreadCount(String userId) async {
-  //   final response = await http.get(
-  //     Uri.parse('http://10.0.2.2:5000//api/messages/unread-count/$userId'),
-  //   );
-
-  //   if (response.statusCode == 200) {
-  //     final data = jsonDecode(response.body);
-  //     return data['unreadCount'] ?? 0;
-  //   } else {
-  //     throw Exception('Failed to load unread count');
-  //   }
-  // }
-
   void _initiateVideoCall() async {
     if (!socketService.isCallConnected) {
-      print("⚠️ Call socket not connected, attempting to reconnect...");
+      _logger.w("⚠️ Call socket not connected, attempting to reconnect...");
       socketService.callSocket?.connect();
       await Future.delayed(Duration(seconds: 1));
 
@@ -617,7 +590,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       }
     }
 
-    final ids = [widget.currentUserId, widget.peerUserId]..sort();
     final conferenceID =
         "${widget.currentUserId}_${widget.peerUserId}_${DateTime.now().millisecondsSinceEpoch}";
 
@@ -629,9 +601,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       'timestamp': DateTime.now().toIso8601String(),
     };
 
-    print("Initiating video call with data: $callData");
+    _logger.i("Initiating video call with data: $callData");
 
-    // Emit the call request through the call namespace
     socketService.emitCall('callRequest', callData);
 
     Navigator.push(
@@ -651,11 +622,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   void _acceptCall() {
-    print("DEBUG - Accepting call with data: $incomingCallData");
+    _logger.d("Accepting call with data: $incomingCallData");
 
     try {
       if (incomingCallData == null) {
-        print("ERROR - No incoming call data available");
+        _logger.e("No incoming call data available");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("No active call to accept"),
@@ -694,8 +665,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         ),
       );
     } catch (e, stackTrace) {
-      print("ERROR in _acceptCall: $e");
-      print("Stack trace: $stackTrace");
+      _logger.e("Error in _acceptCall", error: e, stackTrace: stackTrace);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -719,21 +689,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         'timestamp': DateTime.now().toIso8601String(),
       };
 
-      // Emit the rejection through the call namespace
       socketService.emitCall('callRejected', callData);
-      print("Call rejected with data: $callData");
+      _logger.i("Call rejected with data: $callData");
     }
   }
-
-  //checl status of user
-  // void checkStatus() async {
-  //   print("Checking status of user: $widget.peerUserId");
-
-  //   bool online = await socketService.checkUserOnline(widget.peerUserId);
-  //   setState(() {
-  //     isOnline = online;
-  //   });
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -781,7 +740,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     backgroundImage:
                         peerAvatar.isNotEmpty
                             ? NetworkImage(peerAvatar)
-                            : AssetImage('assets/placeholder.png')
+                            : AssetImage('assets/images/avatarPlaceholder.jpg')
                                 as ImageProvider,
                   ),
                 ),
@@ -855,7 +814,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                   margin: EdgeInsets.symmetric(vertical: 12),
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withAlpha(51),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -896,7 +855,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                 backgroundImage:
                                     peerAvatar.isNotEmpty
                                         ? NetworkImage(peerAvatar)
-                                        : AssetImage('assets/placeholder.png')
+                                        : AssetImage(
+                                              'assets/images/avatarPlaceholder.jpg',
+                                            )
                                             as ImageProvider,
                               ),
                             if (!isMe) SizedBox(width: 8),
@@ -913,7 +874,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                 color:
                                     isMe
                                         ? Colors.indigoAccent.shade400
-                                        : Colors.white.withOpacity(0.9),
+                                        : Colors.white.withAlpha(230),
                                 borderRadius: BorderRadius.only(
                                   topLeft: Radius.circular(18),
                                   topRight: Radius.circular(18),
@@ -982,7 +943,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                         ? NetworkImage(
                                           widget.currentuserAvatarUrl,
                                         )
-                                        : AssetImage('assets/placeholder.png')
+                                        : AssetImage(
+                                              'assets/images/avatarPlaceholder.jpg',
+                                            )
                                             as ImageProvider,
                               ),
                           ],
@@ -993,7 +956,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 ),
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withAlpha(26),
                     borderRadius: BorderRadius.vertical(
                       top: Radius.circular(20),
                     ),
@@ -1012,7 +975,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withAlpha(51),
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(color: Colors.white24),
                           ),
@@ -1042,7 +1005,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.purpleAccent.withOpacity(0.3),
+                              color: Colors.purpleAccent.withAlpha(77),
                               blurRadius: 8,
                               offset: Offset(0, 3),
                             ),
@@ -1067,9 +1030,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               right: 0,
               child: SafeArea(
                 child: CallNotification(
-                  callData: Map<String, dynamic>.from(
-                    incomingCallData!,
-                  ), // Create a copy to avoid modification issues
+                  callerName:
+                      incomingCallData!['callerName'] ?? 'Unknown Caller',
                   onDismiss: () {
                     setState(() {
                       showCallNotification = false;
@@ -1212,7 +1174,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           width: 60,
           height: 60,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
+            color: color.withAlpha(51),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: color, size: 30),

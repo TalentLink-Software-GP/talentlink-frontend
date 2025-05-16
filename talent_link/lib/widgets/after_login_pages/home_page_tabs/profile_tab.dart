@@ -7,6 +7,7 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/resume.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/user_data.dart';
 import 'package:talent_link/models/user_profile_data.dart';
+import 'package:logger/logger.dart';
 
 class ProfileTab extends StatefulWidget {
   final VoidCallback onLogout;
@@ -19,6 +20,7 @@ class ProfileTab extends StatefulWidget {
 }
 
 class _ProfileTabState extends State<ProfileTab> {
+  final _logger = Logger();
   late PostService _postService;
   UserProfileData? userProfileData;
   Map<String, dynamic>? userData;
@@ -30,8 +32,6 @@ class _ProfileTabState extends State<ProfileTab> {
   final int _page = 1;
   final int _limit = 10;
   String? uploadedImageUrl;
-  bool _hasMore = true;
-  bool _isLoading = true;
 
   @override
   void initState() {
@@ -48,7 +48,7 @@ class _ProfileTabState extends State<ProfileTab> {
         userProfileData = data;
       });
     } catch (e) {
-      print("Error fetching profile: $e");
+      _logger.e("Error fetching profile", error: e);
       setState(() {
         userProfileData = UserProfileData(
           summary: '',
@@ -71,7 +71,7 @@ class _ProfileTabState extends State<ProfileTab> {
       await ProfileService.deleteItem(field, value, widget.token);
       await fetchProfileData();
     } catch (e) {
-      print("Error deleting $field: $e");
+      _logger.e("Error deleting $field", error: e);
     }
   }
 
@@ -213,7 +213,7 @@ class _ProfileTabState extends State<ProfileTab> {
   Future<void> fetchUserDataAndPosts() async {
     Map<String, dynamic> decodedToken = JwtDecoder.decode(widget.token);
     String username = decodedToken['username'];
-    print("Username: $username");
+    _logger.i("Username: $username");
     try {
       final userResponse = await _postService.fetchUserByUsername(username);
 
@@ -253,8 +253,6 @@ class _ProfileTabState extends State<ProfileTab> {
                 ),
               };
             }).toList();
-
-        _hasMore = postsResponse.length == _limit;
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -266,9 +264,7 @@ class _ProfileTabState extends State<ProfileTab> {
         'Attempted URL: ${_postService.baseUrl}/posts/getuser-posts-byusername/$username?page=$_page&limit=$_limit',
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() {});
     }
   }
 

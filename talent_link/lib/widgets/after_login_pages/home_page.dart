@@ -5,13 +5,16 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/map_screen.dart';
 import 'dart:convert';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notificationsForUser.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notifications_for_user.dart';
 import 'package:talent_link/widgets/login_widgets/login_page.dart';
 import '../after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_creator.dart';
+import 'package:logger/logger.dart';
 
 class HomePage extends StatefulWidget {
-  String data; // Token
-  HomePage({super.key, required this.data});
+  final String data; // Token
+  final Function(String) onTokenChanged;
+
+  const HomePage({super.key, required this.data, required this.onTokenChanged});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -19,6 +22,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with AutomaticKeepAliveClientMixin {
+  final _logger = Logger();
   @override
   bool get wantKeepAlive => true;
   int _selectedIndex = 0;
@@ -51,10 +55,10 @@ class _HomePageState extends State<HomePage>
           userEducation = List<String>.from(data["education"] ?? []);
         });
       } else {
-        print("Failed to fetch data: ${response.statusCode}");
+        _logger.e("Failed to fetch data", error: response.statusCode);
       }
     } catch (e) {
-      print("Error fetching data: $e");
+      _logger.e("Error fetching data", error: e);
     }
   }
 
@@ -66,9 +70,7 @@ class _HomePageState extends State<HomePage>
   }
 
   void _handleLogout() {
-    setState(() {
-      widget.data = 'Unauthorized';
-    });
+    widget.onTokenChanged('Unauthorized');
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => LoginPage()),

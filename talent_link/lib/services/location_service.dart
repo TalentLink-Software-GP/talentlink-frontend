@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 
 class LocationService {
   final String baseUrl;
   final String token;
+  final _logger = Logger();
 
   LocationService({required this.baseUrl, required this.token});
 
@@ -21,7 +23,7 @@ class LocationService {
     if (response.statusCode == 200) {
       return true;
     } else {
-      print('Failed to set location: ${response.body}');
+      _logger.e('Failed to set location:', error: response.body);
       return false;
     }
   }
@@ -44,7 +46,7 @@ class LocationService {
         'lng': (data['lng'] as num).toDouble(),
       };
     } else {
-      print('Failed to get location: ${response.body}');
+      _logger.e('Failed to get location:', error: response.body);
       return {'lat': 0.0, 'lng': 0.0}; // fallback
     }
   }
@@ -60,7 +62,10 @@ class LocationService {
       final List data = jsonDecode(response.body);
       return data.cast<Map<String, dynamic>>();
     } else {
-      print('Failed to fetch all companies locations: ${response.body}');
+      _logger.e(
+        'Failed to fetch all companies locations:',
+        error: response.body,
+      );
       return [];
     }
   }

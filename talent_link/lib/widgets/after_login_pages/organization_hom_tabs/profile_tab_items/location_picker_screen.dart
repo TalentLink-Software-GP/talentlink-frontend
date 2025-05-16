@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:logger/logger.dart';
 
 class LocationPickerScreen extends StatefulWidget {
   final double initialLat;
@@ -25,6 +26,8 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   final TextEditingController _latController = TextEditingController();
   final TextEditingController _lngController = TextEditingController();
 
+  final logger = Logger();
+
   @override
   void initState() {
     super.initState();
@@ -44,7 +47,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
         _updateLocation(LatLng(loc.latitude, loc.longitude));
       }
     } catch (e) {
-      print("Geocoding error: $e");
+      logger.e("Geocoding error", error: e);
     }
   }
 
@@ -94,11 +97,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
               suggestionsCallback: (pattern) async {
                 // Fake suggestions for simplicity (you can use real API like Places API)
                 return pattern.length > 2
-                    ? [
-                      pattern + " City",
-                      pattern + " Street",
-                      pattern + " Building",
-                    ]
+                    ? ["$pattern City", "$pattern Street", "$pattern Building"]
                     : [];
               },
               itemBuilder:

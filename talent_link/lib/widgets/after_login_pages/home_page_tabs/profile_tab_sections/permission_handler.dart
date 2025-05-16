@@ -1,11 +1,14 @@
 import 'package:permission_handler/permission_handler.dart';
+import 'package:logger/logger.dart';
 
 class PermissionUtils {
+  static final _logger = Logger();
+
   static Future<bool> checkAndRequestPermissions() async {
     Map<Permission, PermissionStatus> statuses =
         await [Permission.camera, Permission.microphone].request();
 
-    print("Permission statuses: $statuses");
+    _logger.i("Permission statuses: $statuses");
 
     return statuses[Permission.camera]!.isGranted &&
         statuses[Permission.microphone]!.isGranted;
@@ -15,7 +18,7 @@ class PermissionUtils {
     bool cameraGranted = await Permission.camera.isGranted;
     bool microphoneGranted = await Permission.microphone.isGranted;
 
-    print(
+    _logger.i(
       "Camera permission: $cameraGranted, Microphone permission: $microphoneGranted",
     );
 

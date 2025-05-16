@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 
 class AddJobOrPostCard extends StatefulWidget {
   final String token;
@@ -19,6 +20,7 @@ class AddJobOrPostCard extends StatefulWidget {
 }
 
 class _AddJobOrPostCardState extends State<AddJobOrPostCard> {
+  final logger = Logger();
   String? uploadedImageUrl;
   String name = '';
   String industry = '';
@@ -46,10 +48,13 @@ class _AddJobOrPostCardState extends State<AddJobOrPostCard> {
           industry = jsonResponse['industry'];
         });
       } else {
-        print('Failed to fetch user data: ${response.statusCode}');
+        logger.e(
+          "Failed to fetch user data",
+          error: {"status": response.statusCode},
+        );
       }
     } catch (e) {
-      print('Error fetching user data: $e');
+      logger.e("Error fetching user data", error: e);
     }
   }
 

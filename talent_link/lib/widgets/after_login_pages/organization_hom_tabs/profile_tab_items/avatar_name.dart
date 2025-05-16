@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:talent_link/services/organization_service.dart';
+import 'package:logger/logger.dart';
 
 class AvatarName extends StatefulWidget {
   final String token;
@@ -14,6 +15,7 @@ class AvatarName extends StatefulWidget {
 }
 
 class _AvatarNameState extends State<AvatarName> {
+  final logger = Logger();
   String? uploadedImageUrl;
   String name = '';
   String industry = '';
@@ -40,7 +42,7 @@ class _AvatarNameState extends State<AvatarName> {
         industry = data['industry'];
       });
     } catch (e) {
-      print('Error fetching organization profile: $e');
+      logger.e("Error fetching organization profile", error: e);
     }
   }
 
@@ -62,11 +64,14 @@ class _AvatarNameState extends State<AvatarName> {
         final jsonResponse = json.decode(resBody);
         return jsonResponse['avatarUrl'];
       } else {
-        print("Failed to upload: ${response.statusCode}");
+        logger.e(
+          "Failed to upload avatar",
+          error: {"status": response.statusCode},
+        );
         return null;
       }
     } catch (e) {
-      print("Upload error: $e");
+      logger.e("Upload avatar error", error: e);
       return null;
     }
   }
@@ -98,10 +103,13 @@ class _AvatarNameState extends State<AvatarName> {
           context,
         ).showSnackBar(SnackBar(content: Text('Profile picture removed')));
       } else {
-        print("Failed to delete avatar: ${response.statusCode}");
+        logger.e(
+          "Failed to delete avatar",
+          error: {"status": response.statusCode},
+        );
       }
     } catch (e) {
-      print("Delete avatar error: $e");
+      logger.e("Delete avatar error", error: e);
     }
   }
 

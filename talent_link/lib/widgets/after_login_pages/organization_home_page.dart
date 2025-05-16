@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:talent_link/services/message_service.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notificationsForOrg.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/applications_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/home_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/my_jobs_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/recommended_users_tab.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notifications_for_org.dart';
 
 class OrganizationHomePage extends StatefulWidget {
   final String token;
@@ -59,7 +59,9 @@ class _OrganizationHomePageState extends State<OrganizationHomePage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => orgNotificationsPage()),
+                MaterialPageRoute(
+                  builder: (context) => const OrgNotificationsPage(),
+                ),
               );
             },
           ),

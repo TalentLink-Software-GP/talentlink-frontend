@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:talent_link/models/job.dart';
 import 'package:talent_link/services/job_service.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/add_job_or_post_card.dart';
@@ -13,6 +14,7 @@ class MyJobsTab extends StatefulWidget {
 }
 
 class _MyJobsTabState extends State<MyJobsTab> {
+  final logger = Logger();
   List<Job> jobs = [];
   int? expandedIndex;
 
@@ -32,7 +34,7 @@ class _MyJobsTabState extends State<MyJobsTab> {
         jobs = fetchedJobs;
       });
     } catch (e) {
-      print('Error: $e');
+      logger.e("Error fetching jobs", error: e);
     }
   }
 
@@ -44,7 +46,7 @@ class _MyJobsTabState extends State<MyJobsTab> {
       ).showSnackBar(SnackBar(content: Text("Job deleted successfully")));
       fetchJobs();
     } catch (e) {
-      print('Error: $e');
+      logger.e("Error deleting job", error: e);
     }
   }
 

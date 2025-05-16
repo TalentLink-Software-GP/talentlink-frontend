@@ -140,7 +140,7 @@ class _CommentsSectionState extends State<CommentsSection> {
                   ),
                 ),
               if (isReplying)
-                commentInputWidget(
+                CommentInputWidget(
                   controller: _commentController,
                   onSubmit: _handleSend,
                   isReplyingToComment: true,
@@ -153,7 +153,7 @@ class _CommentsSectionState extends State<CommentsSection> {
 
         // Global comment box
         if (_replyingToCommentIndex == null)
-          commentInputWidget(
+          CommentInputWidget(
             controller: _commentController,
             onSubmit: _handleSend,
             hintText: "Write a comment...",

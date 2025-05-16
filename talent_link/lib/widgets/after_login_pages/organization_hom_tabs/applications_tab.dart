@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../services/applicationService.dart';
+import '../../../services/application_service.dart';
 
 //what i did at first fetch data from JOB class then send the data include(organizationsid username job title)
 //next make application service and  new class named Application to easer pass the data to the backend server

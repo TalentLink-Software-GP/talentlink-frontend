@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:talent_link/widgets/base_widgets/text_field.dart';
+import 'package:logger/logger.dart';
 
 class AddNewJobScreen extends StatefulWidget {
   final String token;
@@ -44,6 +45,7 @@ class _AddNewJobScreenState extends State<AddNewJobScreen>
 
   bool get isUpdate => widget.jobToEdit != null;
   late TabController _tabController;
+  final logger = Logger();
 
   @override
   void initState() {
@@ -331,7 +333,7 @@ class _AddNewJobScreenState extends State<AddNewJobScreen>
         );
       }
     } catch (e) {
-      print("Submit error: $e");
+      logger.e("Error submitting job", error: e);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Something went wrong.")));
@@ -363,7 +365,7 @@ class _AddNewJobScreenState extends State<AddNewJobScreen>
         );
       }
     } catch (e) {
-      print("Upload error: $e");
+      logger.e("Error uploading image", error: e);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Error uploading file.")));
@@ -395,7 +397,7 @@ class _AddNewJobScreenState extends State<AddNewJobScreen>
         ).showSnackBar(const SnackBar(content: Text("AI submission failed.")));
       }
     } catch (e) {
-      print("AI error: $e");
+      logger.e("Error generating AI description", error: e);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Error submitting text to AI.")),
       );

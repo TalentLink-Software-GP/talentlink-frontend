@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:talent_link/models/job.dart';
 import 'package:talent_link/services/job_service.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/recommended_users/recommended_users_screen.dart';
@@ -13,6 +14,7 @@ class RecommendedUsersTab extends StatefulWidget {
 }
 
 class _RecommendedUsersTabState extends State<RecommendedUsersTab> {
+  final logger = Logger();
   List<Job> jobs = [];
   late JobService jobService;
 
@@ -30,7 +32,7 @@ class _RecommendedUsersTabState extends State<RecommendedUsersTab> {
         jobs = fetchedJobs;
       });
     } catch (e) {
-      print('Error: $e');
+      logger.e("Error fetching recommended users", error: e);
     }
   }
 

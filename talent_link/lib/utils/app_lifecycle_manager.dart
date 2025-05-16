@@ -1,6 +1,6 @@
 // app_lifecycle_manager.dart
 import 'package:flutter/material.dart';
-import 'package:talent_link/services/SocketService.dart';
+import 'package:talent_link/services/socket_service.dart';
 
 class AppLifecycleManager extends StatefulWidget {
   final Widget child;

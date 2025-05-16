@@ -1,47 +1,46 @@
 //   runApp(DevicePreview(enabled: !kReleaseMode, builder: (context) => MyApp()));
 
 // main.dart
-import 'dart:convert';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:logger/logger.dart';
 import 'package:talent_link/firebase_options.dart';
-import 'package:talent_link/services/FCMService.dart';
-import 'package:talent_link/utils/AppLifecycleManager.dart';
+import 'package:talent_link/services/fcm_service.dart';
+import 'package:talent_link/utils/app_lifecycle_manager.dart';
 import 'package:talent_link/utils/push_notifications_firebase.dart';
+import 'package:talent_link/utils/theme/app_theme.dart';
 import 'package:talent_link/widgets/sign_up_widgets/account_created_screen.dart';
 import 'package:talent_link/widgets/applicatin_startup/startup_page.dart';
 import 'package:talent_link/widgets/sign_up_widgets/signup_page.dart';
 
-//function to listen backkground changes
+final logger = Logger();
+
 Future _firebaseBackgroundMessage(RemoteMessage message) async {
   if (message.notification != null) {
-    print('notification recived');
+    logger.i('Notification received');
   }
 }
 
 void main() async {
-  // Ensure Flutter is initialized properly
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Initialize Firebase
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print("✅ Firebase initialized successfully");
+    logger.i("Firebase initialized successfully");
     await _handleFcmRecovery();
 
     await PushNotificationsFirebase.init();
-    print("✅ Push Notifications initialized");
+    logger.i("Push Notifications initialized");
   } catch (e) {
-    print("❌ Error initializing Firebase: $e");
+    logger.e("Error initializing Firebase", error: e);
   }
+
   FirebaseMessaging.instance.getToken().then((token) {
-    print("Current FCM Token: $token");
+    logger.i("Current FCM Token: $token");
   });
 
   FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundMessage);
@@ -57,30 +56,34 @@ Future<void> _handleFcmRecovery() async {
       await fcmService.nuclearReset();
     }
   } catch (e) {
-    print('FCM recovery failed: $e');
+    logger.e('FCM recovery failed', error: e);
   }
-} //ctKXRrQNQTawKEfxv2uTY6:APA91bHJu2lh2Vwg1v9pqMyHXwCL56wc9he_yo1M0OUoyuxzjZQ8GCcQmW2Bwv-Z5NMCliet1ng9IEzscUEAJ0HjdRGkWjXQzkmug3n_6pLF2FEnMwoXgww
-//ctKXRrQNQTawKEfxv2uTY6:APA91bE7NbTQUez77ppdSAHeUSPYrG984imH8RUKowHrFbKLAEZOcgYLD7vrSruTDoVAPzY0E_PsXLjsYxpSL5QL4GJgov5n0Gl4iUysDlNZ59UAE5-3mnY
-//
-//
+}
 
 class MyApp extends StatelessWidget {
   final String? userId;
   final String? token;
 
-  const MyApp({this.userId, this.token, Key? key}) : super(key: key);
+  const MyApp({this.userId, this.token, super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0C9E91)),
-        useMaterial3: true,
-      ),
+      title: 'TalentLink',
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       builder: (context, child) {
-        return AppLifecycleManager(userId: null, token: null, child: child!);
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+          child: AppLifecycleManager(
+            userId: userId,
+            token: token,
+            child: child!,
+          ),
+        );
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/signup') {
@@ -110,7 +113,6 @@ class MyApp extends StatelessWidget {
             builder: (context) => AccountCreatedScreen(),
           );
         }
-
         return null;
       },
       routes: {'/': (context) => const StartupPage()},

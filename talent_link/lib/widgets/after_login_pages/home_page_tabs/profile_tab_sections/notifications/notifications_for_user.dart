@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 
-import 'package:talent_link/services/notificationService.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notificationNavigator.dart';
+import 'package:talent_link/services/notification_service.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notification_navigator.dart';
 
 class NotificationsPage extends StatefulWidget {
+  const NotificationsPage({super.key});
+
   @override
-  _NotificationsPageState createState() => _NotificationsPageState();
+  NotificationsPageState createState() => NotificationsPageState();
 }
 
-class _NotificationsPageState extends State<NotificationsPage>
+class NotificationsPageState extends State<NotificationsPage>
     with SingleTickerProviderStateMixin {
   List notifications = [];
   bool isLoading = true;
   late AnimationController _animationController;
   late NotificationService _notificationService;
+  final logger = Logger();
+
   // for user notifications
   Future<void> _fetchNotifications() async {
     try {
@@ -81,7 +86,7 @@ class _NotificationsPageState extends State<NotificationsPage>
                 'read': notification.read ?? false,
               };
             }).toList();
-        print("aaaaaaaaaaaaaa:$jobNotificationsList");
+        logger.d("Job notifications list", error: jobNotificationsList);
 
         allNotifications.addAll(jobNotificationsList);
 
@@ -91,7 +96,7 @@ class _NotificationsPageState extends State<NotificationsPage>
         });
       }
     } catch (e) {
-      print('Error in _fetchNotifications: $e');
+      logger.e("Error fetching notifications", error: e);
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -360,7 +365,14 @@ class _NotificationsPageState extends State<NotificationsPage>
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     color:
-                        isRead ? Colors.white : Colors.blue.withOpacity(0.05),
+                        isRead
+                            ? Colors.white
+                            : Colors.blue.withValues(
+                              red: 0,
+                              green: 122,
+                              blue: 255,
+                              alpha: 13,
+                            ),
                   ),
                   child: Stack(
                     children: [
@@ -389,7 +401,7 @@ class _NotificationsPageState extends State<NotificationsPage>
                                 color: _getNotificationColor(
                                   type,
                                   isRead,
-                                ).withOpacity(0.1),
+                                ).withAlpha(26),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(

@@ -3,6 +3,7 @@ import 'package:talent_link/models/user_profile_data.dart';
 import 'package:talent_link/services/post_service.dart';
 import 'package:talent_link/services/profile_service.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_card.dart';
+import 'package:logger/logger.dart';
 
 class ProfileWidgetForAnotherUsers extends StatefulWidget {
   final String username;
@@ -21,8 +22,8 @@ class ProfileWidgetForAnotherUsers extends StatefulWidget {
 
 class _ProfileWidgetForAnotherUsersState
     extends State<ProfileWidgetForAnotherUsers> {
+  final _logger = Logger();
   late PostService _postService;
-  late PostCard _postCardState;
   Map<String, dynamic>? userData;
   Map<String, bool> expandedSections = {};
   Map<String, bool> collapsedSections = {};
@@ -31,7 +32,6 @@ class _ProfileWidgetForAnotherUsersState
   bool _isLoading = true;
   final int _page = 1;
   final int _limit = 10;
-  bool _hasMore = true;
   String? username;
   String? uploadedImageUrl;
   String? fullName;
@@ -56,7 +56,7 @@ class _ProfileWidgetForAnotherUsersState
         isLoading = false;
       });
     } catch (e) {
-      print("Error fetching profile: $e");
+      _logger.e("Error fetching profile", error: e);
     }
   }
 
@@ -104,8 +104,6 @@ class _ProfileWidgetForAnotherUsersState
                 ),
               };
             }).toList();
-
-        _hasMore = postsResponse.length == _limit;
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
