@@ -451,7 +451,11 @@ class _AddNewJobScreenState extends State<AddNewJobScreen>
               border: OutlineInputBorder(),
               hintText: 'Paste or write your job description here...',
             ),
-            onChanged: (value) => aiTextInput = value,
+            onChanged: (value) {
+              setState(() {
+                aiTextInput = value;
+              });
+            },
           ),
           const SizedBox(height: 20),
           ElevatedButton(

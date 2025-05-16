@@ -114,7 +114,7 @@ class _PostCreatorState extends State<PostCreator> {
 
       late Map<String, dynamic> data;
 
-      if (role == 'Job Seeker') {
+      if (role == 'Job Seeker' || role == 'Freelancer') {
         data = await _postService.fetchUserData();
       } else if (role == 'Organization') {
         data = await _postService.fetchOrganizationData();

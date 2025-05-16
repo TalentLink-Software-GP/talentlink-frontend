@@ -46,10 +46,23 @@ class _ProfileTabState extends State<ProfileTab> {
       final data = await ProfileService.getProfileData(widget.token);
       setState(() {
         userProfileData = data;
-        isLoading = false;
       });
     } catch (e) {
       print("Error fetching profile: $e");
+      setState(() {
+        userProfileData = UserProfileData(
+          summary: '',
+          education: [],
+          skills: [],
+          experience: [],
+          certifications: [],
+          languages: [],
+        );
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
