@@ -66,16 +66,6 @@ class _FilterJobsTabState extends State<FilterJobsTab> {
     });
   }
 
-  void _clearFilters() {
-    setState(() {
-      _searchController.clear();
-      selectedJobType = null;
-      selectedLocation = null;
-      selectedCategory = null;
-      filteredJobs = List.from(allJobs);
-    });
-  }
-
   void _showFilterDialog() {
     final jobTypes = allJobs.map((job) => job.jobType).toSet().toList();
     final locations = allJobs.map((job) => job.location).toSet().toList();

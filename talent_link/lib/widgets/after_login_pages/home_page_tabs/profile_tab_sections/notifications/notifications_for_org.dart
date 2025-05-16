@@ -21,21 +21,25 @@
 // }
 
 import 'package:flutter/material.dart';
+import 'package:talent_link/services/notification_service.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notification_navigator.dart';
+import 'package:logger/logger.dart';
 
-import 'package:talent_link/services/notificationService.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notificationNavigator.dart';
+class OrgNotificationsPage extends StatefulWidget {
+  const OrgNotificationsPage({super.key});
 
-class orgNotificationsPage extends StatefulWidget {
   @override
-  _orgNotificationsPageState createState() => _orgNotificationsPageState();
+  OrgNotificationsPageState createState() => OrgNotificationsPageState();
 }
 
-class _orgNotificationsPageState extends State<orgNotificationsPage>
+class OrgNotificationsPageState extends State<OrgNotificationsPage>
     with SingleTickerProviderStateMixin {
   List notifications = [];
   bool isLoading = true;
   late AnimationController _animationController;
   late NotificationService _notificationService;
+  final _logger = Logger();
+
   // for org notifications
   Future<void> _fetchNotifications() async {
     try {
@@ -103,7 +107,7 @@ class _orgNotificationsPageState extends State<orgNotificationsPage>
                 'read': notification.read ?? false,
               };
             }).toList();
-        print("aaaaaaaaaaaaaa:$jobNotificationsList");
+        _logger.d('Job notifications list:', error: jobNotificationsList);
 
         allNotifications.addAll(jobNotificationsList);
 
@@ -113,7 +117,7 @@ class _orgNotificationsPageState extends State<orgNotificationsPage>
         });
       }
     } catch (e) {
-      print('Error in _fetchNotifications: $e');
+      _logger.e("Error fetching notifications", error: e);
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -381,8 +385,12 @@ class _orgNotificationsPageState extends State<orgNotificationsPage>
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color:
-                        isRead ? Colors.white : Colors.blue.withOpacity(0.05),
+                    color: _getNotificationColor(type, isRead).withValues(
+                      red: _getNotificationColor(type, isRead).r.toDouble(),
+                      green: _getNotificationColor(type, isRead).g.toDouble(),
+                      blue: _getNotificationColor(type, isRead).b.toDouble(),
+                      alpha: 26.0,
+                    ),
                   ),
                   child: Stack(
                     children: [
@@ -411,7 +419,24 @@ class _orgNotificationsPageState extends State<orgNotificationsPage>
                                 color: _getNotificationColor(
                                   type,
                                   isRead,
-                                ).withOpacity(0.1),
+                                ).withValues(
+                                  red:
+                                      _getNotificationColor(
+                                        type,
+                                        isRead,
+                                      ).r.toDouble(),
+                                  green:
+                                      _getNotificationColor(
+                                        type,
+                                        isRead,
+                                      ).g.toDouble(),
+                                  blue:
+                                      _getNotificationColor(
+                                        type,
+                                        isRead,
+                                      ).b.toDouble(),
+                                  alpha: 26.0,
+                                ),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(

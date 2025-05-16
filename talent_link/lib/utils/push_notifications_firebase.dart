@@ -2,12 +2,14 @@ import 'dart:convert';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:logger/logger.dart';
 
 class PushNotificationsFirebase {
   static final FirebaseMessaging _firebaseMessaging =
       FirebaseMessaging.instance;
   static final FlutterLocalNotificationsPlugin
   _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  static final _logger = Logger();
 
   static Future init() async {
     // Request permissions
@@ -47,11 +49,14 @@ class PushNotificationsFirebase {
   }
 
   static Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    print('Got a message whilst in the foreground!');
-    print('Message data: ${message.data}');
+    _logger.i('Got a message whilst in the foreground!');
+    _logger.i('Message data:', error: message.data);
 
     if (message.notification != null) {
-      print('Message also contained a notification: ${message.notification}');
+      _logger.i(
+        'Message also contained a notification:',
+        error: message.notification,
+      );
 
       // Show local notification
       const AndroidNotificationDetails androidPlatformChannelSpecifics =
@@ -79,8 +84,8 @@ class PushNotificationsFirebase {
   }
 
   static void _handleBackgroundMessage(RemoteMessage message) {
-    print('Got a message whilst in the background!');
-    print('Message data: ${message.data}');
+    _logger.i('Got a message whilst in the background!');
+    _logger.i('Message data:', error: message.data);
 
     // Navigate to chat screen when notification is tapped
     if (message.data['type'] == 'chat') {
@@ -94,8 +99,8 @@ class PushNotificationsFirebase {
   }
 
   static void _handleTerminatedMessage(RemoteMessage message) {
-    print('Got a message whilst app was terminated!');
-    print('Message data: ${message.data}');
+    _logger.i('Got a message whilst app was terminated!');
+    _logger.i('Message data:', error: message.data);
 
     // Similar handling as background message
     _handleBackgroundMessage(message);

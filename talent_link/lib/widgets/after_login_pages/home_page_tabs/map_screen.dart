@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:logger/logger.dart';
 import 'package:talent_link/services/location_service.dart';
 import 'package:talent_link/services/organization_service.dart';
 
@@ -10,11 +11,11 @@ class MapScreen extends StatefulWidget {
   const MapScreen({super.key, required this.token});
 
   @override
-  _MapScreenState createState() => _MapScreenState();
+  State<MapScreen> createState() => _MapScreenState();
 }
 
 class _MapScreenState extends State<MapScreen> {
-  late GoogleMapController _mapController;
+  final _logger = Logger();
   LatLng? _userLocation;
   final Set<Marker> _markers = {};
 
@@ -48,8 +49,9 @@ class _MapScreenState extends State<MapScreen> {
         permission == LocationPermission.deniedForever) {
       permission = await Geolocator.requestPermission();
       if (permission != LocationPermission.whileInUse &&
-          permission != LocationPermission.always)
+          permission != LocationPermission.always) {
         return;
+      }
     }
 
     final position = await Geolocator.getCurrentPosition();
@@ -103,7 +105,7 @@ class _MapScreenState extends State<MapScreen> {
             ),
       );
     } catch (e) {
-      print('Failed to load organization details: $e');
+      _logger.e('Failed to load organization details', error: e);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load organization info')),
       );
@@ -113,7 +115,7 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _loadOrganizationMarkers() async {
     try {
       final locations = await _locationService.getAllCompaniesLocations();
-      print("Fetched locations: $locations");
+      _logger.d("Fetched locations: $locations");
       for (int i = 0; i < locations.length; i++) {
         final org = locations[i];
         final lat = (org['lat'] as num).toDouble();
@@ -132,7 +134,7 @@ class _MapScreenState extends State<MapScreen> {
 
       setState(() {});
     } catch (e) {
-      print("Failed to load organization markers: $e");
+      _logger.e("Failed to load organization markers", error: e);
     }
   }
 
@@ -143,7 +145,6 @@ class _MapScreenState extends State<MapScreen> {
           _userLocation == null
               ? Center(child: CircularProgressIndicator())
               : GoogleMap(
-                onMapCreated: (controller) => _mapController = controller,
                 initialCameraPosition: CameraPosition(
                   target: _userLocation!,
                   zoom: 14.5,

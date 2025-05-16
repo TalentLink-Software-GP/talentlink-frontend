@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/ProfileWidgetForAnotherUsers%20.dart';
+import 'package:logger/logger.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/profile_widget_for_another_users.dart';
 import 'comment_sections/comments_modal.dart';
 import 'comment_sections/comments_section.dart';
 import 'package:http/http.dart' as http;
@@ -56,6 +57,7 @@ class PostCard extends StatefulWidget {
 }
 
 class _PostCardState extends State<PostCard> {
+  final _logger = Logger();
   late List<Map<String, dynamic>> comments;
   final TextEditingController _commentController = TextEditingController();
 
@@ -198,10 +200,10 @@ class _PostCardState extends State<PostCard> {
       if (response.statusCode == 200) {
         widget.onLike();
       } else {
-        print('Failed to like the post: ${response.statusCode}');
+        _logger.e('Failed to like the post: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error while liking the post: $e');
+      _logger.e('Error while liking the post', error: e);
     }
   }
 
@@ -214,7 +216,7 @@ class _PostCardState extends State<PostCard> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color.fromARGB(173, 197, 162, 67).withOpacity(0.2),
+            color: const Color.fromARGB(35, 197, 162, 67),
             spreadRadius: 5,
             blurRadius: 10,
             offset: const Offset(10, 3),
@@ -232,7 +234,7 @@ class _PostCardState extends State<PostCard> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.pinkAccent.withOpacity(0.5),
+                      color: Colors.pinkAccent.withAlpha(128),
                       width: 1.5,
                     ),
                   ),
@@ -251,7 +253,7 @@ class _PostCardState extends State<PostCard> {
                   children: [
                     TextButton(
                       onPressed: () {
-                        print("username: ${widget.username}");
+                        _logger.d("username: ${widget.username}");
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -310,7 +312,7 @@ class _PostCardState extends State<PostCard> {
                     decoration: BoxDecoration(
                       color:
                           widget.isLiked
-                              ? Colors.red.withOpacity(0.1)
+                              ? Colors.red.withAlpha(26)
                               : Colors.transparent,
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -355,7 +357,7 @@ class _PostCardState extends State<PostCard> {
                     decoration: BoxDecoration(
                       color:
                           widget.isLiked
-                              ? Colors.blue.withOpacity(0.1)
+                              ? Colors.blue.withAlpha(26)
                               : Colors.transparent,
                       borderRadius: BorderRadius.circular(20),
                     ),

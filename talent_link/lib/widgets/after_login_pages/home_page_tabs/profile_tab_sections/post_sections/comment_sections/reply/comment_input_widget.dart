@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class commentInputWidget extends StatelessWidget {
+class CommentInputWidget extends StatelessWidget {
   final TextEditingController controller;
   final Future<void> Function(String) onSubmit;
   final bool isReplyingToComment;
@@ -8,7 +8,7 @@ class commentInputWidget extends StatelessWidget {
   final String? commentId;
   final VoidCallback? onTap;
 
-  const commentInputWidget({
+  const CommentInputWidget({
     super.key,
     required this.controller,
     required this.onSubmit,
@@ -33,7 +33,7 @@ class commentInputWidget extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                border: Border.all(color: Colors.grey.withAlpha(77)),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: TextField(
@@ -57,7 +57,7 @@ class commentInputWidget extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.purple.withOpacity(0.3),
+                  color: Colors.purple.withAlpha(77),
                   blurRadius: 6,
                   offset: const Offset(0, 3),
                 ),

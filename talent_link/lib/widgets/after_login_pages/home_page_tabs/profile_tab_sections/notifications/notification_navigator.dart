@@ -6,11 +6,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:talent_link/models/job.dart';
 import 'package:talent_link/services/job_service.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tabs/job_details_screen.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/singlePostViewForNotification.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/single_post_piew_for_notification.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_card.dart';
+import 'package:logger/logger.dart';
 
 class NotificationNavigator {
   final BuildContext context;
+  final _logger = Logger();
 
   NotificationNavigator(this.context);
   final String baseUrl = 'http://10.0.2.2:5000/api';
@@ -18,14 +20,12 @@ class NotificationNavigator {
 
   void navigateBasedOnType(Map notification) async {
     final String type = notification['type'];
-    final String id = notification['id'];
-    final String MyjobId = notification['jobId'];
-    final String organizationId = notification['senderId'];
+    final String myJobId = notification['jobId'];
     final String postId = notification['postId'];
 
     switch (type) {
       case 'job':
-        _navigateToJobDetails(MyjobId);
+        _navigateToJobDetails(myJobId);
         break;
 
       case 'like':
@@ -139,11 +139,17 @@ class NotificationNavigator {
             }
           }
 
-          print('postId: ${post['_id']}');
-          print('content: ${post['content']}');
-          print('author: ${post['author']}');
-          print('username: ${post['username']}');
-          print('avatar: ${post['avatarUrl']}');
+          _logger.d(
+            'Post details:',
+            error: {
+              'postId': post['_id'],
+              'content': post['content'],
+              'author': post['author'],
+              'username': post['username'],
+              'avatar': post['avatarUrl'],
+            },
+          );
+
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -172,13 +178,16 @@ class NotificationNavigator {
             ),
           );
         } else {
-          print("Failed to fetch $type: ${response.statusCode}");
+          _logger.e(
+            "Failed to fetch $type:",
+            error: "Status code: ${response.statusCode}",
+          );
         }
       } else {
-        print('Invalid type: $type');
+        _logger.w('Invalid type: $type');
       }
     } catch (e) {
-      print("Error navigating to $type: $e");
+      _logger.e("Error navigating to $type:", error: e);
     }
   } //   _showPlaceholderMessage('Navigate to post with like: $postId');
   // }

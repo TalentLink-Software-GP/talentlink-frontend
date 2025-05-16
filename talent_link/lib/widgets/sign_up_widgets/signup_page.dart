@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/base_widgets/text_field.dart';
 import 'package:talent_link/widgets/sign_up_widgets/check_verification_screen.dart';
@@ -28,6 +29,7 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  final logger = Logger();
   String? errorMessage;
   final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
@@ -77,7 +79,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
         if (response.statusCode == 201) {
           var data = jsonDecode(response.body);
-          print("🔍 Full API Response: ${response.body}");
+          logger.i("Registration successful", error: response.body);
 
           if (data.containsKey("token")) {
             String realToken = data["token"];
@@ -91,12 +93,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
             );
           } else {
-            print("❌ Token not received: ${response.body}");
+            logger.e("Token not received in response", error: response.body);
           }
         } else {
-          print("❌ Sign-up failed: ${response.body}");
+          logger.e("Sign-up failed", error: response.body);
         }
       } catch (e) {
+        logger.e("Registration error", error: e);
         setState(() {
           errorMessage = "An error occurred. Please try again.";
         });

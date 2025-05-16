@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/mesageProfile.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/mesage_profile.dart';
+import 'package:logger/logger.dart';
 
 class MessageService {
   final String token;
   final String baseUrl = 'http://10.0.2.2:5000/api';
+  final _logger = Logger();
 
   MessageService(this.token);
 
@@ -53,8 +55,13 @@ class MessageService {
     final userInfo = await getUserId(); // Now returns a Map
 
     if (userInfo != null && userInfo['userId'] != null) {
-      print(userInfo['userId']);
-      print(userInfo['avatarUrl']);
+      _logger.i(
+        'User Info:',
+        error: {
+          'userId': userInfo['userId'],
+          'avatarUrl': userInfo['avatarUrl'],
+        },
+      );
 
       Navigator.push(
         context,

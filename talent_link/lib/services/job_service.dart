@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:talent_link/models/job.dart';
+import 'package:logger/logger.dart';
 
 class JobService {
   final String token;
   static const String baseUrl = 'http://10.0.2.2:5000/api/job';
+  final _logger = Logger();
 
   JobService({required this.token});
   Future<Job> fetchJobById(String jobId) async {
@@ -23,7 +25,7 @@ class JobService {
         throw Exception('Failed to load job');
       }
     } catch (e) {
-      print("Error fetching job: $e");
+      _logger.e("Error fetching job:", error: e);
       rethrow;
     }
   }
@@ -42,7 +44,7 @@ class JobService {
         throw Exception('Failed to load jobs');
       }
     } catch (e) {
-      print("Error fetching jobs: $e");
+      _logger.e("Error fetching jobs:", error: e);
       rethrow;
     }
   }
@@ -57,7 +59,7 @@ class JobService {
         throw Exception('Failed to delete job');
       }
     } catch (e) {
-      print("Error deleting job: $e");
+      _logger.e("Error deleting job:", error: e);
       rethrow;
     }
   }
@@ -78,7 +80,7 @@ class JobService {
         throw Exception('Failed to load jobs');
       }
     } catch (e) {
-      print("Error fetching user jobs: $e");
+      _logger.e("Error fetching user jobs:", error: e);
       rethrow;
     }
   }

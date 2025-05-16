@@ -4,13 +4,15 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:logger/logger.dart';
 
 class FCMService {
   static final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+  final _logger = Logger();
 
   /// Nuclear reset for FCM tokens
   Future<void> nuclearReset() async {
-    print('💣 Initiating FCM nuclear reset...');
+    _logger.i('💣 Initiating FCM nuclear reset...');
 
     // 1. Force unregister
     await _fcm.deleteToken();
@@ -21,7 +23,7 @@ class FCMService {
 
     // 3. Get fresh token
     String? newToken = await _fcm.getToken();
-    print('💥 NEW TOKEN: $newToken');
+    _logger.i('💥 NEW TOKEN: $newToken');
 
     // 4. Validate token
     if (newToken == null || !newToken.startsWith('APA')) {
@@ -46,13 +48,13 @@ class FCMService {
         );
 
         if (response.statusCode == 200) {
-          print('Token successfully saved on server');
+          _logger.i('Token successfully saved on server');
         } else {
-          print('Failed to save token on server');
+          _logger.e('Failed to save token on server');
         }
       }
     } catch (e) {
-      print('Error sending token to server: $e');
+      _logger.e('Error sending token to server:', error: e);
     }
   }
 }

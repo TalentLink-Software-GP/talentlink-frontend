@@ -5,7 +5,6 @@ import './post_input_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:talent_link/services/post_service.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
-import 'package:flutter/scheduler.dart';
 
 class PostCreator extends StatefulWidget {
   final String token;
@@ -124,7 +123,7 @@ class _PostCreatorState extends State<PostCreator> {
 
       setState(() {
         uploadedImageUrl = data['avatarUrl'];
-        fullName = data['name'] ?? 'Unknown ${role}';
+        fullName = data['name'] ?? 'Unknown $role';
       });
     } catch (e) {
       if (!mounted) return;
@@ -279,7 +278,7 @@ class _PostCreatorState extends State<PostCreator> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
+                color: const Color.fromRGBO(128, 128, 128, 0.2),
                 spreadRadius: 3,
                 blurRadius: 10,
                 offset: const Offset(0, 3),

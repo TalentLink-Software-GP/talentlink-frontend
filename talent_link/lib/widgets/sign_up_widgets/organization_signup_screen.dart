@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:logger/logger.dart';
 
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/base_widgets/text_field.dart';
@@ -15,6 +16,7 @@ class OrganizationSignupScreen extends StatefulWidget {
 }
 
 class _OrganizationSignupScreenState extends State<OrganizationSignupScreen> {
+  final logger = Logger();
   // Controllers
   final TextEditingController organizationNameController =
       TextEditingController();
@@ -96,7 +98,7 @@ class _OrganizationSignupScreenState extends State<OrganizationSignupScreen> {
 
       if (response.statusCode == 201) {
         var data = jsonDecode(response.body);
-        print("🔍 Full API Response: ${response.body}");
+        logger.i("Organization registration successful", error: response.body);
 
         if (data.containsKey("token")) {
           String realToken = data["token"];
@@ -110,12 +112,16 @@ class _OrganizationSignupScreenState extends State<OrganizationSignupScreen> {
             ),
           );
         } else {
-          print("❌ Token not received: ${response.body}");
+          logger.e(
+            "Token not received in organization signup",
+            error: response.body,
+          );
         }
       } else {
-        print("❌ Sign-up failed: ${response.body}");
+        logger.e("Organization sign-up failed", error: response.body);
       }
     } catch (e) {
+      logger.e("Organization registration error", error: e);
       setState(() {
         errorMessage = "An error occurred. Please try again.";
       });

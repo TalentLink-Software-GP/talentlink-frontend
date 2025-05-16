@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:zego_uikit_prebuilt_video_conference/zego_uikit_prebuilt_video_conference.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:logger/logger.dart';
 
 class VideoWidget extends StatefulWidget {
   final String currentUserId;
   final String peerUserId;
   final String peerUsername;
-  final IO.Socket socket;
+  final io.Socket socket;
   final bool isInitiator;
   final String conferenceID;
 
@@ -22,10 +23,11 @@ class VideoWidget extends StatefulWidget {
   });
 
   @override
-  _VideoWidgetState createState() => _VideoWidgetState();
+  State<VideoWidget> createState() => _VideoWidgetState();
 }
 
 class _VideoWidgetState extends State<VideoWidget> {
+  final _logger = Logger();
   bool isCallAccepted = false;
   bool isCallRejected = false;
   bool isCallEnded = false;
@@ -39,7 +41,7 @@ class _VideoWidgetState extends State<VideoWidget> {
   void initState() {
     super.initState();
 
-    print(
+    _logger.i(
       "VideoWidget initialized with: currentUserId=${widget.currentUserId}, peerUserId=${widget.peerUserId}",
     );
 
@@ -63,7 +65,7 @@ class _VideoWidgetState extends State<VideoWidget> {
   void _setupSocketListeners() {
     // Listen for call accepted event
     widget.socket.on('callAccepted', (data) {
-      print("Call accepted event received: $data");
+      _logger.i("Call accepted event received: $data");
 
       // Check if this event is for our call
       if (data != null &&
@@ -71,7 +73,7 @@ class _VideoWidgetState extends State<VideoWidget> {
                   data['receiverId'] == widget.peerUserId) ||
               (data['callerId'] == widget.peerUserId &&
                   data['receiverId'] == widget.currentUserId))) {
-        print("Call accepted by peer, joining conference");
+        _logger.i("Call accepted by peer, joining conference");
 
         setState(() {
           isCallAccepted = true;
@@ -129,7 +131,7 @@ class _VideoWidgetState extends State<VideoWidget> {
       'timestamp': DateTime.now().toIso8601String(),
     };
 
-    print("Sending call request with data: $callData"); // Add logging
+    _logger.i("Sending call request with data: $callData"); // Add logging
     widget.socket.emit('callRequest', callData);
   }
 
@@ -141,7 +143,7 @@ class _VideoWidgetState extends State<VideoWidget> {
       'timestamp': DateTime.now().toIso8601String(),
     };
 
-    print("Sending call accepted: $callData");
+    _logger.i("Sending call accepted: $callData");
     widget.socket.emit('callAccepted', callData);
   }
 
@@ -180,24 +182,24 @@ class _VideoWidgetState extends State<VideoWidget> {
         try {
           if (widget.socket.connected) {
             widget.socket.emit('callEnded', callData);
-            print("Call ended event emitted successfully");
+            _logger.i("Call ended event emitted successfully");
             sentSuccessfully = true;
           } else {
-            print(
+            _logger.w(
               "Attempt ${attempts + 1}: Socket not connected, trying to reconnect",
             );
             widget.socket.connect();
             await Future.delayed(Duration(milliseconds: 500 * (attempts + 1)));
           }
         } catch (e) {
-          print("Attempt ${attempts + 1} failed: $e");
+          _logger.e("Attempt ${attempts + 1} failed", error: e);
           attempts++;
           await Future.delayed(Duration(milliseconds: 500 * (attempts + 1)));
         }
       }
 
       if (!sentSuccessfully) {
-        print("Failed to send call ended event after 3 attempts");
+        _logger.e("Failed to send call ended event after 3 attempts");
       }
 
       if (mounted) {
@@ -207,7 +209,7 @@ class _VideoWidgetState extends State<VideoWidget> {
         }
       }
     } catch (e, stackTrace) {
-      print("Error in _sendCallEnded: $e\n$stackTrace");
+      _logger.e("Error in _sendCallEnded", error: e, stackTrace: stackTrace);
       if (mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
@@ -250,15 +252,9 @@ class _VideoWidgetState extends State<VideoWidget> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        try {
-          _sendCallEnded();
-          // Add a small delay to ensure the event is sent
-          await Future.delayed(Duration(milliseconds: 300));
-          return true;
-        } catch (e) {
-          print("Error in WillPopScope: $e");
-          return true; // Still allow navigation
-        }
+        _sendCallEnded();
+        await Future.delayed(const Duration(milliseconds: 300));
+        return true;
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -294,7 +290,7 @@ class _VideoWidgetState extends State<VideoWidget> {
 
                       return true;
                     } catch (e) {
-                      print("Error in onLeaveConfirmation: $e");
+                      _logger.e("Error in onLeaveConfirmation", error: e);
                       return true; // Still allow leaving
                     }
                   },
@@ -314,7 +310,7 @@ class _VideoWidgetState extends State<VideoWidget> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.6),
+                            color: const Color.fromRGBO(0, 0, 0, 0.6),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -363,7 +359,7 @@ class _VideoWidgetState extends State<VideoWidget> {
                           try {
                             _sendCallEnded();
                           } catch (e) {
-                            print("Error ending call: $e");
+                            _logger.e("Error ending call", error: e);
                             // Ensure we still navigate back
                             Navigator.pop(context);
                           }

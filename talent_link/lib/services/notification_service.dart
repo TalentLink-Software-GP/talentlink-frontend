@@ -1,12 +1,13 @@
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-
-import 'package:talent_link/models/notfificationModel.dart';
+import 'package:talent_link/models/notfification_model.dart';
+import 'package:logger/logger.dart';
 
 class NotificationService {
   static const String _baseUrl = 'http://10.0.2.2:5000/api';
   late String token;
+  final _logger = Logger();
 
   Future<String> getCurrentUsername() async {
     final prefs = await SharedPreferences.getInstance();
@@ -29,7 +30,7 @@ class NotificationService {
         );
       }
     } catch (e) {
-      print('Error fetching job notifications: $e');
+      _logger.e('Error fetching job notifications:', error: e);
       return [];
     }
   }
@@ -49,7 +50,7 @@ class NotificationService {
         );
       }
     } catch (e) {
-      print('Error fetching job notifications: $e');
+      _logger.e('Error fetching job notifications:', error: e);
       return [];
     }
   }
@@ -58,11 +59,11 @@ class NotificationService {
   fetchUserNotificationsLikeCommentReply() async {
     try {
       String username = await getCurrentUsername();
-      // final username = "ahmadawwad";
-      print("Fetching notifications for: $username");
-      print(
+      _logger.i('Fetching notifications for: $username');
+      _logger.i(
         'Full URL: $_baseUrl/notifications/getPrivateNotificationsLikeCommentReply',
       );
+
       final response = await http.get(
         Uri.parse(
           '$_baseUrl/notifications/getPrivateNotificationsLikeCommentReply/$username',
@@ -71,7 +72,7 @@ class NotificationService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        print("Notifications fetched successfully: $data");
+        _logger.i('Notifications fetched successfully:', error: data);
         return data.map((json) => NotificationModel.fromJson(json)).toList();
       } else {
         throw Exception(
@@ -79,7 +80,7 @@ class NotificationService {
         );
       }
     } catch (e) {
-      print('Error in _fetchNotifications: $e');
+      _logger.e('Error in _fetchNotifications:', error: e);
       return [];
     }
   }
@@ -91,12 +92,12 @@ class NotificationService {
       );
 
       if (response.statusCode == 200) {
-        print('Notification marked as read');
+        _logger.i('Notification marked as read');
       } else {
-        print('Failed to mark as read: ${response.statusCode}');
+        _logger.w('Failed to mark as read:', error: response.statusCode);
       }
     } catch (e) {
-      print('Error marking notification as read: $e');
+      _logger.e('Error marking notification as read:', error: e);
     }
   }
 }

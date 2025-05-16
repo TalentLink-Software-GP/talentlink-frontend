@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 
 class SearchPageService {
   final String baseUrl = 'http://10.0.2.2:5000/api';
+  final _logger = Logger();
 
   Future<List<dynamic>> fetchChatHistory(String currentUserId) async {
     try {
@@ -22,13 +24,13 @@ class SearchPageService {
 
         return fetchedHistory;
       } else {
-        print(
+        _logger.w(
           'Failed to fetch chat history. Status code: ${response.statusCode}',
         );
         return [];
       }
     } catch (e) {
-      print('Error fetching chat history: $e');
+      _logger.e('Error fetching chat history:', error: e);
       return [];
     }
   }
@@ -42,13 +44,13 @@ class SearchPageService {
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
-        print(
+        _logger.w(
           'Failed to fetch search results. Status code: ${response.statusCode}',
         );
         return [];
       }
     } catch (e) {
-      print('Error searching users: $e');
+      _logger.e('Error searching users:', error: e);
       return [];
     }
   }
@@ -61,7 +63,7 @@ class SearchPageService {
 
       return response.statusCode == 200;
     } catch (e) {
-      print('Error hiding chat: $e');
+      _logger.e('Error hiding chat:', error: e);
       return false;
     }
   }
@@ -76,13 +78,13 @@ class SearchPageService {
         final data = json.decode(response.body);
         return data['unreadCount'] ?? 0;
       } else {
-        print(
+        _logger.w(
           'Failed to fetch unread message count. Status code: ${response.statusCode}',
         );
         return 0;
       }
     } catch (e) {
-      print('Error fetching unread message count: $e');
+      _logger.e('Error fetching unread message count:', error: e);
       return 0;
     }
   }

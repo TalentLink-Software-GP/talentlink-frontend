@@ -5,6 +5,7 @@ import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/prof
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/services/location_service.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:logger/logger.dart';
 
 class ProfileTab extends StatefulWidget {
   final String token;
@@ -15,6 +16,7 @@ class ProfileTab extends StatefulWidget {
 }
 
 class _ProfileTabState extends State<ProfileTab> {
+  final logger = Logger();
   double lat = 32.150146;
   double lag = 35.253834;
   bool isLoading = true;
@@ -42,7 +44,7 @@ class _ProfileTabState extends State<ProfileTab> {
         isLoading = false;
       });
     } catch (e) {
-      print("Error fetching location: $e");
+      logger.e("Error fetching location", error: e);
       setState(() => isLoading = false);
     }
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:talent_link/services/job_service.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/ProfileWidgetForAnotherUsers%20.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/profile_widget_for_another_users.dart';
 
 class RecommendedUsersScreen extends StatefulWidget {
   final String jobId;
@@ -19,6 +20,7 @@ class RecommendedUsersScreen extends StatefulWidget {
 }
 
 class _RecommendedUsersScreenState extends State<RecommendedUsersScreen> {
+  final _logger = Logger();
   late JobService _jobMatchService;
   List<dynamic> matchedUsers = [];
   bool isLoading = true;
@@ -38,7 +40,7 @@ class _RecommendedUsersScreenState extends State<RecommendedUsersScreen> {
         isLoading = false;
       });
     } catch (e) {
-      print('Error: $e');
+      _logger.e('Error loading matched users', error: e);
       setState(() => isLoading = false);
     }
   }

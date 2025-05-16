@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:logger/logger.dart';
 
 class AvatarUsername extends StatefulWidget {
   final String token;
@@ -16,6 +17,7 @@ class AvatarUsername extends StatefulWidget {
 
 class _AvatarUsernameState extends State<AvatarUsername> {
   String? uploadedImageUrl;
+  final _logger = Logger();
 
   @override
   void initState() {
@@ -34,17 +36,17 @@ class _AvatarUsernameState extends State<AvatarUsername> {
         ),
         headers: {'Content-Type': 'application/json'},
       );
-      print(username);
+      _logger.i('Fetching data for user: $username');
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
           uploadedImageUrl = data['avatarUrl'];
         });
       } else {
-        print('Failed to fetch user data: ${response.statusCode}');
+        _logger.e('Failed to fetch user data:', error: response.statusCode);
       }
     } catch (e) {
-      print('Error fetching user data: $e');
+      _logger.e('Error fetching user data:', error: e);
     }
   }
 
@@ -130,11 +132,11 @@ class _AvatarUsernameState extends State<AvatarUsername> {
         final jsonResponse = json.decode(resBody);
         return jsonResponse['avatarUrl'];
       } else {
-        print("Failed to upload: ${response.statusCode}");
+        _logger.e('Failed to upload:', error: response.statusCode);
         return null;
       }
     } catch (e) {
-      print("Upload error: $e");
+      _logger.e('Upload error:', error: e);
       return null;
     }
   }
@@ -156,10 +158,10 @@ class _AvatarUsernameState extends State<AvatarUsername> {
           context,
         ).showSnackBar(SnackBar(content: Text('Profile picture removed')));
       } else {
-        print("Failed to delete avatar: ${response.statusCode}");
+        _logger.e('Failed to delete avatar:', error: response.statusCode);
       }
     } catch (e) {
-      print("Delete avatar error: $e");
+      _logger.e('Delete avatar error:', error: e);
     }
   }
 

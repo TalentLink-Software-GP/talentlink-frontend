@@ -1,7 +1,6 @@
 // login_page.dart
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Add this import
-import 'package:talent_link/utils/AppLifecycleManager.dart';
+import 'package:talent_link/utils/app_lifecycle_manager.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_home_page.dart';
@@ -12,6 +11,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:logger/logger.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -23,6 +23,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final logger = Logger();
 
   @override
   void dispose() {
@@ -114,7 +115,19 @@ class _LoginPageState extends State<LoginPage> {
                                               ? OrganizationHomePage(
                                                 token: token,
                                               )
-                                              : HomePage(data: token),
+                                              : HomePage(
+                                                data: token,
+                                                onTokenChanged: (
+                                                  newToken,
+                                                ) async {
+                                                  final prefs =
+                                                      await SharedPreferences.getInstance();
+                                                  await prefs.setString(
+                                                    'token',
+                                                    newToken,
+                                                  );
+                                                },
+                                              ),
                                     ),
                               ),
                             );
@@ -126,12 +139,22 @@ class _LoginPageState extends State<LoginPage> {
                                     (context) =>
                                         role == "Organization"
                                             ? OrganizationHomePage(token: token)
-                                            : HomePage(data: token),
+                                            : HomePage(
+                                              data: token,
+                                              onTokenChanged: (newToken) async {
+                                                final prefs =
+                                                    await SharedPreferences.getInstance();
+                                                await prefs.setString(
+                                                  'token',
+                                                  newToken,
+                                                );
+                                              },
+                                            ),
                               ),
                             );
                           }
                         } else {
-                          print("Login failed: ${response.body}");
+                          logger.e("Login failed: ${response.body}");
                         }
                       },
                     ),

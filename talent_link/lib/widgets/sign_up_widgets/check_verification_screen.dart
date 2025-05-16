@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 import 'package:talent_link/widgets/sign_up_widgets/account_created_screen.dart';
 
 class CheckVerificationScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class CheckVerificationScreen extends StatefulWidget {
 }
 
 class _CheckVerificationScreenState extends State<CheckVerificationScreen> {
+  final logger = Logger();
   late Timer timer;
   bool isVerified = false;
 
@@ -39,9 +41,9 @@ class _CheckVerificationScreenState extends State<CheckVerificationScreen> {
     );
 
     try {
-      print(widget.email);
+      logger.d("Checking verification for email: ${widget.email}");
       var response = await http.get(url);
-      print(response.statusCode);
+      logger.d("Verification check status code: ${response.statusCode}");
 
       if (response.statusCode == 200) {
         setState(() {
@@ -51,13 +53,12 @@ class _CheckVerificationScreenState extends State<CheckVerificationScreen> {
           );
         });
         timer.cancel();
-        print("✅ Email verified successfully!");
-        print(widget.token);
+        logger.i("Email verified successfully", error: {"token": widget.token});
       } else {
-        print("❌ Verification failed: ${response.body}");
+        logger.w("Verification check failed", error: response.body);
       }
     } catch (e) {
-      print("❌ Error checking verification: $e");
+      logger.e("Error checking verification", error: e);
     }
   }
 
