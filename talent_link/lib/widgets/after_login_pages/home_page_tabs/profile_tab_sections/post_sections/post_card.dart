@@ -56,20 +56,32 @@ class PostCard extends StatefulWidget {
   State<PostCard> createState() => _PostCardState();
 }
 
-class _PostCardState extends State<PostCard> {
+class _PostCardState extends State<PostCard>
+    with SingleTickerProviderStateMixin {
   final _logger = Logger();
   late List<Map<String, dynamic>> comments;
   final TextEditingController _commentController = TextEditingController();
+  late AnimationController _likeController;
+  late Animation<double> _likeAnimation;
+  bool _isHovered = false;
 
   @override
   void initState() {
     super.initState();
     comments = widget.initialComments;
+    _likeController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _likeAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
+      CurvedAnimation(parent: _likeController, curve: Curves.elasticOut),
+    );
   }
 
   @override
   void dispose() {
     _commentController.dispose();
+    _likeController.dispose();
     super.dispose();
   }
 
@@ -180,9 +192,8 @@ class _PostCardState extends State<PostCard> {
     );
   }
 
-  //      'http://10.0.2.2:5000/api/posts/${widget.postId}/like-post',
-
   Future<void> handleLike() async {
+    _likeController.forward().then((_) => _likeController.reverse());
     final url = Uri.parse(
       'http://10.0.2.2:5000/api/posts/${widget.postId}/like-post',
     );
@@ -207,264 +218,265 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
+  void _handleHover(bool isHovered) {
+    setState(() {
+      _isHovered = isHovered;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(top: 16, right: 0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color.fromARGB(35, 197, 162, 67),
-            spreadRadius: 5,
-            blurRadius: 10,
-            offset: const Offset(10, 3),
+    return MouseRegion(
+      onEnter: (_) => _handleHover(true),
+      onExit: (_) => _handleHover(false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color:
+                  _isHovered
+                      ? Colors.grey.withOpacity(0.2)
+                      : Colors.grey.withOpacity(0.1),
+              spreadRadius: _isHovered ? 3 : 2,
+              blurRadius: _isHovered ? 15 : 10,
+              offset: Offset(0, _isHovered ? 4 : 3),
+            ),
+          ],
+          border: Border.all(
+            color:
+                _isHovered
+                    ? Colors.grey.withOpacity(0.2)
+                    : Colors.grey.withOpacity(0.1),
+            width: 1,
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.only(left: 20, top: 20, bottom: 20),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
+                  padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.pinkAccent.withAlpha(128),
-                      width: 1.5,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Theme.of(context).primaryColor,
+                        Theme.of(context).primaryColor.withOpacity(0.5),
+                      ],
                     ),
                   ),
                   child: CircleAvatar(
-                    backgroundImage: NetworkImage(
-                      widget.authorAvatarUrl.isNotEmpty
-                          ? widget.authorAvatarUrl
-                          : 'https://randomuser.me/api/portraits/men/1.jpg',
-                    ),
                     radius: 20,
+                    backgroundColor: Colors.white,
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundImage: NetworkImage(widget.authorAvatarUrl),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        _logger.d("username: ${widget.username}");
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => ProfileWidgetForAnotherUsers(
-                                  username: widget.username,
-                                  token: widget.token, // user
-                                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => ProfileWidgetForAnotherUsers(
+                                    username: widget.username,
+                                    token: widget.token,
+                                  ),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          widget.authorName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF2E3E5C),
                           ),
-                        );
-                      },
-                      child: Text(
-                        widget.authorName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.black,
                         ),
                       ),
-                    ),
-                    Text(
-                      _timeAgo(widget.timestamp),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                if (widget.isOwner)
-                  IconButton(
-                    icon: const Icon(Icons.more_vert, color: Colors.grey),
-                    onPressed: _showPostOptions,
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Post Content
-            Text(
-              widget.postText,
-              style: const TextStyle(fontSize: 15, height: 1.4),
-            ),
-            const SizedBox(height: 16),
-
-            // Like Count
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                InkWell(
-                  onTap: handleLike,
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          widget.isLiked
-                              ? Colors.red.withAlpha(26)
-                              : Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          widget.isLiked
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          color: widget.isLiked ? Colors.red : Colors.grey,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${widget.likeCount}',
-                          style: TextStyle(
-                            color: widget.isLiked ? Colors.red : Colors.grey,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 8),
-            /////here
-            // Action Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                InkWell(
-                  onTap: handleLike,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          widget.isLiked
-                              ? Colors.blue.withAlpha(26)
-                              : Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          widget.isLiked
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-                          color: widget.isLiked ? Colors.red : Colors.grey,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          widget.isLiked ? 'Loved' : 'Love',
-                          style: TextStyle(
-                            color: widget.isLiked ? Colors.red : Colors.grey,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                InkWell(
-                  onTap: _showCommentModal,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.comment_outlined, color: Colors.grey),
-                        SizedBox(width: 8),
-                        Text(
-                          'Comment',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.share_outlined, color: Colors.grey),
-                      SizedBox(width: 8),
+                      const SizedBox(height: 2),
                       Text(
-                        'Share',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        DateFormat(
+                          'MMM d, y • h:mm a',
+                        ).format(widget.timestamp),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
                 ),
+                if (widget.isOwner)
+                  IconButton(
+                    icon: const Icon(Icons.more_vert, color: Color(0xFF8D9BB5)),
+                    onPressed: _showPostOptions,
+                  ),
               ],
             ),
-
-            // Comments Section
-            CommentsSection(
-              comments: comments.take(2).toList(),
-              currentUserAvatar: widget.currentUserAvatar,
-              currentUserName: widget.currentUserName,
-              postId: widget.postId, // <<< ADD THIS
-              token: widget.token,
-              onCommentAdded: (newComment) async {
-                setState(() => comments.add(newComment));
-              },
-              onReplyAdded: (commentIndex, newReply) async {
-                setState(() {
-                  comments[commentIndex]['replies'] ??= [];
-                  comments[commentIndex]['replies'].add(newReply);
-                });
-              },
+            // Content
+            Container(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                widget.postText,
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.4,
+                  color: Color(0xFF2E3E5C),
+                ),
+              ),
             ),
-
-            // View all comments button
-            if (comments.length > 2)
-              Center(
-                child: TextButton(
-                  onPressed: _showCommentModal,
-                  child: Text(
-                    'View all ${comments.length} comments',
-                    style: const TextStyle(
-                      color: Colors.purpleAccent,
-                      fontWeight: FontWeight.w500,
+            const SizedBox(height: 12),
+            // Like count
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          widget.isLiked
+                              ? Colors.red.withOpacity(0.1)
+                              : Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          widget.isLiked
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          size: 16,
+                          color: widget.isLiked ? Colors.red : Colors.grey,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${widget.likeCount}',
+                          style: TextStyle(
+                            color: widget.isLiked ? Colors.red : Colors.grey,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 24),
+            // Action buttons
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildActionButton(
+                    icon:
+                        widget.isLiked ? Icons.favorite : Icons.favorite_border,
+                    label: widget.isLiked ? 'Loved' : 'Love',
+                    color: widget.isLiked ? Colors.red : Colors.grey[600]!,
+                    onTap: handleLike,
+                  ),
+                  _buildActionButton(
+                    icon: Icons.comment_outlined,
+                    label: 'Comment',
+                    color: Colors.grey[600]!,
+                    onTap: _showCommentModal,
+                  ),
+                  _buildActionButton(
+                    icon: Icons.share_outlined,
+                    label: 'Share',
+                    color: Colors.grey[600]!,
+                    onTap: () {},
+                  ),
+                ],
+              ),
+            ),
+            // Comments section
+            if (comments.isNotEmpty) ...[
+              const Divider(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: CommentsSection(
+                  comments: comments.take(2).toList(),
+                  currentUserAvatar: widget.currentUserAvatar,
+                  currentUserName: widget.currentUserName,
+                  postId: widget.postId,
+                  token: widget.token,
+                  onCommentAdded: (newComment) async {
+                    setState(() => comments.add(newComment));
+                  },
+                  onReplyAdded: (commentIndex, newReply) async {
+                    setState(() {
+                      comments[commentIndex]['replies'] ??= [];
+                      comments[commentIndex]['replies'].add(newReply);
+                    });
+                  },
+                ),
+              ),
+              if (comments.length > 2)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextButton(
+                    onPressed: _showCommentModal,
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).primaryColor,
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: Text(
+                      'View all ${comments.length} comments',
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ),
                 ),
+            ],
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
               ),
+            ),
           ],
         ),
       ),

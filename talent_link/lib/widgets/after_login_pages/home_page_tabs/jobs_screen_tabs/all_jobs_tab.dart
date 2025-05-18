@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:talent_link/models/job.dart';
 import 'package:talent_link/services/job_functions.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tabs/job_details_screen.dart';
+import 'package:talent_link/widgets/shared/job_card.dart';
 
 class AllJobsTab extends StatefulWidget {
   final String token;
@@ -15,16 +16,29 @@ class AllJobsTab extends StatefulWidget {
 class _AllJobsTabState extends State<AllJobsTab> {
   List<Job> allJobs = [];
   bool isLoading = false;
+  bool _mounted = true;
 
   @override
   void initState() {
     super.initState();
+    _mounted = true;
     fetchJobs();
   }
 
+  @override
+  void dispose() {
+    _mounted = false;
+    super.dispose();
+  }
+
   Future<void> fetchJobs() async {
+    if (!_mounted) return;
+
     setState(() => isLoading = true);
     final jobs = await JobFunctions.fetchJobs(widget.token);
+
+    if (!_mounted) return;
+
     setState(() {
       allJobs = jobs;
       isLoading = false;
@@ -32,6 +46,8 @@ class _AllJobsTabState extends State<AllJobsTab> {
   }
 
   void _navigateToJobDetail(Job job) {
+    if (!_mounted) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -42,40 +58,51 @@ class _AllJobsTabState extends State<AllJobsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     if (isLoading && allJobs.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
+        ),
+      );
     }
 
-    return ListView.builder(
-      itemCount: allJobs.length,
-      itemBuilder: (context, index) {
-        final job = allJobs[index];
-        return Card(
-          color: Colors.white,
-          elevation: 3,
-          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: ListTile(
-            trailing: const Icon(Icons.arrow_circle_right, color: Colors.green),
-            title: Text(
-              job.title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
+    if (allJobs.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.work_off_outlined,
+              size: 64,
+              color: theme.colorScheme.outline,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No jobs available',
+              style: TextStyle(
+                fontSize: 18,
+                color: theme.colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
               ),
-              textAlign: TextAlign.center,
             ),
-            subtitle: Text(
-              job.location,
-              style: const TextStyle(color: Colors.blueGrey),
-              textAlign: TextAlign.center,
-            ),
-            onTap: () => _navigateToJobDetail(job),
-          ),
-        );
-      },
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      color: theme.primaryColor,
+      onRefresh: fetchJobs,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: allJobs.length,
+        itemBuilder: (context, index) {
+          final job = allJobs[index];
+          return JobCard(job: job, onTap: () => _navigateToJobDetail(job));
+        },
+      ),
     );
   }
 }
