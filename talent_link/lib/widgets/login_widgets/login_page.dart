@@ -30,7 +30,6 @@ class _LoginPageState extends State<LoginPage>
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final logger = Logger();
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
