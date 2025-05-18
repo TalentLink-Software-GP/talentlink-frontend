@@ -170,7 +170,7 @@ class NotificationsPageState extends State<NotificationsPage>
     await _fetchNotifications();
     return Future.value();
   }
-
+  
   Future<void> _markAsRead(int index) async {
     final notification = notifications[index];
     final notificationId = notification['id'];

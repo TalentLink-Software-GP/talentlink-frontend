@@ -36,6 +36,7 @@ class _ProfileTabState extends State<ProfileTab>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
+
   @override
   void initState() {
     super.initState();

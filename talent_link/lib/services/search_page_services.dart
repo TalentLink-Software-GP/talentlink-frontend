@@ -68,24 +68,15 @@ class SearchPageService {
     }
   }
 
-  Future<int> fetchUnreadMessageCount(String currentUserId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/unread-count/$currentUserId'),
-      );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data['unreadCount'] ?? 0;
-      } else {
-        _logger.w(
-          'Failed to fetch unread message count. Status code: ${response.statusCode}',
-        );
-        return 0;
-      }
-    } catch (e) {
-      _logger.e('Error fetching unread message count:', error: e);
-      return 0;
+  Future<int> getUnreadCount(String userId, String peerId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/messages/unread-count/$userId/$peerId'),
+      // headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body)['count'];
     }
+    return 0;
   }
 }

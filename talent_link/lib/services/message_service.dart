@@ -111,4 +111,39 @@ class MessageService2 {
       body: json.encode(message),
     );
   }
+
+  Future<bool> markMessagesAsRead(
+    String currentUserId,
+    String peerUserId,
+  ) async {
+    final url = '$baseUrl/messages/mark-as-read';
+    print('Attempting to mark messages as read. URL: $url');
+    print('Request data: senderId=$peerUserId, receiverId=$currentUserId');
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'senderId': peerUserId,
+          'receiverId': currentUserId,
+        }),
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print(
+          'Failed to mark messages as read. Status: ${response.statusCode}',
+        );
+        return false;
+      }
+    } catch (e) {
+      print('Exception in markMessagesAsRead: $e');
+      return false;
+    }
+  }
 }
