@@ -40,6 +40,7 @@ class SearchUserPageState extends State<SearchUserPage> {
   bool isSearching = false;
   Timer? timer;
 
+
   int finalcount = 0;
 
 
@@ -64,6 +65,7 @@ class SearchUserPageState extends State<SearchUserPage> {
 
   Future<void> fetchChatHistory() async {
     final history = await _service.fetchChatHistory(widget.currentUserId);
+
 
 
     // Get unread counts for each conversation
@@ -213,6 +215,7 @@ class SearchUserPageState extends State<SearchUserPage> {
                   ),
 
 
+
                   //TODO: when user1 send a message to user2 i need the Count of notification (finalcount or unReadCount) to be in realTime that dont need to refresh the page to show the notifications
                   if ((user['unreadCount'] ?? 0) > 0) // here's
 
@@ -267,6 +270,7 @@ class SearchUserPageState extends State<SearchUserPage> {
                   ),
                 );
               },
+
 
             ),
           ),
@@ -411,6 +415,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
     // Initialize status tracking
     _initializePresence();
+
 
     _markMessagesAsRead(); // Add this line
 
@@ -716,6 +721,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
 
+
   void _markMessagesAsRead() async {
     bool success = await messageService.markMessagesAsRead(
       widget.currentUserId,
@@ -735,7 +741,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       });
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -964,6 +969,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                         ),
                                       ),
                                       if (isMe)
+
                                         // TODO: when user1 send message to user2 and user2 is in chat i need to show for user 1 that user2 seen the message, i do that but i need it in realTime
                                         Padding(
                                           padding: EdgeInsets.only(left: 4),

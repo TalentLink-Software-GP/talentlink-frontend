@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:talent_link/models/job.dart';
 import 'package:talent_link/services/job_functions.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tabs/job_details_screen.dart';
-import 'package:talent_link/widgets/base_widgets/button.dart';
+import 'package:talent_link/widgets/shared/job_card.dart';
 
 class BestMatchedTab extends StatefulWidget {
   final String token;
@@ -17,30 +17,59 @@ class _BestMatchedTabState extends State<BestMatchedTab> {
   List<Job> allJobs = [];
   List<Job> bestJobs = [];
   bool isLoading = false;
-  double minMatchScore = 0; // Slider value (0% initially)
+  double minMatchScore = 0;
+  bool _mounted = true;
 
   @override
   void initState() {
     super.initState();
+    _mounted = true;
     fetchBestMatches();
   }
 
+  @override
+  void dispose() {
+    _mounted = false;
+    super.dispose();
+  }
+
   Future<void> fetchBestMatches() async {
+    if (!_mounted) return;
+
     setState(() => isLoading = true);
-    final jobs = await JobFunctions.fetchJobs(widget.token);
-    setState(() {
-      allJobs = JobFunctions.sortJobsByMatchScore(jobs);
-      filterJobs();
-      isLoading = false;
-    });
+
+    try {
+      final jobs = await JobFunctions.fetchJobs(widget.token);
+      if (!_mounted) return;
+
+      setState(() {
+        allJobs = JobFunctions.sortJobsByMatchScore(jobs);
+        filterJobs();
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!_mounted) return;
+
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   void filterJobs() {
-    bestJobs =
-        allJobs.where((job) => (job.matchScore ?? 0) >= minMatchScore).toList();
+    if (!_mounted) return;
+
+    setState(() {
+      bestJobs =
+          allJobs
+              .where((job) => (job.matchScore ?? 0) >= minMatchScore)
+              .toList();
+    });
   }
 
   void _navigateToJobDetail(Job job) {
+    if (!_mounted) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -51,91 +80,117 @@ class _BestMatchedTabState extends State<BestMatchedTab> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
+        ),
+      );
     }
 
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.shadow.withOpacity(0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Minimum Match Percentage:',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Row(
+                children: [
+                  Icon(Icons.tune, color: theme.primaryColor),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Minimum Match Score: ${minMatchScore.round()}%',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ],
               ),
-              Slider(
-                value: minMatchScore,
-                min: 0,
-                max: 100,
-                divisions: 20,
-                label: '${minMatchScore.round()}%',
-                activeColor: Colors.green,
-                onChanged: (value) {
-                  setState(() {
-                    minMatchScore = value;
-                    filterJobs();
-                  });
-                },
+              const SizedBox(height: 8),
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: theme.primaryColor,
+                  inactiveTrackColor: theme.primaryColor.withOpacity(0.2),
+                  thumbColor: theme.primaryColor,
+                  overlayColor: theme.primaryColor.withOpacity(0.1),
+                ),
+                child: Slider(
+                  value: minMatchScore,
+                  min: 0,
+                  max: 100,
+                  divisions: 20,
+                  label: '${minMatchScore.round()}%',
+                  onChanged: (value) {
+                    if (!_mounted) return;
+                    setState(() {
+                      minMatchScore = value;
+                      filterJobs();
+                    });
+                  },
+                ),
               ),
             ],
           ),
         ),
         Expanded(
-          child: PageView.builder(
-            itemCount: bestJobs.length,
-            controller: PageController(viewportFraction: 0.85),
-            itemBuilder: (context, index) {
-              final job = bestJobs[index];
-              return Center(
-                child: SizedBox(
-                  height: 200,
-                  child: Card(
-                    color: Colors.white,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+          child:
+              bestJobs.isEmpty
+                  ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off_rounded,
+                          size: 64,
+                          color: theme.colorScheme.outline,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No matching jobs found',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Try adjusting the match score filter',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            job.title,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          Text(
-                            'Match: ${job.matchScore?.toStringAsFixed(1) ?? "0"}%',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.black,
-                            ),
-                          ),
-                          SizedBox(
-                            width: double.infinity,
-                            child: BaseButton(
-                              onPressed: () => _navigateToJobDetail(job),
-                              text: 'Apply Now!',
-                              buttonColor: Colors.green,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  )
+                  : ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: bestJobs.length,
+                    itemBuilder: (context, index) {
+                      final job = bestJobs[index];
+                      return JobCard(
+                        job: job,
+                        onTap: () => _navigateToJobDetail(job),
+                        showMatchScore: true,
+                      );
+                    },
                   ),
-                ),
-              );
-            },
-          ),
         ),
       ],
     );

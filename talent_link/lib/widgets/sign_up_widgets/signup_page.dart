@@ -34,7 +34,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
   bool agreeToTerms = false;
-  final bool _obscurePassword = true;
+  bool _obscurePassword = true;
 
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
@@ -43,19 +43,39 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Email is required';
+    }
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+      return 'Please enter a valid email';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Password is required';
+    }
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+    return null;
+  }
+
   void registerUser() async {
     if (_formKey.currentState?.validate() ?? false) {
+      setState(() {
+        isLoading = true;
+        errorMessage = null;
+      });
+
       String firstName = firstNameController.text;
       String lastName = lastNameController.text;
       String email = emailController.text;
       String username = usernameController.text;
       String phone = phoneController.text;
       String password = passwordController.text;
-      String usercountry = widget.country;
-      String userDate = widget.date;
-      String userCity = widget.city;
-      String userGender = widget.gender;
-      String userRole = widget.userRole;
 
       try {
         var url = Uri.parse('http://10.0.2.2:5000/api/auth/register');
@@ -69,11 +89,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
             "email": email,
             "phone": phone,
             "password": password,
-            "role": userRole,
-            "date": userDate,
-            "country": usercountry,
-            "city": userCity,
-            "gender": userGender,
+            "role": widget.userRole,
+            "date": widget.date,
+            "country": widget.country,
+            "city": widget.city,
+            "gender": widget.gender,
           }),
         );
 
@@ -83,7 +103,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
           if (data.containsKey("token")) {
             String realToken = data["token"];
-
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -93,9 +112,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
             );
           } else {
+            setState(() {
+              errorMessage = "Token not received from server";
+            });
             logger.e("Token not received in response", error: response.body);
           }
         } else {
+          var data = jsonDecode(response.body);
+          setState(() {
+            errorMessage = data["message"] ?? "Registration failed";
+          });
           logger.e("Sign-up failed", error: response.body);
         }
       } catch (e) {
@@ -111,127 +137,287 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
+  Widget _buildTextField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    bool isPassword = false,
+    String? Function(String?)? validator,
+    TextInputType? keyboardType,
+    IconData? prefixIcon,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        obscureText: isPassword && _obscurePassword,
+        validator: validator,
+        keyboardType: keyboardType,
+        style: TextStyle(fontSize: 16.0),
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          prefixIcon:
+              prefixIcon != null
+                  ? Icon(prefixIcon, color: Theme.of(context).primaryColor)
+                  : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12.0),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 16.0,
+            vertical: 16.0,
+          ),
+          suffixIcon:
+              isPassword
+                  ? IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  )
+                  : null,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset("assets/images/5.jpg", fit: BoxFit.cover),
-                    Text(
-                      "Let's create your account",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+      appBar: AppBar(title: Text('Create Account'), elevation: 0),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Almost there!",
+                    style: TextStyle(
+                      fontSize: 28.0,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  SizedBox(height: 8.0),
+                  Text(
+                    "Please fill in your account details to complete registration",
+                    style: TextStyle(fontSize: 16.0, color: Colors.grey[600]),
+                  ),
+                  SizedBox(height: 32.0),
+
+                  if (errorMessage != null)
+                    Container(
+                      padding: EdgeInsets.all(16.0),
+                      margin: EdgeInsets.only(bottom: 24.0),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(12.0),
+                        border: Border.all(color: Colors.red[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.red),
+                          SizedBox(width: 12.0),
+                          Expanded(
+                            child: Text(
+                              errorMessage!,
+                              style: TextStyle(color: Colors.red[700]),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: MyTextFieled(
-                            textHint: "Enter first name",
-                            textLable: "First Name",
-                            controller: firstNameController,
-                            obscureText: false,
-                          ),
-                        ),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: MyTextFieled(
-                            textHint: "Enter last name",
-                            textLable: "Last Name",
-                            controller: lastNameController,
-                            obscureText: false,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 10),
-                    MyTextFieled(
-                      textHint: "Enter your username",
-                      textLable: "Username",
-                      controller: usernameController,
-                      obscureText: false,
-                    ),
-                    SizedBox(height: 10),
-                    MyTextFieled(
-                      textHint: "Enter your email",
-                      textLable: "E-Mail",
-                      controller: emailController,
-                      obscureText: false,
-                    ),
-                    SizedBox(height: 10),
-                    MyTextFieled(
-                      textHint: "Enter your phone number",
-                      textLable: "Phone Number",
-                      controller: phoneController,
-                      obscureText: false,
-                    ),
-                    SizedBox(height: 10),
-                    MyTextFieled(
-                      textHint: "Enter your password",
-                      textLable: "Password",
-                      controller: passwordController,
-                      obscureText: _obscurePassword,
-                    ),
-                    SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: agreeToTerms,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              agreeToTerms = value ?? false;
-                            });
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildTextField(
+                          label: "First Name",
+                          hint: "Enter first name",
+                          controller: firstNameController,
+                          prefixIcon: Icons.person_outline,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'First name is required';
+                            }
+                            return null;
                           },
                         ),
-                        Text("I agree to "),
-                        GestureDetector(
-                          onTap: () {},
-                          child: Text(
-                            "Privacy Policy",
-                            style: TextStyle(color: Colors.blue),
+                      ),
+                      SizedBox(width: 16.0),
+                      Expanded(
+                        child: _buildTextField(
+                          label: "Last Name",
+                          hint: "Enter last name",
+                          controller: lastNameController,
+                          prefixIcon: Icons.person_outline,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Last name is required';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  _buildTextField(
+                    label: "Username",
+                    hint: "Choose a unique username",
+                    controller: usernameController,
+                    prefixIcon: Icons.alternate_email,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Username is required';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  _buildTextField(
+                    label: "Email",
+                    hint: "Enter your email",
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    prefixIcon: Icons.email_outlined,
+                    validator: _validateEmail,
+                  ),
+
+                  _buildTextField(
+                    label: "Phone Number",
+                    hint: "Enter your phone number",
+                    controller: phoneController,
+                    keyboardType: TextInputType.phone,
+                    prefixIcon: Icons.phone_outlined,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Phone number is required';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  _buildTextField(
+                    label: "Password",
+                    hint: "Create a strong password",
+                    controller: passwordController,
+                    isPassword: true,
+                    prefixIcon: Icons.lock_outline,
+                    validator: _validatePassword,
+                  ),
+
+                  SizedBox(height: 24.0),
+
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12.0),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    padding: EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Transform.scale(
+                          scale: 1.2,
+                          child: Checkbox(
+                            value: agreeToTerms,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                agreeToTerms = value ?? false;
+                              });
+                            },
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4.0),
+                            ),
                           ),
                         ),
-                        Text(" and "),
-                        GestureDetector(
-                          onTap: () {},
-                          child: Text(
-                            "Terms of use",
-                            style: TextStyle(color: Colors.blue),
+                        SizedBox(width: 8.0),
+                        Expanded(
+                          child: Wrap(
+                            children: [
+                              Text(
+                                "I agree to the ",
+                                style: TextStyle(fontSize: 16.0),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  // TODO: Navigate to Privacy Policy
+                                },
+                                child: Text(
+                                  "Privacy Policy",
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    color: Theme.of(context).primaryColor,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                              Text(" and ", style: TextStyle(fontSize: 16.0)),
+                              GestureDetector(
+                                onTap: () {
+                                  // TODO: Navigate to Terms of Use
+                                },
+                                child: Text(
+                                  "Terms of Use",
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    color: Theme.of(context).primaryColor,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                    SizedBox(height: 10),
-                    BaseButton(
-                      text: "Create Account",
-                      onPressed: () {
-                        if (agreeToTerms) {
-                          registerUser();
-                        } else {
-                          print(
-                            "❌ You must agree to the terms and conditions.",
-                          );
-                        }
-                      },
+                  ),
+
+                  SizedBox(height: 32.0),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56.0,
+                    child: BaseButton(
+                      text:
+                          isLoading ? "Creating Account..." : "Create Account",
+                      onPressed:
+                          isLoading || !agreeToTerms ? () {} : registerUser,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }

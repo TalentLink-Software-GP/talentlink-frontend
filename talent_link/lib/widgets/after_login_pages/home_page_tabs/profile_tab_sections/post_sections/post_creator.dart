@@ -272,80 +272,73 @@ class _PostCreatorState extends State<PostCreator> {
         controller: _scrollController,
         physics: const BouncingScrollPhysics(),
         child: Container(
-          margin: const EdgeInsets.all(16),
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.only(left: 20, top: 20, bottom: 20),
           decoration: BoxDecoration(
-            color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: const Color.fromRGBO(128, 128, 128, 0.2),
-                spreadRadius: 3,
-                blurRadius: 10,
-                offset: const Offset(0, 3),
+                color: const Color.fromRGBO(128, 128, 128, 0.1),
+                spreadRadius: 1,
+                blurRadius: 5,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Padding(
-              padding: const EdgeInsets.only(left: 20, top: 20, bottom: 20),
-              child: Column(
-                children: [
-                  PostInputWidget(
-                    controller: _postController,
-                    onPost: createPost,
-                    fullName: fullName,
-                    avatarUrl: uploadedImageUrl,
-                  ),
-                  const SizedBox(height: 10),
-                  if (_isLoading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: CircularProgressIndicator(),
-                    ),
-                  ...posts.asMap().entries.map((entry) {
-                    final post = entry.value;
-                    return PostCard(
-                      postText: post['text'],
-                      authorName:
-                          post['author'] is Map<String, dynamic>
-                              ? post['author']['fullName'] ?? 'Unknown'
-                              : post['author'],
-                      timestamp: post['time'],
-                      authorAvatarUrl: post['avatarUrl'] ?? '',
-                      postId: post['id'],
-                      onDelete: () => _handlePostDeleted(entry.key),
-                      onUpdate:
-                          (newText) => _handlePostUpdated(entry.key, newText),
-                      isOwner: post['isOwner'],
-                      isLiked: post['isLiked'],
-                      likeCount: post['likeCount'],
-                      onLike: () => _handlePostLiked(entry.key),
-                      onComment: () => _handleShowComments(entry.key),
-                      currentUserAvatar: uploadedImageUrl ?? '',
-                      currentUserName: fullName ?? 'Anonymous',
-                      token: widget.token,
-                      username: post['author'] ?? '',
-
-                      initialComments: List<Map<String, dynamic>>.from(
-                        post['comments']?.map(
-                              (c) => {
-                                '_id': c['_id'],
-                                'text': c['text'],
-                                'author': c['author'],
-                                'avatarUrl': c['avatarUrl'],
-                                'replies': List<Map<String, dynamic>>.from(
-                                  c['replies'] ?? [],
-                                ),
-                              },
-                            ) ??
-                            [],
-                      ),
-                    );
-                  }),
-                ],
+          child: Column(
+            children: [
+              PostInputWidget(
+                controller: _postController,
+                onPost: createPost,
+                fullName: fullName,
+                avatarUrl: uploadedImageUrl,
               ),
-            ),
+              const SizedBox(height: 10),
+              if (_isLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: CircularProgressIndicator(),
+                ),
+              ...posts.asMap().entries.map((entry) {
+                final post = entry.value;
+                return PostCard(
+                  postText: post['text'],
+                  authorName:
+                      post['author'] is Map<String, dynamic>
+                          ? post['author']['fullName'] ?? 'Unknown'
+                          : post['author'],
+                  timestamp: post['time'],
+                  authorAvatarUrl: post['avatarUrl'] ?? '',
+                  postId: post['id'],
+                  onDelete: () => _handlePostDeleted(entry.key),
+                  onUpdate: (newText) => _handlePostUpdated(entry.key, newText),
+                  isOwner: post['isOwner'],
+                  isLiked: post['isLiked'],
+                  likeCount: post['likeCount'],
+                  onLike: () => _handlePostLiked(entry.key),
+                  onComment: () => _handleShowComments(entry.key),
+                  currentUserAvatar: uploadedImageUrl ?? '',
+                  currentUserName: fullName ?? 'Anonymous',
+                  token: widget.token,
+                  username: post['author'] ?? '',
+
+                  initialComments: List<Map<String, dynamic>>.from(
+                    post['comments']?.map(
+                          (c) => {
+                            '_id': c['_id'],
+                            'text': c['text'],
+                            'author': c['author'],
+                            'avatarUrl': c['avatarUrl'],
+                            'replies': List<Map<String, dynamic>>.from(
+                              c['replies'] ?? [],
+                            ),
+                          },
+                        ) ??
+                        [],
+                  ),
+                );
+              }),
+            ],
           ),
         ),
       ),

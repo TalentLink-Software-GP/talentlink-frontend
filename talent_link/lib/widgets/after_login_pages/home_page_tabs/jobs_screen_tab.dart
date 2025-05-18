@@ -39,7 +39,7 @@ class _JobsScreenTabState extends State<JobsScreenTab>
             controller: _tabController,
             labelColor: Colors.black,
             unselectedLabelColor: Colors.grey,
-            indicatorColor: Colors.green,
+            indicatorColor: Theme.of(context).colorScheme.outline,
             tabs: const [
               Tab(text: 'All Jobs'),
               Tab(text: 'Best Matches'),

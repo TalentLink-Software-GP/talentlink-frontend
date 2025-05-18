@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:talent_link/widgets/sign_up_widgets/account_created_screen.dart';
+import 'package:talent_link/widgets/base_widgets/button.dart';
 
 class CheckVerificationScreen extends StatefulWidget {
   final String token;
@@ -17,81 +18,183 @@ class CheckVerificationScreen extends StatefulWidget {
   });
 
   @override
-  _CheckVerificationScreenState createState() =>
+  State<CheckVerificationScreen> createState() =>
       _CheckVerificationScreenState();
 }
 
 class _CheckVerificationScreenState extends State<CheckVerificationScreen> {
   final logger = Logger();
-  late Timer timer;
-  bool isVerified = false;
+  bool _canResend = false;
+  int _timeLeft = 60;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    timer = Timer.periodic(
-      Duration(seconds: 3),
-      (timer) => checkVerification(),
-    );
+    startTimer();
   }
 
-  Future<void> checkVerification() async {
-    var url = Uri.parse(
-      'http://10.0.2.2:5000/api/auth/isVerified/${widget.email}',
-    );
-
-    try {
-      logger.d("Checking verification for email: ${widget.email}");
-      var response = await http.get(url);
-      logger.d("Verification check status code: ${response.statusCode}");
-
-      if (response.statusCode == 200) {
+  void startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_timeLeft > 0) {
         setState(() {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => AccountCreatedScreen()),
-          );
+          _timeLeft--;
         });
-        timer.cancel();
-        logger.i("Email verified successfully", error: {"token": widget.token});
       } else {
-        logger.w("Verification check failed", error: response.body);
+        timer.cancel();
+        setState(() {
+          _canResend = true;
+        });
       }
-    } catch (e) {
-      logger.e("Error checking verification", error: e);
-    }
+    });
+  }
+
+  void resendVerification() {
+    // TODO: Implement resend verification logic
+    setState(() {
+      _canResend = false;
+      _timeLeft = 60;
+    });
+    startTimer();
   }
 
   @override
   void dispose() {
-    timer.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child:
-            isVerified
-                ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 40),
+
+              // Email Icon
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.email_outlined,
+                  size: 60,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Title
+              Text(
+                'Verify your email',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).primaryColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 16),
+
+              // Description
+              Text(
+                'We have sent a verification link to:',
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 8),
+
+              // Email
+              Text(
+                widget.email,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 24),
+
+              // Instructions
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Column(
                   children: [
-                    Text("Verified!"),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AccountCreatedScreen(),
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.blue[700]),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Please check your email and follow the instructions to verify your account.',
+                            style: TextStyle(color: Colors.blue[700]),
                           ),
-                        );
-                      },
-                      child: Text("Proceed to Account Created Screen"),
+                        ),
+                      ],
                     ),
                   ],
+                ),
+              ),
+
+              const Spacer(),
+
+              // Resend Timer/Button
+              if (!_canResend)
+                Text(
+                  'Resend available in ${_timeLeft}s',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 16),
                 )
-                : Text("Waiting for verification..."),
+              else
+                TextButton(
+                  onPressed: resendVerification,
+                  child: Text(
+                    'Resend Verification Email',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).primaryColor,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+
+              const SizedBox(height: 16),
+
+              // Continue Button
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: BaseButton(
+                  text: 'I have verified my email',
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AccountCreatedScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
       ),
     );
   }

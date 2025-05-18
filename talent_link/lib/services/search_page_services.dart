@@ -68,6 +68,7 @@ class SearchPageService {
     }
   }
 
+
   Future<int> getUnreadCount(String userId, String peerId) async {
     final response = await http.get(
       Uri.parse('$baseUrl/messages/unread-count/$userId/$peerId'),

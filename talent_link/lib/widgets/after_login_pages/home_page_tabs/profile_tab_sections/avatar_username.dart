@@ -169,33 +169,68 @@ class _AvatarUsernameState extends State<AvatarUsername> {
   Widget build(BuildContext context) {
     Map<String, dynamic> decodedToken = JwtDecoder.decode(widget.token);
     return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Center(
-            child: SizedBox(
-              height: 100,
-              width: 100,
-              child: FloatingActionButton(
-                heroTag: "avatar_fab",
-                onPressed: showAvatarOptions,
-                shape: CircleBorder(),
-                elevation: 10,
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.transparent,
+            border: Border.all(color: Colors.white, width: 2),
+          ),
+          child: SizedBox(
+            height: 110,
+            width: 110,
+            child: FloatingActionButton(
+              heroTag: "avatar_fab",
+              onPressed: showAvatarOptions,
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              shape: const CircleBorder(),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 2,
+                  ),
+                ),
                 child: CircleAvatar(
+                  backgroundColor: Colors.white.withOpacity(0.1),
                   backgroundImage:
                       uploadedImageUrl != null
                           ? NetworkImage(uploadedImageUrl!)
-                          : AssetImage('assets/images/avatarPlaceholder.jpg')
+                          : const AssetImage(
+                                'assets/images/avatarPlaceholder.jpg',
+                              )
                               as ImageProvider,
-                  radius: 999999,
+                  radius: 50,
                 ),
               ),
             ),
           ),
         ),
+        const SizedBox(height: 16),
         Text(
           decodedToken['username'],
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            letterSpacing: 0.5,
+            shadows: [
+              Shadow(
+                offset: Offset(0, 1),
+                blurRadius: 3,
+                color: Colors.black38,
+              ),
+              Shadow(
+                offset: Offset(0, 2),
+                blurRadius: 6,
+                color: Colors.black26,
+              ),
+            ],
+          ),
         ),
       ],
     );
