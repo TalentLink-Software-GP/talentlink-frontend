@@ -85,14 +85,18 @@ class JobService {
     }
   }
 
-  Future<List<dynamic>> fetchMatchedUsers(String jobId) async {
+  Future<List<dynamic>> fetchMatchedUsers(
+    String jobId, {
+    int page = 1,
+    int pageSize = 10,
+  }) async {
     final response = await http.post(
       Uri.parse('http://10.0.2.2:5000/api/jobMatch/getMatchSortedByScore'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({'jobId': jobId}),
+      body: jsonEncode({'jobId': jobId, 'page': page, 'pageSize': pageSize}),
     );
 
     if (response.statusCode == 200) {

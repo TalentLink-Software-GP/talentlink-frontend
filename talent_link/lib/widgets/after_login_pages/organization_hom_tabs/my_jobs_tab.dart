@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:talent_link/models/job.dart';
 import 'package:talent_link/services/job_service.dart';
+import 'package:talent_link/services/organization_service.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/add_job_or_post_card.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/add_new_job_screen.dart';
 
@@ -16,15 +17,33 @@ class MyJobsTab extends StatefulWidget {
 class _MyJobsTabState extends State<MyJobsTab> {
   final logger = Logger();
   List<Job> jobs = [];
-  int? expandedIndex;
+  String? avatarUrl;
 
   late JobService jobService;
+  late OrganizationService _orgService;
 
   @override
   void initState() {
     super.initState();
     jobService = JobService(token: widget.token);
+    _orgService = OrganizationService(
+      baseUrl: 'http://10.0.2.2:5000/api/organization',
+      token: widget.token,
+    );
     fetchJobs();
+    fetchOrgData();
+  }
+
+  Future<void> fetchOrgData() async {
+    try {
+      final data = await _orgService.getOrganizationProfile();
+      if (!mounted) return;
+      setState(() {
+        avatarUrl = data['avatarUrl'];
+      });
+    } catch (e) {
+      logger.e("Error fetching organization profile", error: e);
+    }
   }
 
   Future<void> fetchJobs() async {
@@ -41,9 +60,14 @@ class _MyJobsTabState extends State<MyJobsTab> {
   Future<void> deleteJob(String jobId) async {
     try {
       await jobService.deleteJob(jobId);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Job deleted successfully")));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Job deleted successfully"),
+          backgroundColor: Theme.of(context).primaryColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       fetchJobs();
     } catch (e) {
       logger.e("Error deleting job", error: e);
@@ -66,148 +90,504 @@ class _MyJobsTabState extends State<MyJobsTab> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        AddJobOrPostCard(
-          token: widget.token,
-          text: "Add New Job",
-          onPressed: () => showJobDialog(),
-        ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: jobs.length,
-            itemBuilder: (context, index) {
-              final job = jobs[index];
-              final isExpanded = expandedIndex == index;
-
-              return Card(
-                margin: EdgeInsets.all(8),
-                child: InkWell(
-                  onTap: () {
-                    setState(() {
-                      expandedIndex = isExpanded ? null : index;
-                    });
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  void showJobDetails(Job job) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => DraggableScrollableSheet(
+            initialChildSize: 0.7,
+            minChildSize: 0.5,
+            maxChildSize: 0.95,
+            builder:
+                (_, controller) => Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        margin: EdgeInsets.only(top: 8),
+                        height: 4,
+                        width: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      Expanded(
+                        child: ListView(
+                          controller: controller,
+                          padding: EdgeInsets.all(20),
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
                                     job.title,
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 20,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  Text(
-                                    "${job.jobType} • ${job.location} • Deadline: ${job.deadline.split('T')[0]}",
-                                    style: TextStyle(color: Colors.grey[700]),
-                                  ),
-                                ],
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.close),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 20),
+                            _buildDetailRow(
+                              Icons.business_center_outlined,
+                              'Job Type',
+                              job.jobType,
+                            ),
+                            _buildDetailRow(
+                              Icons.location_on_outlined,
+                              'Location',
+                              job.location,
+                            ),
+                            _buildDetailRow(
+                              Icons.calendar_today_outlined,
+                              'Deadline',
+                              job.deadline.split('T')[0],
+                            ),
+                            _buildDetailRow(
+                              Icons.attach_money,
+                              'Salary',
+                              job.salary,
+                            ),
+                            _buildDetailRow(
+                              Icons.category_outlined,
+                              'Category',
+                              job.category,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              'Description',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).primaryColor,
                               ),
                             ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: Icon(Icons.edit, color: Colors.blue),
-                                  onPressed:
-                                      () => showJobDialog(
-                                        isUpdate: true,
-                                        job: job,
-                                      ),
-                                ),
-                                IconButton(
-                                  icon: Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () async {
-                                    final confirm = await showDialog<bool>(
-                                      context: context,
-                                      builder:
-                                          (_) => AlertDialog(
-                                            title: Text('Delete Job'),
-                                            content: Text(
-                                              'Are you sure you want to delete this job?',
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed:
-                                                    () => Navigator.pop(
-                                                      context,
-                                                      false,
-                                                    ),
-                                                child: Text('Cancel'),
-                                              ),
-                                              ElevatedButton(
-                                                onPressed:
-                                                    () => Navigator.pop(
-                                                      context,
-                                                      true,
-                                                    ),
-                                                child: Text('Delete'),
-                                              ),
-                                            ],
-                                          ),
-                                    );
-                                    if (confirm == true) deleteJob(job.id);
-                                  },
-                                ),
-                              ],
+                            SizedBox(height: 8),
+                            Text(
+                              job.description,
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                height: 1.5,
+                              ),
                             ),
+                            if (job.requirements.isNotEmpty) ...[
+                              SizedBox(height: 16),
+                              Text(
+                                'Requirements',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              ...job.requirements.map(
+                                (req) => Padding(
+                                  padding: EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle_outline,
+                                        size: 18,
+                                        color: Theme.of(context).primaryColor,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          req,
+                                          style: TextStyle(
+                                            color: Colors.grey[700],
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                            if (job.responsibilities.isNotEmpty) ...[
+                              SizedBox(height: 16),
+                              Text(
+                                'Responsibilities',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              ...job.responsibilities.map(
+                                (resp) => Padding(
+                                  padding: EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle_outline,
+                                        size: 18,
+                                        color: Theme.of(context).primaryColor,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          resp,
+                                          style: TextStyle(
+                                            color: Colors.grey[700],
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                            SizedBox(height: 20),
                           ],
                         ),
-                        if (isExpanded) ...[
-                          SizedBox(height: 10),
-                          Text("Description: ${job.description}"),
-                          SizedBox(height: 4),
-                          Text("Salary: ${job.salary}"),
-                          SizedBox(height: 4),
-                          Text("Category: ${job.category}"),
-                          SizedBox(height: 4),
-                          if (job.requirements.isNotEmpty)
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Requirements:",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+          ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Theme.of(context).primaryColor),
+          SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              ),
+              Text(
+                value,
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Color(0xFFF5F5F5),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            color: Colors.white,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.grey[200],
+                  radius: 16,
+                  backgroundImage:
+                      avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+                  child:
+                      avatarUrl == null
+                          ? Icon(
+                            Icons.person_outline,
+                            color: Colors.grey[600],
+                            size: 20,
+                          )
+                          : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => showJobDialog(),
+                        borderRadius: BorderRadius.circular(18),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              Text(
+                                'Add New Job',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                ...job.requirements.map((r) => Text("• $r")),
-                              ],
-                            ),
-                          if (job.responsibilities.isNotEmpty)
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(height: 8),
-                                Text(
-                                  "Responsibilities:",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                ...job.responsibilities.map(
-                                  (r) => Text("• $r"),
-                                ),
-                              ],
-                            ),
-                        ],
-                      ],
+                              ),
+                              Spacer(),
+                              Icon(Icons.add, color: Colors.white, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              );
-            },
+              ],
+            ),
           ),
-        ),
-      ],
+          Expanded(
+            child:
+                jobs.isEmpty
+                    ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.work_outline,
+                            size: 48,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            "No jobs posted yet",
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    : ListView.builder(
+                      itemCount: jobs.length,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemBuilder: (context, index) {
+                        final job = jobs[index];
+                        return Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => showJobDetails(job),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            job.title,
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            SizedBox(
+                                              width: 32,
+                                              height: 32,
+                                              child: IconButton(
+                                                padding: EdgeInsets.zero,
+                                                icon: Icon(
+                                                  Icons.edit_outlined,
+                                                  color:
+                                                      Theme.of(
+                                                        context,
+                                                      ).primaryColor,
+                                                  size: 18,
+                                                ),
+                                                onPressed:
+                                                    () => showJobDialog(
+                                                      isUpdate: true,
+                                                      job: job,
+                                                    ),
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: 32,
+                                              height: 32,
+                                              child: IconButton(
+                                                padding: EdgeInsets.zero,
+                                                icon: Icon(
+                                                  Icons.delete_outline,
+                                                  color: Colors.red[400],
+                                                  size: 18,
+                                                ),
+                                                onPressed: () async {
+                                                  final confirm = await showDialog<
+                                                    bool
+                                                  >(
+                                                    context: context,
+                                                    builder:
+                                                        (_) => AlertDialog(
+                                                          title: const Text(
+                                                            'Delete Job',
+                                                          ),
+                                                          content: const Text(
+                                                            'Are you sure you want to delete this job?',
+                                                          ),
+                                                          actions: [
+                                                            TextButton(
+                                                              onPressed:
+                                                                  () =>
+                                                                      Navigator.pop(
+                                                                        context,
+                                                                        false,
+                                                                      ),
+                                                              child: Text(
+                                                                'Cancel',
+                                                              ),
+                                                            ),
+                                                            TextButton(
+                                                              onPressed:
+                                                                  () =>
+                                                                      Navigator.pop(
+                                                                        context,
+                                                                        true,
+                                                                      ),
+                                                              child: Text(
+                                                                'Delete',
+                                                                style: TextStyle(
+                                                                  color:
+                                                                      Colors
+                                                                          .red[400],
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                  );
+                                                  if (confirm == true)
+                                                    deleteJob(job.id);
+                                                },
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 16,
+                                      runSpacing: 4,
+                                      children: [
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.business_center_outlined,
+                                              size: 14,
+                                              color: Colors.grey[600],
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Text(
+                                                job.jobType,
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 13,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.location_on_outlined,
+                                              size: 14,
+                                              color: Colors.grey[600],
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Text(
+                                                job.location,
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 13,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.calendar_today_outlined,
+                                          size: 14,
+                                          color: Colors.grey[600],
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Flexible(
+                                          child: Text(
+                                            "Deadline: ${job.deadline.split('T')[0]}",
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 13,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+          ),
+        ],
+      ),
     );
   }
 }
