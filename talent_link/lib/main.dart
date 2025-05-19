@@ -1,6 +1,11 @@
 //   runApp(DevicePreview(enabled: !kReleaseMode, builder: (context) => MyApp()));
 
 // main.dart
+//TODO: notfication fillter
+//TODO: application meeting
+// TODO: like view extra
+
+// TODO : sort notitification  time
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -11,15 +16,18 @@ import 'package:talent_link/services/fcm_service.dart';
 import 'package:talent_link/utils/app_lifecycle_manager.dart';
 import 'package:talent_link/utils/push_notifications_firebase.dart';
 import 'package:talent_link/utils/theme/app_theme.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tabs/job_details_screen.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/mesage_profile.dart';
 import 'package:talent_link/widgets/sign_up_widgets/account_created_screen.dart';
 import 'package:talent_link/widgets/applicatin_startup/startup_page.dart';
 import 'package:talent_link/widgets/sign_up_widgets/signup_page.dart';
 
 final logger = Logger();
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future _firebaseBackgroundMessage(RemoteMessage message) async {
   if (message.notification != null) {
-    logger.i('Notification received');
+    logger.i('Notification receivedaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
   }
 }
 
@@ -70,6 +78,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'TalentLink',
+      navigatorKey: navigatorKey,
+
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
@@ -114,10 +124,31 @@ class MyApp extends StatelessWidget {
           return MaterialPageRoute(
             builder: (context) => AccountCreatedScreen(),
           );
+        } else if (settings.name == '/job') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder:
+                (context) =>
+                    JobDetailsScreen(job: args['job'], token: args['token']),
+          );
         }
         return null;
       },
-      routes: {'/': (context) => const StartupPage()},
+      routes: {
+        '/': (context) => const StartupPage(),
+        '/chat': (context) {
+          final args =
+              ModalRoute.of(context)?.settings.arguments as Map<String, String>;
+          return ChatPage(
+            currentUserId: args['currentUserId'] ?? '',
+            peerUserId: args['peerUserId'] ?? '',
+            peerUsername: args['peerUsername'] ?? '',
+            currentuserAvatarUrl: args['currentuserAvatarUrl'] ?? '',
+            token: args['token'] ?? '',
+            onChatClosed: () {},
+          );
+        },
+      },
     );
   }
 }
