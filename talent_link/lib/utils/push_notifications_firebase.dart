@@ -1,8 +1,13 @@
 import 'dart:convert';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:talent_link/main.dart';
+import 'package:talent_link/services/job_service.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tabs/job_details_screen.dart';
 
 class PushNotificationsFirebase {
   static final FirebaseMessaging _firebaseMessaging =
@@ -10,9 +15,14 @@ class PushNotificationsFirebase {
   static final FlutterLocalNotificationsPlugin
   _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   static final _logger = Logger();
+  //late JobService=>JobService(token: token);
+  static late JobService jobService;
+  static Future<void> initializeJobService(String token) async {
+    jobService = JobService(token: token);
+  }
 
   static Future init() async {
-    // Request permissions
+    // req permissions
     await _firebaseMessaging.requestPermission(
       alert: true,
       announcement: true,
@@ -23,7 +33,6 @@ class PushNotificationsFirebase {
       sound: true,
     );
 
-    // Initialize local notifications (for Android foreground notifications)
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -34,13 +43,104 @@ class PushNotificationsFirebase {
           macOS: null,
         );
 
-    await _flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    await _flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) async {
+        if (response.payload != null) {
+          final Map<String, dynamic> data = jsonDecode(response.payload!);
+          final prefs = await SharedPreferences.getInstance();
+          final token = prefs.getString('token') ?? 'defaultToken';
 
-    // Configure message handlers
+          await initializeJobService(token);
+
+          if (data['type'] == 'chat') {
+            final Map<String, String> arguments = data.map(
+              (key, value) => MapEntry(key, value?.toString() ?? ''),
+            );
+            arguments['token'] = token;
+            navigatorKey.currentState?.pushNamed('/chat', arguments: arguments);
+          }
+
+          if (data['type'] == 'job') {
+            try {
+              if (data['jobId'] == null) {
+                _logger.e('Job ID is missing in notification data');
+                return;
+              }
+
+              final job = await jobService.fetchJobById(
+                data['jobId'].toString(),
+              );
+
+              if (job == null) {
+                _logger.e('Failed to fetch job details');
+                return;
+              }
+
+              navigatorKey.currentState?.push(
+                MaterialPageRoute(
+                  builder:
+                      (context) => JobDetailsScreen(job: job, token: token),
+                ),
+              );
+            } catch (e) {
+              _logger.e('Error handling job notification', error: e);
+            }
+          }
+        }
+      },
+    );
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleBackgroundMessage);
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
+      _logger.i('Notification opened: ${message.data}');
 
-    // Handle notification when app is terminated
+      if (message.data['type'] == 'chat') {
+        navigatorKey.currentState?.pushNamed(
+          '/chat',
+          arguments: {
+            'currentUserId': message.data['currentUserId'],
+            'peerUserId': message.data['senderId'],
+            'peerUsername': message.data['peerUsername'],
+            'currentuserAvatarUrl': message.data['currentuserAvatarUrl'],
+            'token': message.data['token'],
+          },
+        );
+      }
+
+      if (message.data['type'] == 'job') {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final token = prefs.getString('token') ?? 'defaultToken';
+          await initializeJobService(token);
+
+          if (message.data['jobId'] == null) {
+            _logger.e('Job ID is missing in notification data');
+            return;
+          }
+
+          final job = await jobService.fetchJobById(
+            message.data['jobId'].toString(),
+          );
+
+          if (job == null) {
+            _logger.e('Failed to fetch job details');
+            return;
+          }
+
+          navigatorKey.currentState?.push(
+            MaterialPageRoute(
+              builder: (context) => JobDetailsScreen(job: job, token: token),
+            ),
+          );
+        } catch (e) {
+          _logger.e(
+            'Error handling job notification from opened app',
+            error: e,
+          );
+        }
+      }
+    });
+
     RemoteMessage? initialMessage =
         await _firebaseMessaging.getInitialMessage();
     if (initialMessage != null) {
@@ -58,10 +158,9 @@ class PushNotificationsFirebase {
         error: message.notification,
       );
 
-      // Show local notification
       const AndroidNotificationDetails androidPlatformChannelSpecifics =
           AndroidNotificationDetails(
-            'chat_messages', // Same as in your backend
+            'chat_messages', //
             'Chat Messages',
             channelDescription: 'Incoming chat messages',
             importance: Importance.max,
@@ -87,14 +186,52 @@ class PushNotificationsFirebase {
     _logger.i('Got a message whilst in the background!');
     _logger.i('Message data:', error: message.data);
 
-    // Navigate to chat screen when notification is tapped
     if (message.data['type'] == 'chat') {
-      // You'll need to implement your navigation logic here
-      // For example using a global navigator key or similar
-      // navigatorKey.currentState?.pushNamed('/chat', arguments: {
-      //   'senderId': message.data['senderId'],
-      //   'messageId': message.data['messageId'],
-      // });
+      const AndroidNotificationDetails androidPlatformChannelSpecifics =
+          AndroidNotificationDetails(
+            'chat_messages',
+            'Chat Messages',
+            channelDescription: 'Incoming chat messages',
+            importance: Importance.max,
+            priority: Priority.high,
+            showWhen: true,
+          );
+
+      const NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+      );
+
+      _flutterLocalNotificationsPlugin.show(
+        0,
+        message.notification?.title,
+        message.notification?.body,
+        platformChannelSpecifics,
+        payload: jsonEncode(message.data),
+      );
+    }
+
+    if (message.data['type'] == 'job') {
+      const AndroidNotificationDetails androidPlatformChannelSpecifics =
+          AndroidNotificationDetails(
+            'chat_messages',
+            'Chat Messages',
+            channelDescription: 'Incoming chat messages',
+            importance: Importance.max,
+            priority: Priority.high,
+            showWhen: true,
+          );
+
+      const NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+      );
+
+      _flutterLocalNotificationsPlugin.show(
+        0,
+        message.notification?.title,
+        message.notification?.body,
+        platformChannelSpecifics,
+        payload: jsonEncode(message.data),
+      );
     }
   }
 
@@ -102,7 +239,6 @@ class PushNotificationsFirebase {
     _logger.i('Got a message whilst app was terminated!');
     _logger.i('Message data:', error: message.data);
 
-    // Similar handling as background message
     _handleBackgroundMessage(message);
   }
 }
