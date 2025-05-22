@@ -100,7 +100,7 @@ class _CommentWidgetState extends State<CommentWidget>
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: _isHovered ? Colors.grey[100] : Colors.grey[50],
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color:

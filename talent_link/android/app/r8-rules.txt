@@ -1,0 +1,2 @@
+-keep class com.example.talent_link.** { *; }
+-keep class androidx.** { *; }

@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:logger/logger.dart';
+import 'package:talent_link/widgets/appSetting/seeting.dart';
 
 final String baseUrl = dotenv.env['BASE_URL']!;
 
@@ -103,6 +104,16 @@ class _AvatarUsernameState extends State<AvatarUsername> {
                 onTap: () async {
                   Navigator.pop(context);
                   await removeAvatarFromBackend();
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.settings),
+                title: Text('Settings'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SettingsPage()),
+                  );
                 },
               ),
             ],

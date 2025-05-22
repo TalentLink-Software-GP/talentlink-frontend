@@ -60,7 +60,7 @@ class _PostInputWidgetState extends State<PostInputWidget>
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -106,7 +106,8 @@ class _PostInputWidgetState extends State<PostInputWidget>
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FD),
+                    color: Theme.of(context).cardColor,
+
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color:

@@ -9,6 +9,8 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/map_screen.
 import 'dart:convert';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notifications_for_user.dart';
+import 'package:talent_link/widgets/appSetting/logout.dart';
+import 'package:talent_link/widgets/appSetting/seeting.dart';
 import 'package:talent_link/widgets/login_widgets/login_page.dart';
 import '../after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_creator.dart';
 import 'package:logger/logger.dart';
