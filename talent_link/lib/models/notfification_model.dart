@@ -9,6 +9,12 @@ class NotificationModel {
   final String? postId;
   final bool? read;
 
+  final String? meetingLink;
+  final String? meetingId;
+  final String? applicantId;
+  final String? scheduledDateTime;
+  final String? organizationId;
+
   NotificationModel({
     this.id,
     this.title,
@@ -19,6 +25,11 @@ class NotificationModel {
     this.senderId,
     this.postId,
     this.read,
+    this.meetingLink,
+    this.meetingId,
+    this.applicantId,
+    this.scheduledDateTime,
+    this.organizationId,
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +43,11 @@ class NotificationModel {
       senderId: json['senderId'] ?? 'No senderId',
       postId: json['postId'] ?? 'No postId',
       read: json['read'] ?? false,
+      meetingLink: json['meetingLink'] ?? 'No meetingLink',
+      meetingId: json['meetingId'] ?? 'No meetingId',
+      applicantId: json['applicantId'] ?? 'No applicantId',
+      scheduledDateTime: json['scheduledDateTime'] ?? 'No scheduledDateTime',
+      organizationId: json['organizationId'] ?? 'No organizationId',
     );
   }
 }

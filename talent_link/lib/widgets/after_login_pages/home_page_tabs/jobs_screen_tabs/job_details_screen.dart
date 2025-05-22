@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:talent_link/models/job.dart';
 import 'package:talent_link/services/application_service.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';

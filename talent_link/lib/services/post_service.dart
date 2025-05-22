@@ -1,4 +1,7 @@
+//new api all fixed i used api.env
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:jwt_decoder/jwt_decoder.dart';
@@ -6,7 +9,8 @@ import 'package:logger/logger.dart';
 
 class PostService {
   final String token;
-  final String baseUrl = 'http://10.0.2.2:5000/api';
+  final String baseUrl = dotenv.env['BASE_URL']!;
+
   final _logger = Logger();
 
   PostService(this.token);

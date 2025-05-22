@@ -1,25 +1,3 @@
-// import 'package:flutter/material.dart';
-
-// import 'package:talent_link/services/notificationService.dart';
-// import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notificationNavigator.dart';
-
-// class orgNotificationsPage extends StatefulWidget {
-//   @override
-//   _orgNotificationsPageState createState() => _orgNotificationsPageState();
-// }
-
-// class _orgNotificationsPageState extends State<orgNotificationsPage> {
-//   late NotificationService _notificationService;
-//   late AnimationController _animationController;
-//   List notifications = [];
-//   bool isLoading = true;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(appBar: AppBar(title: Text('Notifications')));
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:talent_link/services/notification_service.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notification_navigator.dart';
@@ -33,18 +11,21 @@ class OrgNotificationsPage extends StatefulWidget {
 }
 
 class OrgNotificationsPageState extends State<OrgNotificationsPage>
-    with SingleTickerProviderStateMixin {
-  List notifications = [];
+    with TickerProviderStateMixin {
+  List communityNotifications = [];
+  List jobNotifications = [];
   bool isLoading = true;
   late AnimationController _animationController;
+  late TabController _tabController;
   late NotificationService _notificationService;
   final _logger = Logger();
 
-  // for org notifications
   Future<void> _fetchNotifications() async {
     try {
-      List allNotifications = [];
+      List communityNotifs = [];
+      List jobNotifs = [];
 
+      // Fetch community notifications
       final userNotifications =
           await _notificationService.fetchUserNotificationsLikeCommentReply();
       if (mounted) {
@@ -76,25 +57,20 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
               };
             }).toList();
 
-        allNotifications.addAll(userNotificationsList);
-        allNotifications.sort((a, b) {
+        communityNotifs.addAll(userNotificationsList);
+        communityNotifs.sort((a, b) {
           final aTime = DateTime.tryParse(a['timestamp']) ?? DateTime.now();
           final bTime = DateTime.tryParse(b['timestamp']) ?? DateTime.now();
           return bTime.compareTo(aTime);
         });
-
-        setState(() {
-          notifications = allNotifications;
-          isLoading = false;
-        });
       }
 
-      //for job notifications
-      final jobNotifications =
+      // Fetch job notifications
+      final jobNotifsFromApi =
           await _notificationService.fetchApplyForJobNotifications();
       if (mounted) {
         final jobNotificationsList =
-            jobNotifications.map((notification) {
+            jobNotifsFromApi.map((notification) {
               return {
                 'id': notification.id,
                 'title': notification.title,
@@ -109,10 +85,13 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
             }).toList();
         _logger.d('Job notifications list:', error: jobNotificationsList);
 
-        allNotifications.addAll(jobNotificationsList);
+        jobNotifs.addAll(jobNotificationsList);
+      }
 
+      if (mounted) {
         setState(() {
-          notifications = allNotifications;
+          communityNotifications = communityNotifs;
+          jobNotifications = jobNotifs;
           isLoading = false;
         });
       }
@@ -132,14 +111,16 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
     _notificationService = NotificationService();
     _animationController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 300),
     );
+    _tabController = TabController(length: 2, vsync: this);
     _fetchNotifications();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -151,12 +132,10 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
         return Icons.comment_bank_rounded;
       case 'reply':
         return Icons.reply;
-
       case 'friend':
         return Icons.person_add;
       case 'system':
         return Icons.system_update;
-
       case 'event':
         return Icons.event;
       case 'applyjob':
@@ -193,35 +172,37 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
     setState(() {
       isLoading = true;
     });
-
     await _fetchNotifications();
-
     return Future.value();
   }
 
-  // void _markAsRead(int index) {
-  //   setState(() {
-  //     notifications[index]['read'] = true;
-  //   });
-  // }
-  Future<void> _markAsRead(int index) async {
-    final notification = notifications[index];
+  Future<void> _markAsRead(int index, bool isCommunityTab) async {
+    final notification =
+        isCommunityTab
+            ? communityNotifications[index]
+            : jobNotifications[index];
     final notificationId = notification['id'];
 
     setState(() {
-      notifications[index]['read'] = true;
+      if (isCommunityTab) {
+        communityNotifications[index]['read'] = true;
+      } else {
+        jobNotifications[index]['read'] = true;
+      }
     });
 
     try {
       await _notificationService.markAsRead(notificationId);
     } catch (e) {
       setState(() {
-        notifications[index]['read'] = false;
+        if (isCommunityTab) {
+          communityNotifications[index]['read'] = false;
+        } else {
+          jobNotifications[index]['read'] = false;
+        }
       });
-
-      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to mark notification as read')),
+        const SnackBar(content: Text('Failed to mark notification as read')),
       );
     }
   }
@@ -231,16 +212,23 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Notifications',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [Tab(text: 'Community'), Tab(text: 'Jobs')],
+        ),
         actions: [
           IconButton(
-            icon: Icon(Icons.done_all),
+            icon: const Icon(Icons.done_all),
             onPressed: () {
               setState(() {
-                for (var notification in notifications) {
+                for (var notification in communityNotifications) {
+                  notification['read'] = true;
+                }
+                for (var notification in jobNotifications) {
                   notification['read'] = true;
                 }
               });
@@ -266,7 +254,7 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
                         ),
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Text(
                       'Loading notifications...',
                       style: TextStyle(fontSize: 16, color: Colors.grey[600]),
@@ -274,20 +262,39 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
                   ],
                 ),
               )
-              : notifications.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                onRefresh: _handleRefresh,
-                child: ListView.builder(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  itemCount: notifications.length,
-                  itemBuilder: (context, index) {
-                    final notification = notifications[index];
-                    return _buildNotificationCard(notification, index);
-                  },
-                ),
+              : TabBarView(
+                controller: _tabController,
+                children: [
+                  // Community Tab
+                  _buildNotificationList(true),
+                  // Jobs Tab
+                  _buildNotificationList(false),
+                ],
               ),
     );
+  }
+
+  Widget _buildNotificationList(bool isCommunityTab) {
+    final notifications =
+        isCommunityTab ? communityNotifications : jobNotifications;
+
+    return notifications.isEmpty
+        ? _buildEmptyState()
+        : RefreshIndicator(
+          onRefresh: _handleRefresh,
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: notifications.length,
+            itemBuilder: (context, index) {
+              final notification = notifications[index];
+              return _buildNotificationCard(
+                notification,
+                index,
+                isCommunityTab,
+              );
+            },
+          ),
+        );
   }
 
   Widget _buildEmptyState() {
@@ -300,7 +307,7 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
             size: 80,
             color: Colors.grey[400],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             'No notifications yet',
             style: TextStyle(
@@ -309,7 +316,7 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
               color: Colors.grey[700],
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             'Pull down to refresh',
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
@@ -319,7 +326,11 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
     );
   }
 
-  Widget _buildNotificationCard(Map notification, int index) {
+  Widget _buildNotificationCard(
+    Map notification,
+    int index,
+    bool isCommunityTab,
+  ) {
     final bool isRead = notification['read'];
     final String type = notification['type'];
 
@@ -341,22 +352,30 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
             background: Container(
               color: Colors.red,
               alignment: Alignment.centerRight,
-              padding: EdgeInsets.only(right: 20),
-              child: Icon(Icons.delete, color: Colors.white),
+              padding: const EdgeInsets.only(right: 20),
+              child: const Icon(Icons.delete, color: Colors.white),
             ),
             direction: DismissDirection.endToStart,
             onDismissed: (direction) {
               setState(() {
-                notifications.removeAt(index);
+                if (isCommunityTab) {
+                  communityNotifications.removeAt(index);
+                } else {
+                  jobNotifications.removeAt(index);
+                }
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Notification dismissed'),
+                  content: const Text('Notification dismissed'),
                   action: SnackBarAction(
                     label: 'UNDO',
                     onPressed: () {
                       setState(() {
-                        notifications.insert(index, notification);
+                        if (isCommunityTab) {
+                          communityNotifications.insert(index, notification);
+                        } else {
+                          jobNotifications.insert(index, notification);
+                        }
                       });
                     },
                   ),
@@ -364,7 +383,7 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
               );
             },
             child: Card(
-              margin: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               elevation: isRead ? 0 : 2,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -377,7 +396,7 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
-                  _markAsRead(index);
+                  _markAsRead(index, isCommunityTab);
                   NotificationNavigator(
                     context,
                   ).navigateBasedOnType(notification);
@@ -385,12 +404,7 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: _getNotificationColor(type, isRead).withValues(
-                      red: _getNotificationColor(type, isRead).r.toDouble(),
-                      green: _getNotificationColor(type, isRead).g.toDouble(),
-                      blue: _getNotificationColor(type, isRead).b.toDouble(),
-                      alpha: 26.0,
-                    ),
+                    color: _getNotificationColor(type, isRead).withOpacity(0.1),
                   ),
                   child: Stack(
                     children: [
@@ -419,24 +433,7 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
                                 color: _getNotificationColor(
                                   type,
                                   isRead,
-                                ).withValues(
-                                  red:
-                                      _getNotificationColor(
-                                        type,
-                                        isRead,
-                                      ).r.toDouble(),
-                                  green:
-                                      _getNotificationColor(
-                                        type,
-                                        isRead,
-                                      ).g.toDouble(),
-                                  blue:
-                                      _getNotificationColor(
-                                        type,
-                                        isRead,
-                                      ).b.toDouble(),
-                                  alpha: 26.0,
-                                ),
+                                ).withOpacity(0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -445,7 +442,7 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
                                 size: 24,
                               ),
                             ),
-                            SizedBox(width: 16),
+                            const SizedBox(width: 16),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -460,7 +457,7 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
                                       fontSize: 16,
                                     ),
                                   ),
-                                  SizedBox(height: 4),
+                                  const SizedBox(height: 4),
                                   Text(
                                     notification['body'],
                                     style: TextStyle(
@@ -468,7 +465,7 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
                                       fontSize: 14,
                                     ),
                                   ),
-                                  SizedBox(height: 8),
+                                  const SizedBox(height: 8),
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
@@ -482,14 +479,17 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
                                       ),
                                       if (!isRead)
                                         TextButton(
-                                          onPressed: () => _markAsRead(index),
-
+                                          onPressed:
+                                              () => _markAsRead(
+                                                index,
+                                                isCommunityTab,
+                                              ),
                                           style: TextButton.styleFrom(
-                                            padding: EdgeInsets.symmetric(
+                                            padding: const EdgeInsets.symmetric(
                                               horizontal: 8,
                                               vertical: 0,
                                             ),
-                                            minimumSize: Size(0, 0),
+                                            minimumSize: Size.zero,
                                             tapTargetSize:
                                                 MaterialTapTargetSize
                                                     .shrinkWrap,

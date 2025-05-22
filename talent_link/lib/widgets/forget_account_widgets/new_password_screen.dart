@@ -1,10 +1,14 @@
 // ignore_for_file: library_private_types_in_public_api
+//new api all fixed i used api.env
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/base_widgets/text_field.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class NewPasswordScreen extends StatefulWidget {
   final String email;
@@ -39,7 +43,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
     }
 
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:5000/api/auth/set-new-password'),
+      Uri.parse('$baseUrl/auth/set-new-password'),
       headers: <String, String>{'Content-Type': 'application/json'},
       body: jsonEncode(<String, String>{
         'email': widget.email,

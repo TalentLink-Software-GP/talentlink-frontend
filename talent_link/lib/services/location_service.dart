@@ -1,16 +1,20 @@
+//new api all fixed i used api.env
+
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 
+final String baseUrl = dotenv.env['BASE_URL']!;
+
 class LocationService {
-  final String baseUrl;
   final String token;
   final _logger = Logger();
 
-  LocationService({required this.baseUrl, required this.token});
+  LocationService({required this.token});
 
   Future<bool> setLocation({required double lat, required double lng}) async {
-    final url = Uri.parse('$baseUrl/api/location/set');
+    final url = Uri.parse('$baseUrl/location/set');
     final response = await http.post(
       url,
       headers: {
@@ -29,7 +33,7 @@ class LocationService {
   }
 
   Future<Map<String, double>> getLocationByUsername(String username) async {
-    final url = Uri.parse('$baseUrl/api/location/get');
+    final url = Uri.parse('$baseUrl/location/get');
     final response = await http.post(
       url,
       headers: {
@@ -52,7 +56,7 @@ class LocationService {
   }
 
   Future<List<Map<String, dynamic>>> getAllCompaniesLocations() async {
-    final url = Uri.parse('$baseUrl/api/location/all');
+    final url = Uri.parse('$baseUrl/location/all');
     final response = await http.get(
       url,
       headers: {'Authorization': 'Bearer $token'},

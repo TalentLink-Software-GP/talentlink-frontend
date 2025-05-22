@@ -1,9 +1,13 @@
 // ignore_for_file: library_private_types_in_public_api
+//new api all fixed i used api.env
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:talent_link/widgets/forget_account_widgets/new_password_screen.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class EnterResetCodeScreen extends StatefulWidget {
   final String email;
@@ -19,7 +23,7 @@ class _EnterResetCodeScreenState extends State<EnterResetCodeScreen> {
   bool isLoading = false;
 
   Future<void> verifyResetCode() async {
-    final String apiUrl = "http://10.0.2.2:5000/api/auth/verify-reset-code";
+    final String apiUrl = "$baseUrl/auth/verify-reset-code";
     final String resetCode = codeController.text.trim();
 
     if (resetCode.isEmpty) {

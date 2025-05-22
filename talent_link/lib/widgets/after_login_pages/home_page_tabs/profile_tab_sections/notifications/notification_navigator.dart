@@ -1,6 +1,8 @@
-import 'dart:convert';
+//new api all fixed i used api.env
 
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:talent_link/models/job.dart';
@@ -9,19 +11,27 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/single_post_piew_for_notification.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_card.dart';
 import 'package:logger/logger.dart';
+import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/meeting/joinMeeting.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class NotificationNavigator {
   final BuildContext context;
   final _logger = Logger();
 
   NotificationNavigator(this.context);
-  final String baseUrl = 'http://10.0.2.2:5000/api';
+  //192.168.1.7
+  // final String baseUrl = 'http://192.168.1.7:5000/api';
   List<Map<String, dynamic>> posts = [];
 
   void navigateBasedOnType(Map notification) async {
-    final String type = notification['type'];
-    final String myJobId = notification['jobId'];
-    final String postId = notification['postId'];
+    final String type = notification['type'] ?? 'unknown';
+    final String myJobId = notification['jobId'] ?? '';
+    final String postId = notification['postId'] ?? '';
+
+    final String meetingId = notification['meetingId'] ?? '';
+    final String meetingLink = notification['meetingLink'] ?? '';
+    final String scheduledDateTime = notification['scheduledDateTime'] ?? '';
 
     switch (type) {
       case 'job':
@@ -43,11 +53,34 @@ class NotificationNavigator {
       case 'post':
         _navigateToPost(postId, type);
         break;
-
+      case 'meeting':
+        _navigateToMeeting(meetingId, meetingLink, scheduledDateTime);
+        break;
       default:
         _showUnsupportedTypeMessage(type);
         break;
     }
+  }
+
+  Future<void> _navigateToMeeting(
+    String meetingId,
+    String meetingLink,
+    String scheduledDateTime,
+  ) async {
+    print('haaaaaaaaaaaaaaaaaaaaaaaa: $meetingId');
+    print('meetingLink: $meetingLink');
+    print('scheduledDateTime: $scheduledDateTime');
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => JoinMeetingPage(
+              meetingId: meetingId,
+              meetingLink: meetingLink,
+              scheduledDateTime: scheduledDateTime,
+            ),
+      ),
+    );
   }
 
   //done100%

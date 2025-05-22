@@ -11,6 +11,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:talent_link/firebase_options.dart';
 import 'package:talent_link/services/fcm_service.dart';
 import 'package:talent_link/utils/app_lifecycle_manager.dart';
@@ -21,6 +22,7 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab
 import 'package:talent_link/widgets/sign_up_widgets/account_created_screen.dart';
 import 'package:talent_link/widgets/applicatin_startup/startup_page.dart';
 import 'package:talent_link/widgets/sign_up_widgets/signup_page.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final logger = Logger();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -31,9 +33,15 @@ Future _firebaseBackgroundMessage(RemoteMessage message) async {
   }
 }
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+Future<void> requestPermissions() async {
+  await [Permission.microphone, Permission.camera].request();
+}
 
+void main() async {
+  await dotenv.load(fileName: "api.env");
+
+  WidgetsFlutterBinding.ensureInitialized();
+  await requestPermissions();
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,

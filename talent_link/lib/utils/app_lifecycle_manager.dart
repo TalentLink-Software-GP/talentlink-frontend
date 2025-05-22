@@ -1,6 +1,11 @@
+//new api all fixed i used api.env
+
 // app_lifecycle_manager.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:talent_link/services/socket_service.dart';
+
+final String baseUrl2 = dotenv.env['BASE_URL2']!;
 
 class AppLifecycleManager extends StatefulWidget {
   final Widget child;
@@ -34,8 +39,10 @@ class _AppLifecycleManagerState extends State<AppLifecycleManager>
     if (widget.userId == null || widget.token == null) return;
 
     _socketService = SocketService();
+    //192.168.1.7
     await _socketService.initializePresence(
-      url: 'http://10.0.2.2:5000',
+      //      url: 'http://192.168.1.7:5000',
+      url: baseUrl2,
       userId: widget.userId!,
       token: widget.token!,
     );

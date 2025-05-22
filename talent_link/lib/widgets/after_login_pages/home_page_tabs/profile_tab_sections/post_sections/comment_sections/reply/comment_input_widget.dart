@@ -61,6 +61,7 @@ class _CommentInputWidgetState extends State<CommentInputWidget>
 
   Future<void> _handleSubmit() async {
     final text = widget.controller.text.trim();
+
     if (text.isEmpty || _isSubmitting) return;
 
     setState(() => _isSubmitting = true);

@@ -1,4 +1,7 @@
+//new api all fixed i used api.env
+
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:logger/logger.dart';
@@ -6,6 +9,8 @@ import 'package:logger/logger.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/base_widgets/text_field.dart';
 import 'package:talent_link/widgets/sign_up_widgets/check_verification_screen.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class OrganizationSignupScreen extends StatefulWidget {
   const OrganizationSignupScreen({super.key});
@@ -76,7 +81,7 @@ class _OrganizationSignupScreenState extends State<OrganizationSignupScreen> {
 
     try {
       final url = Uri.parse(
-        'http://10.0.2.2:5000/api/auth/register',
+        '$baseUrl/auth/register',
       ); // Replace this with your real URL
       final response = await http.post(
         url,

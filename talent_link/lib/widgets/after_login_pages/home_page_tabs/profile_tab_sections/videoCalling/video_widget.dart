@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:zego_uikit_prebuilt_video_conference/zego_uikit_prebuilt_video_conference.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:logger/logger.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class VideoWidget extends StatefulWidget {
   final String currentUserId;
@@ -33,6 +34,7 @@ class _VideoWidgetState extends State<VideoWidget> {
   bool isCallEnded = false;
   Timer? callTimer;
   String callStatus = 'Calling...';
+  bool _permissionsGranted = false;
 
   // Generate a unique conference ID for the call
   String get conferenceID => widget.conferenceID;
@@ -40,26 +42,64 @@ class _VideoWidgetState extends State<VideoWidget> {
   @override
   void initState() {
     super.initState();
+    _requestPermissions();
+  }
 
-    _logger.i(
-      "VideoWidget initialized with: currentUserId=${widget.currentUserId}, peerUserId=${widget.peerUserId}",
-    );
+  Future<void> _requestPermissions() async {
+    try {
+      // Request camera and microphone permissions
+      Map<Permission, PermissionStatus> statuses =
+          await [Permission.camera, Permission.microphone].request();
 
-    // Register the user's socket connection
-    widget.socket.emit('register', widget.currentUserId);
-
-    if (widget.isInitiator) {
-      _sendCallRequest();
-      callStatus = 'Calling...';
-    } else {
-      _sendCallAccepted();
-      setState(() {
-        isCallAccepted = true;
-        callStatus = 'Connected';
+      bool allGranted = true;
+      statuses.forEach((permission, status) {
+        if (!status.isGranted) {
+          allGranted = false;
+        }
       });
-    }
 
-    _setupSocketListeners();
+      if (allGranted) {
+        setState(() {
+          _permissionsGranted = true;
+        });
+
+        _logger.i("Permissions granted, initializing call");
+
+        // Register the user's socket connection
+        widget.socket.emit('register', widget.currentUserId);
+
+        if (widget.isInitiator) {
+          _sendCallRequest();
+          callStatus = 'Calling...';
+        } else {
+          _sendCallAccepted();
+          setState(() {
+            isCallAccepted = true;
+            callStatus = 'Connected';
+          });
+        }
+
+        _setupSocketListeners();
+      } else {
+        _logger.e("Permissions not granted");
+        setState(() {
+          callStatus = 'Permissions Required';
+        });
+        // Show error message to user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Camera and microphone permissions are required for video calls',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      _logger.e("Error requesting permissions", error: e);
+    }
   }
 
   void _setupSocketListeners() {
@@ -250,6 +290,31 @@ class _VideoWidgetState extends State<VideoWidget> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_permissionsGranted) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, color: Colors.red, size: 60),
+              SizedBox(height: 20),
+              Text(
+                'Camera and microphone permissions are required',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _requestPermissions,
+                child: Text('Grant Permissions'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return WillPopScope(
       onWillPop: () async {
         _sendCallEnded();
@@ -266,32 +331,28 @@ class _VideoWidgetState extends State<VideoWidget> {
                 appSign:
                     'eb6aebf3c532a731f17deb12859b8a25790b9d8fdff4ffc5e9bc009e1fa42435',
                 userID: widget.currentUserId,
-                userName: 'User_${widget.currentUserId}',
+                userName: widget.peerUsername,
                 conferenceID: widget.conferenceID,
                 config: ZegoUIKitPrebuiltVideoConferenceConfig(
                   onLeaveConfirmation: (context) async {
                     try {
-                      // Just set the state, don't navigate here
                       setState(() {
                         isCallEnded = true;
                         callStatus = 'Call Ended';
                       });
 
-                      // Send call ended event if socket is connected
                       if (widget.socket.connected) {
                         final callData = {
                           'callerId': widget.currentUserId,
                           'receiverId': widget.peerUserId,
                           'timestamp': DateTime.now().toIso8601String(),
                         };
-
                         widget.socket.emit('callEnded', callData);
                       }
-
                       return true;
                     } catch (e) {
                       _logger.e("Error in onLeaveConfirmation", error: e);
-                      return true; // Still allow leaving
+                      return true;
                     }
                   },
                   audioVideoViewConfig: ZegoPrebuiltAudioVideoViewConfig(
@@ -321,6 +382,9 @@ class _VideoWidgetState extends State<VideoWidget> {
                       );
                     },
                   ),
+                  turnOnMicrophoneWhenJoining: true,
+                  turnOnCameraWhenJoining: true,
+                  useSpeakerWhenJoining: true,
                 ),
               ),
 

@@ -1,5 +1,9 @@
 // login_page.dart
+//new api all fixed i used api.env
+
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
 import 'package:talent_link/utils/app_lifecycle_manager.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page.dart';
@@ -12,6 +16,8 @@ import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -74,7 +80,7 @@ class _LoginPageState extends State<LoginPage>
     });
 
     try {
-      var url = Uri.parse('http://10.0.2.2:5000/api/auth/login');
+      var url = Uri.parse('$baseUrl/auth/login');
       var response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
@@ -90,32 +96,35 @@ class _LoginPageState extends State<LoginPage>
 
         if (!mounted) return;
 
-        // Decode the token to get the role
         final decodedToken = JwtDecoder.decode(data["token"]);
         final role = decodedToken['role'];
+        String userId = decodedToken['id'];
+        String username = decodedToken['username'];
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', data['token']);
+        await prefs.setString('username', username);
+        await prefs.setString('role', role);
+        await prefs.setString('userId', userId);
 
-        // Navigate based on role
-        if (role == 'Organization') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => OrganizationHomePage(token: data["token"]),
-            ),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => HomePage(
-                    data: data["token"],
-                    onTokenChanged: (newToken) async {
-                      // Handle token change
-                    },
-                  ),
-            ),
-          );
-        }
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => AppLifecycleManager(
+                  userId: userId,
+                  token: data["token"],
+                  child:
+                      role == 'Organization'
+                          ? OrganizationHomePage(token: data["token"])
+                          : HomePage(
+                            data: data["token"],
+                            onTokenChanged: (newToken) async {
+                              // Handle token change
+                            },
+                          ),
+                ),
+          ),
+        );
       } else {
         var data = jsonDecode(response.body);
         setState(() {
@@ -389,7 +398,13 @@ class _LoginPageState extends State<LoginPage>
                           alignment: Alignment.centerLeft,
                           child: TextButton(
                             onPressed: () {
-                              // TODO: Implement forgot password
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => const ForgotAccountScreen(),
+                                ),
+                              );
                             },
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(

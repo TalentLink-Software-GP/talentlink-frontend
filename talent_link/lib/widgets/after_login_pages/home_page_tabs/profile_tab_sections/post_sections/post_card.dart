@@ -1,4 +1,7 @@
+//new api all fixed i used api.env
+
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/profile_widget_for_another_users.dart';
@@ -6,6 +9,8 @@ import 'comment_sections/comments_modal.dart';
 import 'comment_sections/comments_section.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class PostCard extends StatefulWidget {
   final String postId;
@@ -194,9 +199,7 @@ class _PostCardState extends State<PostCard>
 
   Future<void> handleLike() async {
     _likeController.forward().then((_) => _likeController.reverse());
-    final url = Uri.parse(
-      'http://10.0.2.2:5000/api/posts/${widget.postId}/like-post',
-    );
+    final url = Uri.parse('$baseUrl/posts/${widget.postId}/like-post');
 
     try {
       final response = await http.patch(

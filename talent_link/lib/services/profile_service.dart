@@ -1,7 +1,12 @@
+//new api all fixed i used api.env
+
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_profile_data.dart';
 import 'package:logger/logger.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class ProfileService {
   static final _logger = Logger();
@@ -10,7 +15,9 @@ class ProfileService {
     String token, {
     String? username,
   }) async {
-    final uri = Uri.parse('http://10.0.2.2:5000/api/skills/get-all');
+    //192.168.1.7      final uri = Uri.parse('http://10.0.2.2:5000/api/skills/get-all');
+
+    final uri = Uri.parse('$baseUrl/skills/get-all');
 
     final headers = {
       'Content-Type': 'application/json',
@@ -35,7 +42,7 @@ class ProfileService {
   ) async {
     _logger.i('Deleting item:', error: {'field': field, 'value': value});
     final response = await http.delete(
-      Uri.parse('http://10.0.2.2:5000/api/skills/delete-$field'),
+      Uri.parse('$baseUrl/skills/delete-$field'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -52,7 +59,7 @@ class ProfileService {
   static Future<void> addItem(String field, String value, String token) async {
     _logger.i('Adding item:', error: {'field': field, 'value': value});
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:5000/api/skills/add-$field'),
+      Uri.parse('$baseUrl/skills/add-$field'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -72,7 +79,7 @@ class ProfileService {
     String token,
   ) async {
     final response = await http.put(
-      Uri.parse('http://10.0.2.2:5000/api/skills/update-$field'),
+      Uri.parse('$baseUrl/skills/update-$field'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
