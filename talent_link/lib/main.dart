@@ -10,15 +10,20 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:talent_link/firebase_options.dart';
 import 'package:talent_link/services/fcm_service.dart';
 import 'package:talent_link/utils/app_lifecycle_manager.dart';
 import 'package:talent_link/utils/push_notifications_firebase.dart';
 import 'package:talent_link/utils/theme/app_theme.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tabs/job_details_screen.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/mesage_profile.dart';
+import 'package:talent_link/widgets/appSetting/theremeProv.dart';
 import 'package:talent_link/widgets/sign_up_widgets/account_created_screen.dart';
 import 'package:talent_link/widgets/applicatin_startup/startup_page.dart';
 import 'package:talent_link/widgets/sign_up_widgets/signup_page.dart';
@@ -35,6 +40,25 @@ Future _firebaseBackgroundMessage(RemoteMessage message) async {
 
 Future<void> requestPermissions() async {
   await [Permission.microphone, Permission.camera].request();
+}
+
+Future<bool> validateToken(String token) async {
+  // try {
+  //   final response = await http.get(
+  //     Uri.parse("https://your-backend.com/api/validate-token"),
+  //     headers: {
+  //       'Authorization': 'Bearer $token',
+  //     },
+  //   );
+  //   if (response.statusCode == 200) {
+  //     return true;
+  //   } else {
+  //     return false;
+  //   }
+  // } catch (e) {
+  //   return false;
+  // }
+  return true;
 }
 
 void main() async {
@@ -55,13 +79,36 @@ void main() async {
     logger.e("Error initializing Firebase", error: e);
   }
 
-  FirebaseMessaging.instance.getToken().then((token) {
+  FirebaseMessaging.instance.getToken().then((token) async {
     logger.i("Current FCM Token: $token");
   });
 
   FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundMessage);
 
-  runApp(const MyApp());
+  final prefs = await SharedPreferences.getInstance();
+  final storedToken = prefs.getString('token');
+
+  bool isValidToken = false;
+
+  if (storedToken != null && storedToken.isNotEmpty) {
+    try {
+      isValidToken = await validateToken(storedToken);
+    } catch (e) {
+      logger.e("Token validation failed: $e");
+      prefs.remove('token');
+    }
+  }
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+
+      child: MyApp(
+        isLoggedIn: isValidToken,
+        userToken: isValidToken ? storedToken : null,
+      ),
+    ),
+  );
 }
 
 Future<void> _handleFcmRecovery() async {
@@ -79,18 +126,30 @@ Future<void> _handleFcmRecovery() async {
 class MyApp extends StatelessWidget {
   final String? userId;
   final String? token;
+  final bool isLoggedIn;
+  final String? userToken;
 
-  const MyApp({this.userId, this.token, super.key});
+  const MyApp({
+    this.userId,
+    this.token,
+    super.key,
+    required this.isLoggedIn,
+    this.userToken,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(
+      context,
+    ); // <-- Add this line
+
     return MaterialApp(
       title: 'TalentLink',
       navigatorKey: navigatorKey,
 
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       builder: (context, child) {
@@ -143,7 +202,16 @@ class MyApp extends StatelessWidget {
         return null;
       },
       routes: {
-        '/': (context) => const StartupPage(),
+        '/':
+            (context) =>
+                isLoggedIn
+                    ? HomePage(
+                      data: userToken ?? '',
+                      onTokenChanged: (String userToken) => userToken,
+                    )
+                    : StartupPage(),
+
+        // '/': (context) => const StartupPage(),
         '/chat': (context) {
           final args =
               ModalRoute.of(context)?.settings.arguments as Map<String, String>;
