@@ -1,10 +1,14 @@
 // ignore_for_file: library_private_types_in_public_api
+//new api all fixed i used api.env
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'package:talent_link/widgets/forget_account_widgets/enter_reset_code_screen.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class ForgotAccountScreen extends StatefulWidget {
   const ForgotAccountScreen({super.key});
@@ -18,7 +22,7 @@ class _ForgotAccountScreenState extends State<ForgotAccountScreen> {
   bool isLoading = false;
 
   Future<void> sendResetLink() async {
-    final String apiUrl = "http://10.0.2.2:5000/api/auth/forgot-password";
+    final String apiUrl = "$baseUrl/auth/forgot-password";
     final String email = emailController.text.trim();
 
     if (email.isEmpty) {

@@ -1,12 +1,16 @@
 // ignore_for_file: library_private_types_in_public_api, avoid_print
+//new api all fixed i used api.env
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/base_widgets/text_field.dart';
 import 'package:talent_link/widgets/sign_up_widgets/check_verification_screen.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class SignUpScreen extends StatefulWidget {
   final String country;
@@ -78,7 +82,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       String password = passwordController.text;
 
       try {
-        var url = Uri.parse('http://10.0.2.2:5000/api/auth/register');
+        var url = Uri.parse('$baseUrl/auth/register');
 
         var response = await http.post(
           url,

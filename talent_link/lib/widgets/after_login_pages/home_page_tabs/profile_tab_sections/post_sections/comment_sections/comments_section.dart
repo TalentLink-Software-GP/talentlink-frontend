@@ -1,7 +1,12 @@
+//new api all fixed i used api.env
+
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import './comment_widget.dart';
 import 'reply/comment_input_widget.dart';
 import './comment_service.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class CommentsSection extends StatefulWidget {
   final List<Map<String, dynamic>> comments;
@@ -36,7 +41,7 @@ class _CommentsSectionState extends State<CommentsSection> {
   void initState() {
     super.initState();
     _commentService = CommentService(
-      baseUrl: "http://10.0.2.2:5000/api",
+      baseUrl: baseUrl,
       token: widget.token,
       postId: widget.postId,
     );

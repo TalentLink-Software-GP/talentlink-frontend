@@ -1,10 +1,17 @@
+//new api all fixed i used api.env
+
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 
+final String baseUrl = dotenv.env['BASE_URL']!;
+
 class SearchPageService {
-  final String baseUrl = 'http://10.0.2.2:5000/api';
+  //192.168.1.7    final String baseUrl = 'http://10.0.2.2:5000/api';
+  //  final String baseUrl = 'http://192.168.1.7:5000/api';
+
   final _logger = Logger();
 
   Future<List<dynamic>> fetchChatHistory(String currentUserId) async {
@@ -67,7 +74,6 @@ class SearchPageService {
       return false;
     }
   }
-
 
   Future<int> getUnreadCount(String userId, String peerId) async {
     final response = await http.get(

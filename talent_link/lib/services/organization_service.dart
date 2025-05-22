@@ -1,16 +1,20 @@
+//new api all fixed i used api.env
+
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
+final String baseUrl = dotenv.env['BASE_URL']!;
+
 class OrganizationService {
-  final String baseUrl;
   final String token;
 
-  OrganizationService({required this.baseUrl, required this.token});
+  OrganizationService({required this.token});
 
   Future<Map<String, dynamic>> getOrganizationProfile({
     String? organizationId,
   }) async {
-    final uri = Uri.parse('$baseUrl/getOrgData');
+    final uri = Uri.parse('$baseUrl/organization/getOrgData');
     final response = await http.post(
       uri,
       headers: {

@@ -1,4 +1,7 @@
+//new api all fixed i used api.env
+
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:talent_link/services/message_service.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tab.dart';
@@ -9,6 +12,8 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab
 import 'package:talent_link/widgets/login_widgets/login_page.dart';
 import '../after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_creator.dart';
 import 'package:logger/logger.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class HomePage extends StatefulWidget {
   final String data; // Token
@@ -38,8 +43,9 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> fetchUserData() async {
-    const String apiUrl =
-        "http://10.0.2.2:5000/api/skills/get-skills-education";
+    String apiUrl =
+        //192.168.1.7             "http://10.0.2.2:5000/api/skills/get-skills-education";
+        "$baseUrl/skills/get-skills-education";
     try {
       final response = await http.get(
         Uri.parse(apiUrl),

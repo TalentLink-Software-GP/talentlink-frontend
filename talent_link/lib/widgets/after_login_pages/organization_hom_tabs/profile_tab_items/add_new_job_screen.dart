@@ -1,9 +1,14 @@
+//new api all fixed i used api.env
+
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:talent_link/widgets/base_widgets/text_field.dart';
 import 'package:logger/logger.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class AddNewJobScreen extends StatefulWidget {
   final String token;
@@ -603,8 +608,9 @@ class _AddNewJobScreenState extends State<AddNewJobScreen>
   void submitJob() async {
     final url =
         isUpdate
-            ? 'http://10.0.2.2:5000/api/job/updatejob?jobId=${widget.jobToEdit!['_id']}'
-            : 'http://10.0.2.2:5000/api/job/addjob';
+            //10.0.2.2
+            ? '$baseUrl/job/updatejob?jobId=${widget.jobToEdit!['_id']}'
+            : '$baseUrl/job/addjob';
 
     final method = isUpdate ? http.patch : http.post;
 
@@ -658,7 +664,7 @@ class _AddNewJobScreenState extends State<AddNewJobScreen>
     try {
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://10.0.2.2:5000/api/job/smart-add-job'),
+        Uri.parse('$baseUrl/job/smart-add-job'),
       );
       request.headers['Authorization'] = 'Bearer ${widget.token}';
       request.files.add(
@@ -691,7 +697,7 @@ class _AddNewJobScreenState extends State<AddNewJobScreen>
     setState(() => isLoading = true);
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:5000/api/job/smart-add-job'),
+        Uri.parse('$baseUrl/job/smart-add-job'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
           'Content-Type': 'application/json',

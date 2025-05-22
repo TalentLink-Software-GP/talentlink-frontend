@@ -2,7 +2,6 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:talent_link/widgets/sign_up_widgets/account_created_screen.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';

@@ -1,6 +1,11 @@
+//new api all fixed i used api.env
+
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class Application {
   final String id;
@@ -9,6 +14,8 @@ class Application {
   final double matchScore;
   final DateTime appliedDate;
   final String status;
+  final String userId;
+  final String username;
 
   Application({
     required this.id,
@@ -17,6 +24,8 @@ class Application {
     required this.matchScore,
     required this.appliedDate,
     required this.status,
+    required this.userId,
+    required this.username,
   });
 
   factory Application.fromJson(Map<String, dynamic> json) {
@@ -28,6 +37,8 @@ class Application {
       appliedDate:
           DateTime.tryParse(json['appliedDate'] ?? '') ?? DateTime.now(),
       status: json['status'] ?? 'pending',
+      userId: json['userId'] ?? '',
+      username: json['username'] ?? 'Unknown User',
     );
   }
 }
@@ -44,7 +55,8 @@ class ApplicationService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:5000/api/applications/data'),
+        //192.168.1.7         Uri.parse('http://10.0.2.2:5000/api/applications/data'),
+        Uri.parse('$baseUrl/applications/data'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -75,7 +87,7 @@ class ApplicationService {
     String token,
   ) async {
     final response = await http.get(
-      Uri.parse('http://10.0.2.2:5000/api/applications/organization'),
+      Uri.parse('$baseUrl/applications/organization'),
       headers: {'Authorization': 'Bearer $token'},
     );
 
@@ -85,5 +97,16 @@ class ApplicationService {
     } else {
       throw Exception('Failed to load applications: ${response.body}');
     }
+  }
+
+  static Future<String?> getUserCV(String userId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/users/getUserCV/$userId'),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['cvUrl'];
+    }
+    return null;
   }
 }

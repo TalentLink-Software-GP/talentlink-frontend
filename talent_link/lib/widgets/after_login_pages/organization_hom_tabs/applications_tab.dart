@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:talent_link/utils/pdfViewr.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/profile_widget_for_another_users.dart';
+import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/meeting/meeting.dart';
+import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/meeting/organizationsMeetingSchedualing.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../services/application_service.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 //what i did at first fetch data from JOB class then send the data include(organizationsid username job title)
 //next make application service and  new class named Application to easer pass the data to the backend server
@@ -49,6 +56,10 @@ class _ApplicationsTabState extends State<ApplicationsTab>
     super.dispose();
   }
 
+  // Future<void> fetchCv() {
+  //   return ApplicationService.getUserCV(widget.token);
+  // }
+
   Future<void> fetchApplications() async {
     setState(() {
       isLoading = true;
@@ -83,6 +94,11 @@ class _ApplicationsTabState extends State<ApplicationsTab>
     }
   }
 
+  Future<String> getCurrentUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('userId') ?? 'defaultUserId';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -107,6 +123,31 @@ class _ApplicationsTabState extends State<ApplicationsTab>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    TextButton(
+                      onPressed: () async {
+                        final orgId = await getCurrentUserId();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => OrganizationMeetingsPage(
+                                  organizationId: orgId,
+                                ),
+                          ),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(context).primaryColor,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: const Text(
+                        "View Meetings",
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
                     Text(
                       "Applications",
                       style: TextStyle(
@@ -115,6 +156,7 @@ class _ApplicationsTabState extends State<ApplicationsTab>
                         color: Theme.of(context).primaryColor,
                       ),
                     ),
+
                     const SizedBox(height: 8),
                     Text(
                       "Manage your job applications",
@@ -196,6 +238,13 @@ class ApplicationCard extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     return "${date.day}/${date.month}/${date.year}";
+  }
+
+  Future<void> openCV(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
   }
 
   Color _getMatchColor(double score) {
@@ -354,7 +403,18 @@ class ApplicationCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => ProfileWidgetForAnotherUsers(
+                                    username: application.username,
+                                    token: token,
+                                  ),
+                            ),
+                          );
+                        },
                         style: TextButton.styleFrom(
                           foregroundColor: Theme.of(context).primaryColor,
                           padding: const EdgeInsets.symmetric(
@@ -364,6 +424,40 @@ class ApplicationCard extends StatelessWidget {
                         ),
                         child: const Text(
                           "View Profile",
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          print('User ID: ${application.userId}');
+                          if (application.userId != null) {
+                            final cvUrl = await ApplicationService.getUserCV(
+                              application.userId,
+                            );
+                            if (cvUrl != null && cvUrl.isNotEmpty) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => PDFViewerPage(url: cvUrl),
+                                ),
+                              );
+                            } else {
+                              print('No CV URL found');
+                            }
+                          } else {
+                            print("application.userId is null!");
+                          }
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Theme.of(context).primaryColor,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                        ),
+                        child: const Text(
+                          "View Cv",
                           style: TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
@@ -390,7 +484,17 @@ class ApplicationCard extends StatelessWidget {
                           ],
                         ),
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => ScheduleMeetingPage(
+                                      applicantId: application.userId,
+                                    ),
+                              ),
+                            );
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
                             foregroundColor: Colors.white,

@@ -1,3 +1,5 @@
+//new api all fixed i used api.env
+
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -25,8 +27,8 @@ class _AvatarNameState extends State<AvatarName> {
   void initState() {
     super.initState();
     _orgService = OrganizationService(
-      // ← Add this
-      baseUrl: 'http://10.0.2.2:5000/api/organization',
+      // 192.168.1.7        baseUrl: 'http://10.0.2.2:5000/api/organization',
+      // baseUrl: 'http://192.168.1.7:5000/api/organization',
       token: widget.token,
     );
     fetchOrgData();
@@ -47,7 +49,9 @@ class _AvatarNameState extends State<AvatarName> {
   }
 
   Future<String?> uploadImageToBackend(File imageFile) async {
-    final uri = Uri.parse("http://10.0.2.2:5000/api/organization/updateAvatar");
+    final uri = Uri.parse(
+      "http://192.168.1.7:5000/api/organization/updateAvatar",
+    );
 
     final request = http.MultipartRequest("POST", uri);
     request.headers['Authorization'] = 'Bearer ${widget.token}';
@@ -87,7 +91,9 @@ class _AvatarNameState extends State<AvatarName> {
   }
 
   Future<void> removeAvatarFromBackend() async {
-    final uri = Uri.parse("http://10.0.2.2:5000/api/organization/deleteAvatar");
+    final uri = Uri.parse(
+      "http://192.168.1.7:5000/api/organization/deleteAvatar",
+    );
 
     try {
       final response = await http.delete(

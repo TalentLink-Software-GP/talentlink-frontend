@@ -8,13 +8,17 @@ class SocketService {
   io.Socket? _presenceSocket;
   final _logger = Logger();
 
+  // Add a stream controller to broadcast message events
+  final StreamController<Map<String, dynamic>> _messageController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  Stream<Map<String, dynamic>> get messageStream => _messageController.stream;
+
   Future<void> initializePresence({
     required String url,
     required String userId,
     required String token,
   }) async {
     final completer = Completer<void>();
-
     _presenceSocket = io.io('$url/presence', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': true,
@@ -59,7 +63,6 @@ class SocketService {
     required Function(String reason) onCallFailed,
   }) async {
     final completer = Completer<void>();
-
     try {
       // Initialize chat socket
       chatSocket = io.io('$url/chat', <String, dynamic>{
@@ -95,10 +98,22 @@ class SocketService {
       });
 
       chatSocket!.on("receiveMessage", (data) {
-        onMessage(Map<String, dynamic>.from(data));
+        _logger.i("Received message: $data");
+        final messageData = Map<String, dynamic>.from(data);
+        onMessage(messageData);
+        // Also broadcast to stream
+        _messageController.add(messageData);
       });
 
-      chatSocket!.onDisconnect((_) => _logger.w("Chat socket disconnected"));
+      chatSocket!.onDisconnect((_) {
+        _logger.w("Chat socket disconnected");
+        // Try to reconnect
+        Future.delayed(Duration(seconds: 2), () {
+          if (chatSocket != null && !chatSocket!.connected) {
+            chatSocket!.connect();
+          }
+        });
+      });
 
       chatSocket!.onConnectError((err) {
         _logger.e("Chat connect error:", error: err);
@@ -124,7 +139,15 @@ class SocketService {
         onCallFailed(data['reason'] ?? 'Unknown error');
       });
 
-      callSocket!.onDisconnect((_) => _logger.w("Call socket disconnected"));
+      callSocket!.onDisconnect((_) {
+        _logger.w("Call socket disconnected");
+        // Try to reconnect
+        Future.delayed(Duration(seconds: 2), () {
+          if (callSocket != null && !callSocket!.connected) {
+            callSocket!.connect();
+          }
+        });
+      });
 
       callSocket!.onConnectError(
         (err) => _logger.e("Call connect error:", error: err),
@@ -176,7 +199,22 @@ class SocketService {
   }
 
   void emitChat(String event, dynamic data) {
-    chatSocket?.emit(event, data);
+    if (chatSocket != null && chatSocket!.connected) {
+      _logger.i("Emitting chat event: $event with data: $data");
+      chatSocket!.emit(event, data);
+    } else {
+      _logger.w("Cannot emit chat event: socket not connected");
+      // Try to reconnect
+      if (chatSocket != null) {
+        chatSocket!.connect();
+        // Wait for connection and then emit
+        Future.delayed(Duration(seconds: 1), () {
+          if (chatSocket!.connected) {
+            chatSocket!.emit(event, data);
+          }
+        });
+      }
+    }
   }
 
   void emitCall(String event, dynamic data) {
@@ -188,7 +226,7 @@ class SocketService {
   bool get isCallConnected => callSocket?.connected ?? false;
 
   void listenForStatusUpdates(Function(String, bool) onStatusChange) {
-    chatSocket?.on('userStatusUpdate', (data) {
+    _presenceSocket?.on('userStatusUpdate', (data) {
       final userId = data['userId'];
       final isOnline = data['isOnline'];
       _logger.i(
@@ -206,9 +244,14 @@ class SocketService {
   }
 
   void startHealthChecks() {
-    Timer.periodic(Duration(seconds: 30), (timer) {
+    Timer.periodic(Duration(seconds: 10), (timer) {
       if (!isChatConnected) {
+        _logger.w("Chat socket disconnected, attempting to reconnect...");
         chatSocket?.connect();
+      }
+      if (!isCallConnected) {
+        _logger.w("Call socket disconnected, attempting to reconnect...");
+        callSocket?.connect();
       }
     });
   }
@@ -227,7 +270,13 @@ class SocketService {
   }) async {
     if (!isChatConnected) {
       _logger.w('Chat socket not connected');
-      return;
+      // Try to reconnect
+      chatSocket?.connect();
+      await Future.delayed(Duration(seconds: 1));
+      if (!isChatConnected) {
+        _logger.e('Failed to reconnect chat socket');
+        return;
+      }
     }
 
     final messageData = {
@@ -238,6 +287,7 @@ class SocketService {
       'timestamp': DateTime.now().toIso8601String(),
     };
 
+    _logger.i("Sending message: $messageData");
     emitChat('sendMessage', messageData);
   }
 
@@ -246,5 +296,6 @@ class SocketService {
     callSocket?.dispose();
     _presenceSocket?.disconnect();
     _presenceSocket?.dispose();
+    _messageController.close();
   }
 }

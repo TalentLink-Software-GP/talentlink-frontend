@@ -1,11 +1,16 @@
+//new api all fixed i used api.env
+
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class Resume extends StatefulWidget {
   final String token;
@@ -33,7 +38,9 @@ class _ResumeState extends State<Resume> {
 
     if (result != null && result.files.single.path != null) {
       File pdfFile = File(result.files.single.path!);
-      final uri = Uri.parse("http://10.0.2.2:5000/api/users/upload-cv");
+      //192.168.1.7       final uri = Uri.parse("http://10.0.2.2:5000/api/users/upload-cv");
+
+      final uri = Uri.parse("$baseUrl/users/upload-cv");
 
       final request = http.MultipartRequest("POST", uri);
       request.headers['Authorization'] = 'Bearer ${widget.token}';

@@ -26,12 +26,13 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _locationService = LocationService(
-      baseUrl: 'http://10.0.2.2:5000',
+      //192.168.1.7
+      //baseUrl: 'http://192.168.1.7:5000',
       token: widget.token,
     );
     _orgService = OrganizationService(
       // ← Add this
-      baseUrl: 'http://10.0.2.2:5000/api/organization',
+      // baseUrl: 'http://192.168.1.7:5000/api/organization',
       token: widget.token,
     );
     _getUserLocation();

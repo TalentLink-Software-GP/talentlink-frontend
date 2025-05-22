@@ -12,17 +12,19 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class NotificationsPageState extends State<NotificationsPage>
-    with SingleTickerProviderStateMixin {
-  List notifications = [];
+    with TickerProviderStateMixin {
+  List communityNotifications = [];
+  List jobNotifications = [];
   bool isLoading = true;
   late AnimationController _animationController;
   late NotificationService _notificationService;
   final logger = Logger();
+  late TabController _tabController;
 
-  // for user notifications
   Future<void> _fetchNotifications() async {
     try {
-      List allNotifications = [];
+      List communityNotifs = [];
+      List jobNotifs = [];
 
       final userNotifications =
           await _notificationService.fetchUserNotificationsLikeCommentReply();
@@ -55,25 +57,19 @@ class NotificationsPageState extends State<NotificationsPage>
               };
             }).toList();
 
-        allNotifications.addAll(userNotificationsList);
-        allNotifications.sort((a, b) {
+        communityNotifs.addAll(userNotificationsList);
+        communityNotifs.sort((a, b) {
           final aTime = DateTime.tryParse(a['timestamp']) ?? DateTime.now();
           final bTime = DateTime.tryParse(b['timestamp']) ?? DateTime.now();
           return bTime.compareTo(aTime);
         });
-
-        setState(() {
-          notifications = allNotifications;
-          isLoading = false;
-        });
       }
 
-      //for job notifications
-      final jobNotifications =
+      final jobNotifsFromApi =
           await _notificationService.fetchJobNotifications();
       if (mounted) {
         final jobNotificationsList =
-            jobNotifications.map((notification) {
+            jobNotifsFromApi.map((notification) {
               return {
                 'id': notification.id,
                 'title': notification.title,
@@ -88,10 +84,38 @@ class NotificationsPageState extends State<NotificationsPage>
             }).toList();
         logger.d("Job notifications list", error: jobNotificationsList);
 
-        allNotifications.addAll(jobNotificationsList);
+        jobNotifs.addAll(jobNotificationsList);
+      }
 
+      // Fetch meeting notifications (added to job notifications)
+      final meetingNotifs =
+          await _notificationService.fetchMeetingNotifications();
+      if (mounted) {
+        final meetingNotificationsList =
+            meetingNotifs.map((notification) {
+              return {
+                'id': notification.id,
+                'title': notification.title,
+                'body': notification.body,
+                'meetingId': notification.meetingId,
+                'applicantId': notification.applicantId,
+                'scheduledDateTime': notification.scheduledDateTime,
+                'organizationId': notification.organizationId,
+                'meetingLink': notification.meetingLink,
+                'type': 'meeting',
+                'read': notification.read ?? false,
+                'timestamp': notification.scheduledDateTime ?? 'No date',
+              };
+            }).toList();
+        logger.d("Meeting notifications list", error: meetingNotificationsList);
+
+        jobNotifs.addAll(meetingNotificationsList);
+      }
+
+      if (mounted) {
         setState(() {
-          notifications = allNotifications;
+          communityNotifications = communityNotifs;
+          jobNotifications = jobNotifs;
           isLoading = false;
         });
       }
@@ -113,12 +137,14 @@ class NotificationsPageState extends State<NotificationsPage>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+    _tabController = TabController(length: 2, vsync: this);
     _fetchNotifications();
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -140,6 +166,8 @@ class NotificationsPageState extends State<NotificationsPage>
         return Icons.work_rounded;
       case 'post':
         return Icons.post_add_rounded;
+      case 'meeting':
+        return Icons.meeting_room;
       default:
         return Icons.notifications_rounded;
     }
@@ -158,6 +186,8 @@ class NotificationsPageState extends State<NotificationsPage>
         return Colors.green;
       case 'job':
         return primaryColor;
+      case 'meeting':
+        return primaryColor;
       default:
         return primaryColor;
     }
@@ -170,20 +200,31 @@ class NotificationsPageState extends State<NotificationsPage>
     await _fetchNotifications();
     return Future.value();
   }
-  
-  Future<void> _markAsRead(int index) async {
-    final notification = notifications[index];
+
+  Future<void> _markAsRead(int index, bool isCommunityTab) async {
+    final notification =
+        isCommunityTab
+            ? communityNotifications[index]
+            : jobNotifications[index];
     final notificationId = notification['id'];
 
     setState(() {
-      notifications[index]['read'] = true;
+      if (isCommunityTab) {
+        communityNotifications[index]['read'] = true;
+      } else {
+        jobNotifications[index]['read'] = true;
+      }
     });
 
     try {
       await _notificationService.markAsRead(notificationId);
     } catch (e) {
       setState(() {
-        notifications[index]['read'] = false;
+        if (isCommunityTab) {
+          communityNotifications[index]['read'] = false;
+        } else {
+          jobNotifications[index]['read'] = false;
+        }
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -234,61 +275,76 @@ class NotificationsPageState extends State<NotificationsPage>
               ),
               child: SafeArea(
                 bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8.0,
-                    vertical: 4.0,
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.arrow_back_ios_rounded,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                        onPressed: () => Navigator.of(context).pop(),
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 40,
-                          minHeight: 40,
-                        ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8.0,
+                        vertical: 4.0,
                       ),
-                      const Expanded(
-                        child: Text(
-                          'Notifications',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.arrow_back_ios_rounded,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                            onPressed: () => Navigator.of(context).pop(),
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 40,
+                              minHeight: 40,
+                            ),
                           ),
-                        ),
+                          const Expanded(
+                            child: Text(
+                              'Notifications',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.done_all_rounded,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                for (var notification
+                                    in communityNotifications) {
+                                  notification['read'] = true;
+                                }
+                                for (var notification in jobNotifications) {
+                                  notification['read'] = true;
+                                }
+                              });
+                            },
+                            tooltip: 'Mark all as read',
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 40,
+                              minHeight: 40,
+                            ),
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.done_all_rounded,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            for (var notification in notifications) {
-                              notification['read'] = true;
-                            }
-                          });
-                        },
-                        tooltip: 'Mark all as read',
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 40,
-                          minHeight: 40,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                    TabBar(
+                      controller: _tabController,
+                      tabs: const [Tab(text: 'Community'), Tab(text: 'Jobs')],
+                      labelColor: Colors.white,
+                      unselectedLabelColor: Colors.white.withOpacity(0.7),
+                      indicatorColor: Colors.white,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -321,25 +377,44 @@ class NotificationsPageState extends State<NotificationsPage>
                           ],
                         ),
                       )
-                      : notifications.isEmpty
-                      ? _buildEmptyState()
-                      : RefreshIndicator(
-                        onRefresh: _handleRefresh,
-                        color: Theme.of(context).primaryColor,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          itemCount: notifications.length,
-                          itemBuilder: (context, index) {
-                            final notification = notifications[index];
-                            return _buildNotificationCard(notification, index);
-                          },
-                        ),
+                      : TabBarView(
+                        controller: _tabController,
+                        children: [
+                          // Community Tab
+                          _buildNotificationList(true),
+                          // Jobs Tab
+                          _buildNotificationList(false),
+                        ],
                       ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildNotificationList(bool isCommunityTab) {
+    final notifications =
+        isCommunityTab ? communityNotifications : jobNotifications;
+
+    return notifications.isEmpty
+        ? _buildEmptyState()
+        : RefreshIndicator(
+          onRefresh: _handleRefresh,
+          color: Theme.of(context).primaryColor,
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: notifications.length,
+            itemBuilder: (context, index) {
+              final notification = notifications[index];
+              return _buildNotificationCard(
+                notification,
+                index,
+                isCommunityTab,
+              );
+            },
+          ),
+        );
   }
 
   Widget _buildEmptyState() {
@@ -375,7 +450,11 @@ class NotificationsPageState extends State<NotificationsPage>
     );
   }
 
-  Widget _buildNotificationCard(Map notification, int index) {
+  Widget _buildNotificationCard(
+    Map notification,
+    int index,
+    bool isCommunityTab,
+  ) {
     final bool isRead = notification['read'];
     final String type = notification['type'];
     final Color notificationColor = _getNotificationColor(type, isRead);
@@ -405,7 +484,11 @@ class NotificationsPageState extends State<NotificationsPage>
         direction: DismissDirection.endToStart,
         onDismissed: (direction) {
           setState(() {
-            notifications.removeAt(index);
+            if (isCommunityTab) {
+              communityNotifications.removeAt(index);
+            } else {
+              jobNotifications.removeAt(index);
+            }
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -414,7 +497,11 @@ class NotificationsPageState extends State<NotificationsPage>
                 label: 'UNDO',
                 onPressed: () {
                   setState(() {
-                    notifications.insert(index, notification);
+                    if (isCommunityTab) {
+                      communityNotifications.insert(index, notification);
+                    } else {
+                      jobNotifications.insert(index, notification);
+                    }
                   });
                 },
               ),
@@ -436,7 +523,7 @@ class NotificationsPageState extends State<NotificationsPage>
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
             onTap: () {
-              _markAsRead(index);
+              _markAsRead(index, isCommunityTab);
               NotificationNavigator(context).navigateBasedOnType(notification);
             },
             child: Container(
@@ -517,7 +604,11 @@ class NotificationsPageState extends State<NotificationsPage>
                                   ),
                                   if (!isRead)
                                     TextButton(
-                                      onPressed: () => _markAsRead(index),
+                                      onPressed:
+                                          () => _markAsRead(
+                                            index,
+                                            isCommunityTab,
+                                          ),
                                       style: TextButton.styleFrom(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 8,

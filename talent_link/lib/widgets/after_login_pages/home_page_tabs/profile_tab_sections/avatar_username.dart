@@ -1,11 +1,16 @@
+//new api all fixed i used api.env
+
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:logger/logger.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class AvatarUsername extends StatefulWidget {
   final String token;
@@ -32,7 +37,8 @@ class _AvatarUsernameState extends State<AvatarUsername> {
     try {
       final response = await http.get(
         Uri.parse(
-          'http://10.0.2.2:5000/api/users/getUserData?userName=$username',
+          //192.168.1.7
+          '$baseUrl/users/getUserData?userName=$username',
         ),
         headers: {'Content-Type': 'application/json'},
       );
@@ -115,7 +121,7 @@ class _AvatarUsernameState extends State<AvatarUsername> {
   }
 
   Future<String?> uploadImageToBackend(File imageFile) async {
-    final uri = Uri.parse("http://10.0.2.2:5000/api/users/upload-avatar");
+    final uri = Uri.parse("$baseUrl/users/upload-avatar");
 
     final request = http.MultipartRequest("POST", uri);
     request.headers['Authorization'] = 'Bearer ${widget.token}';
@@ -142,7 +148,7 @@ class _AvatarUsernameState extends State<AvatarUsername> {
   }
 
   Future<void> removeAvatarFromBackend() async {
-    final uri = Uri.parse("http://10.0.2.2:5000/api/users/remove-avatar");
+    final uri = Uri.parse("$baseUrl/users/remove-avatar");
 
     try {
       final response = await http.delete(
