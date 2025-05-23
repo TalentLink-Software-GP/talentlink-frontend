@@ -1,6 +1,7 @@
 // app_lifecycle_manager.dart
 import 'package:flutter/material.dart';
 import 'package:talent_link/services/socket_service.dart';
+import 'package:talent_link/config/env.dart';
 
 class AppLifecycleManager extends StatefulWidget {
   final Widget child;
@@ -35,7 +36,7 @@ class _AppLifecycleManagerState extends State<AppLifecycleManager>
 
     _socketService = SocketService();
     await _socketService.initializePresence(
-      url: 'http://10.0.2.2:5000',
+      url: Env.baseUrl2,
       userId: widget.userId!,
       token: widget.token!,
     );

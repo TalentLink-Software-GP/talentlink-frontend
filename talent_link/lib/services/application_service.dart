@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
+import 'package:talent_link/config/env.dart';
 
 class Application {
   final String id;
@@ -44,7 +45,7 @@ class ApplicationService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:5000/api/applications/data'),
+        Uri.parse('${Env.baseUrl}/applications/data'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -75,7 +76,7 @@ class ApplicationService {
     String token,
   ) async {
     final response = await http.get(
-      Uri.parse('http://10.0.2.2:5000/api/applications/organization'),
+      Uri.parse('${Env.baseUrl}/applications/organization'),
       headers: {'Authorization': 'Bearer $token'},
     );
 

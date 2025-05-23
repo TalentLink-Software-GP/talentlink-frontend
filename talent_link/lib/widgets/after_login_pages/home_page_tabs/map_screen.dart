@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:logger/logger.dart';
+import 'package:talent_link/config/env.dart';
 import 'package:talent_link/services/location_service.dart';
 import 'package:talent_link/services/organization_service.dart';
 
@@ -26,12 +27,11 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _locationService = LocationService(
-      baseUrl: 'http://10.0.2.2:5000',
+      baseUrl: Env.baseUrl,
       token: widget.token,
     );
     _orgService = OrganizationService(
-      // ← Add this
-      baseUrl: 'http://10.0.2.2:5000/api/organization',
+      baseUrl: '${Env.baseUrl}/organization',
       token: widget.token,
     );
     _getUserLocation();

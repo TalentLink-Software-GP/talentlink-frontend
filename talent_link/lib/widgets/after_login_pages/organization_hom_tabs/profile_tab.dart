@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:talent_link/config/env.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/avatar_name.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/location_picker_screen.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/location_view.dart';
@@ -27,7 +28,7 @@ class _ProfileTabState extends State<ProfileTab> {
   void initState() {
     super.initState();
     _locationService = LocationService(
-      baseUrl: 'http://10.0.2.2:5000',
+      baseUrl: Env.baseUrl2,
       token: widget.token,
     );
     _fetchLocation();

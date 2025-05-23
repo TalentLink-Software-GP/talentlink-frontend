@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:talent_link/config/env.dart';
 import './comment_widget.dart';
 import 'reply/comment_input_widget.dart';
 import './comment_service.dart';
@@ -36,7 +37,7 @@ class _CommentsSectionState extends State<CommentsSection> {
   void initState() {
     super.initState();
     _commentService = CommentService(
-      baseUrl: "http://10.0.2.2:5000/api",
+      baseUrl: Env.baseUrl,
       token: widget.token,
       postId: widget.postId,
     );

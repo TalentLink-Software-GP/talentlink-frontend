@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:talent_link/config/env.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -33,7 +34,7 @@ class _ResumeState extends State<Resume> {
 
     if (result != null && result.files.single.path != null) {
       File pdfFile = File(result.files.single.path!);
-      final uri = Uri.parse("http://10.0.2.2:5000/api/users/upload-cv");
+      final uri = Uri.parse("${Env.baseUrl}/users/upload-cv");
 
       final request = http.MultipartRequest("POST", uri);
       request.headers['Authorization'] = 'Bearer ${widget.token}';

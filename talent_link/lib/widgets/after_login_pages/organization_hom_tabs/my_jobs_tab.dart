@@ -5,6 +5,7 @@ import 'package:talent_link/services/job_service.dart';
 import 'package:talent_link/services/organization_service.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/add_job_or_post_card.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/add_new_job_screen.dart';
+import 'package:talent_link/config/env.dart';
 
 class MyJobsTab extends StatefulWidget {
   final String token;
@@ -27,7 +28,7 @@ class _MyJobsTabState extends State<MyJobsTab> {
     super.initState();
     jobService = JobService(token: widget.token);
     _orgService = OrganizationService(
-      baseUrl: 'http://10.0.2.2:5000/api/organization',
+      baseUrl: '${Env.baseUrl}/organization',
       token: widget.token,
     );
     fetchJobs();

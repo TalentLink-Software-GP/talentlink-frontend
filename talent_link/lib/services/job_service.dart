@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:talent_link/models/job.dart';
 import 'package:logger/logger.dart';
+import 'package:talent_link/config/env.dart';
 
 class JobService {
   final String token;
-  static const String baseUrl = 'http://10.0.2.2:5000/api/job';
+  static const String baseUrl = '${Env.baseUrl}/job';
   final _logger = Logger();
 
   JobService({required this.token});
@@ -91,7 +92,7 @@ class JobService {
     int pageSize = 10,
   }) async {
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:5000/api/jobMatch/getMatchSortedByScore'),
+      Uri.parse('${Env.baseUrl}/jobMatch/getMatchSortedByScore'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -103,6 +104,27 @@ class JobService {
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to load matched users');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getMatchSortedByScore() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${Env.baseUrl}/jobMatch/getMatchSortedByScore'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to load matched users');
+      }
+    } catch (e) {
+      _logger.e("Error fetching matched users:", error: e);
+      rethrow;
     }
   }
 }

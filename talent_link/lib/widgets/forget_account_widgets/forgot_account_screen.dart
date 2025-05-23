@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:talent_link/config/env.dart';
 
 import 'package:talent_link/widgets/forget_account_widgets/enter_reset_code_screen.dart';
 
@@ -18,7 +19,7 @@ class _ForgotAccountScreenState extends State<ForgotAccountScreen> {
   bool isLoading = false;
 
   Future<void> sendResetLink() async {
-    final String apiUrl = "http://10.0.2.2:5000/api/auth/forgot-password";
+    final String apiUrl = "${Env.baseUrl}/auth/forgot-password";
     final String email = emailController.text.trim();
 
     if (email.isEmpty) {

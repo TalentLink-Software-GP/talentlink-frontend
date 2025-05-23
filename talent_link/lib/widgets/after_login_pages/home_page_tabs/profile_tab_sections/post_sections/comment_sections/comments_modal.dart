@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'comments_section.dart';
 import 'comment_service.dart';
+import 'package:talent_link/config/env.dart';
 
 class CommentsModal extends StatefulWidget {
   final List<Map<String, dynamic>> comments;
@@ -38,12 +39,12 @@ class _CommentsModalState extends State<CommentsModal>
   void initState() {
     super.initState();
     _commentService = CommentService(
-      baseUrl: "http://10.0.2.2:5000/api",
+      baseUrl: Env.baseUrl,
       token: widget.token,
       postId: widget.postId,
     );
     _replyService = CommentService(
-      baseUrl: "http://10.0.2.2:5000/api",
+      baseUrl: Env.baseUrl,
       token: widget.token,
       postId: widget.postId,
     );

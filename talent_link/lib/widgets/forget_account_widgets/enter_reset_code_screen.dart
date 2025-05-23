@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:talent_link/config/env.dart';
 import 'package:talent_link/widgets/forget_account_widgets/new_password_screen.dart';
 
 class EnterResetCodeScreen extends StatefulWidget {
@@ -19,7 +20,7 @@ class _EnterResetCodeScreenState extends State<EnterResetCodeScreen> {
   bool isLoading = false;
 
   Future<void> verifyResetCode() async {
-    final String apiUrl = "http://10.0.2.2:5000/api/auth/verify-reset-code";
+    final String apiUrl = "${Env.baseUrl}/auth/verify-reset-code";
     final String resetCode = codeController.text.trim();
 
     if (resetCode.isEmpty) {

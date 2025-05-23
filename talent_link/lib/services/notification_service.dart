@@ -3,9 +3,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:talent_link/models/notfification_model.dart';
 import 'package:logger/logger.dart';
+import 'package:talent_link/config/env.dart';
 
 class NotificationService {
-  static const String _baseUrl = 'http://10.0.2.2:5000/api';
+  static const String _baseUrl = Env.baseUrl;
   late String token;
   final _logger = Logger();
 

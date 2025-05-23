@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:talent_link/config/env.dart';
 import '../models/user_profile_data.dart';
 import 'package:logger/logger.dart';
 
@@ -10,7 +11,7 @@ class ProfileService {
     String token, {
     String? username,
   }) async {
-    final uri = Uri.parse('http://10.0.2.2:5000/api/skills/get-all');
+    final uri = Uri.parse('${Env.baseUrl}/skills/get-all');
 
     final headers = {
       'Content-Type': 'application/json',
@@ -35,7 +36,7 @@ class ProfileService {
   ) async {
     _logger.i('Deleting item:', error: {'field': field, 'value': value});
     final response = await http.delete(
-      Uri.parse('http://10.0.2.2:5000/api/skills/delete-$field'),
+      Uri.parse('${Env.baseUrl}/skills/delete-$field'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -52,7 +53,7 @@ class ProfileService {
   static Future<void> addItem(String field, String value, String token) async {
     _logger.i('Adding item:', error: {'field': field, 'value': value});
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:5000/api/skills/add-$field'),
+      Uri.parse('${Env.baseUrl}/skills/add-$field'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -72,7 +73,7 @@ class ProfileService {
     String token,
   ) async {
     final response = await http.put(
-      Uri.parse('http://10.0.2.2:5000/api/skills/update-$field'),
+      Uri.parse('${Env.baseUrl}/skills/update-$field'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',

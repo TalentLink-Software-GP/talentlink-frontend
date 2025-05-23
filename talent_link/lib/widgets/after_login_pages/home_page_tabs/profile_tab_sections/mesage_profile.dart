@@ -11,6 +11,7 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/profile_widget_for_another_users.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/call_notification.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/video_widget.dart';
+import 'package:talent_link/config/env.dart';
 
 class SearchUserPage extends StatefulWidget {
   final String currentUserId;
@@ -33,16 +34,14 @@ class SearchUserPageState extends State<SearchUserPage> {
   List<dynamic> searchResults = [];
   List<dynamic> chatHistory = [];
   final String baseUrl =
-      'http://10.0.2.2:5000/api'; //https://talentlink-backend-c01n.onrender.com
+      Env.baseUrl; //https://talentlink-backend-c01n.onrender.com
   String? uploadedImageUrl;
   final SearchPageService _service = SearchPageService();
 
   bool isSearching = false;
   Timer? timer;
 
-
   int finalcount = 0;
-
 
   @override
   void initState() {
@@ -66,8 +65,6 @@ class SearchUserPageState extends State<SearchUserPage> {
   Future<void> fetchChatHistory() async {
     final history = await _service.fetchChatHistory(widget.currentUserId);
 
-
-
     // Get unread counts for each conversation
     final updatedHistory = await Future.wait(
       history.map((user) async {
@@ -81,7 +78,6 @@ class SearchUserPageState extends State<SearchUserPage> {
 
     setState(() {
       chatHistory = updatedHistory;
-
     });
   }
 
@@ -104,7 +100,6 @@ class SearchUserPageState extends State<SearchUserPage> {
       });
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -214,11 +209,8 @@ class SearchUserPageState extends State<SearchUserPage> {
                                 as ImageProvider,
                   ),
 
-
-
                   //TODO: when user1 send a message to user2 i need the Count of notification (finalcount or unReadCount) to be in realTime that dont need to refresh the page to show the notifications
                   if ((user['unreadCount'] ?? 0) > 0) // here's
-
                     Positioned(
                       right: 0,
                       top: 0,
@@ -270,8 +262,6 @@ class SearchUserPageState extends State<SearchUserPage> {
                   ),
                 );
               },
-
-
             ),
           ),
         );
@@ -379,7 +369,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   String peerUsername = '';
   String peerAvatar = '';
   final String baseUrl =
-      'http://10.0.2.2:5000/api'; //https://talentlink-backend-c01n.onrender.com
+      Env.baseUrl; //https://talentlink-backend-c01n.onrender.com
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -416,9 +406,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     // Initialize status tracking
     _initializePresence();
 
-
     _markMessagesAsRead(); // Add this line
-
   }
 
   void _initializePresence() {
@@ -720,8 +708,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
-
-
   void _markMessagesAsRead() async {
     bool success = await messageService.markMessagesAsRead(
       widget.currentUserId,
@@ -969,7 +955,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                         ),
                                       ),
                                       if (isMe)
-
                                         // TODO: when user1 send message to user2 and user2 is in chat i need to show for user 1 that user2 seen the message, i do that but i need it in realTime
                                         Padding(
                                           padding: EdgeInsets.only(left: 4),

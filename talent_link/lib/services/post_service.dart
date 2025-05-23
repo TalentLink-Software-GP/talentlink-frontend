@@ -3,10 +3,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:logger/logger.dart';
+import 'package:talent_link/config/env.dart';
 
 class PostService {
   final String token;
-  final String baseUrl = 'http://10.0.2.2:5000/api';
+  final String baseUrl = Env.baseUrl;
   final _logger = Logger();
 
   PostService(this.token);

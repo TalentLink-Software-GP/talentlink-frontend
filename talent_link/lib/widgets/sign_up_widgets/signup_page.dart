@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
+import 'package:talent_link/config/env.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/base_widgets/text_field.dart';
 import 'package:talent_link/widgets/sign_up_widgets/check_verification_screen.dart';
@@ -78,7 +79,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       String password = passwordController.text;
 
       try {
-        var url = Uri.parse('http://10.0.2.2:5000/api/auth/register');
+        var url = Uri.parse('${Env.baseUrl}/auth/register');
 
         var response = await http.post(
           url,

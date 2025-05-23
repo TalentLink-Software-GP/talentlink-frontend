@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
+import 'package:talent_link/config/env.dart';
 
 class AddJobOrPostCard extends StatefulWidget {
   final String token;
@@ -33,7 +34,7 @@ class _AddJobOrPostCardState extends State<AddJobOrPostCard> {
 
   Future<void> fetchOrgData() async {
     try {
-      final uri = Uri.parse("http://10.0.2.2:5000/api/organization/getOrgData");
+      final uri = Uri.parse("${Env.baseUrl}/organization/getOrgData");
 
       final response = await http.get(
         uri,

@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
+import 'package:talent_link/config/env.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -74,7 +75,7 @@ class _LoginPageState extends State<LoginPage>
     });
 
     try {
-      var url = Uri.parse('http://10.0.2.2:5000/api/auth/login');
+      var url = Uri.parse('${Env.baseUrl}/auth/login');
       var response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:talent_link/config/env.dart';
 import 'package:talent_link/services/organization_service.dart';
 import 'package:logger/logger.dart';
 
@@ -25,8 +26,7 @@ class _AvatarNameState extends State<AvatarName> {
   void initState() {
     super.initState();
     _orgService = OrganizationService(
-      // ← Add this
-      baseUrl: 'http://10.0.2.2:5000/api/organization',
+      baseUrl: '${Env.baseUrl}/organization',
       token: widget.token,
     );
     fetchOrgData();
@@ -47,7 +47,7 @@ class _AvatarNameState extends State<AvatarName> {
   }
 
   Future<String?> uploadImageToBackend(File imageFile) async {
-    final uri = Uri.parse("http://10.0.2.2:5000/api/organization/updateAvatar");
+    final uri = Uri.parse("${Env.baseUrl}/organization/updateAvatar");
 
     final request = http.MultipartRequest("POST", uri);
     request.headers['Authorization'] = 'Bearer ${widget.token}';
@@ -87,7 +87,7 @@ class _AvatarNameState extends State<AvatarName> {
   }
 
   Future<void> removeAvatarFromBackend() async {
-    final uri = Uri.parse("http://10.0.2.2:5000/api/organization/deleteAvatar");
+    final uri = Uri.parse("${Env.baseUrl}/organization/deleteAvatar");
 
     try {
       final response = await http.delete(

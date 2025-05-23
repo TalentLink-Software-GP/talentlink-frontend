@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:logger/logger.dart';
+import 'package:talent_link/config/env.dart';
 
 class AvatarUsername extends StatefulWidget {
   final String token;
@@ -31,9 +32,7 @@ class _AvatarUsernameState extends State<AvatarUsername> {
 
     try {
       final response = await http.get(
-        Uri.parse(
-          'http://10.0.2.2:5000/api/users/getUserData?userName=$username',
-        ),
+        Uri.parse('${Env.baseUrl}/users/getUserData?userName=$username'),
         headers: {'Content-Type': 'application/json'},
       );
       _logger.i('Fetching data for user: $username');
@@ -115,7 +114,7 @@ class _AvatarUsernameState extends State<AvatarUsername> {
   }
 
   Future<String?> uploadImageToBackend(File imageFile) async {
-    final uri = Uri.parse("http://10.0.2.2:5000/api/users/upload-avatar");
+    final uri = Uri.parse("${Env.baseUrl}/users/upload-avatar");
 
     final request = http.MultipartRequest("POST", uri);
     request.headers['Authorization'] = 'Bearer ${widget.token}';
@@ -142,7 +141,7 @@ class _AvatarUsernameState extends State<AvatarUsername> {
   }
 
   Future<void> removeAvatarFromBackend() async {
-    final uri = Uri.parse("http://10.0.2.2:5000/api/users/remove-avatar");
+    final uri = Uri.parse("${Env.baseUrl}/users/remove-avatar");
 
     try {
       final response = await http.delete(

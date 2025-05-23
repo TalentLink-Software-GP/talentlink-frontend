@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:logger/logger.dart';
+import 'package:talent_link/config/env.dart';
 
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/base_widgets/text_field.dart';
@@ -76,7 +77,7 @@ class _OrganizationSignupScreenState extends State<OrganizationSignupScreen> {
 
     try {
       final url = Uri.parse(
-        'http://10.0.2.2:5000/api/auth/register',
+        '${Env.baseUrl}/auth/register',
       ); // Replace this with your real URL
       final response = await http.post(
         url,

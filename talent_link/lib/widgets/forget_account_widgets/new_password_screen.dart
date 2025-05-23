@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:talent_link/config/env.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/base_widgets/text_field.dart';
 
@@ -39,7 +40,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
     }
 
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:5000/api/auth/set-new-password'),
+      Uri.parse('${Env.baseUrl}/auth/set-new-password'),
       headers: <String, String>{'Content-Type': 'application/json'},
       body: jsonEncode(<String, String>{
         'email': widget.email,

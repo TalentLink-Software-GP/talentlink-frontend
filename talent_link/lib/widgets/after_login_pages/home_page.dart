@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:talent_link/config/env.dart';
 import 'package:talent_link/services/message_service.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/map_screen.dart';
@@ -38,8 +39,7 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> fetchUserData() async {
-    const String apiUrl =
-        "http://10.0.2.2:5000/api/skills/get-skills-education";
+    final String apiUrl = "${Env.baseUrl}/skills/get-skills-education";
     try {
       final response = await http.get(
         Uri.parse(apiUrl),

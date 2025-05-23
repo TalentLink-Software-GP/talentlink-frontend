@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:talent_link/config/env.dart';
 import 'package:talent_link/models/job.dart';
 import 'package:talent_link/services/job_service.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tabs/job_details_screen.dart';
@@ -15,7 +16,7 @@ class NotificationNavigator {
   final _logger = Logger();
 
   NotificationNavigator(this.context);
-  final String baseUrl = 'http://10.0.2.2:5000/api';
+  final String baseUrl = Env.baseUrl;
   List<Map<String, dynamic>> posts = [];
 
   void navigateBasedOnType(Map notification) async {
