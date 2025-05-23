@@ -1,9 +1,11 @@
 // login_page.dart
 //new api all fixed i used api.env
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'package:talent_link/services/fcm_service.dart';
 import 'package:talent_link/utils/app_lifecycle_manager.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page.dart';
@@ -71,6 +73,24 @@ class _LoginPageState extends State<LoginPage>
     super.dispose();
   }
 
+  Future<void> _handleFcmRecovery() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      logger.i(
+        'FCM token is $token',
+      ); // Changed to info level for normal logging
+
+      if (token != null) {
+        final fcmService = FCMService();
+        await fcmService.sendTokenToServer(token);
+      } else {
+        logger.e('FCM token is null');
+      }
+    } catch (e) {
+      logger.e('FCM recovery failed', error: e);
+    }
+  }
+
   Future<void> login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -105,6 +125,7 @@ class _LoginPageState extends State<LoginPage>
         await prefs.setString('username', username);
         await prefs.setString('role', role);
         await prefs.setString('userId', userId);
+        await _handleFcmRecovery();
 
         Navigator.pushReplacement(
           context,

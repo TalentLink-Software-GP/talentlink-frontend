@@ -87,6 +87,94 @@ class PushNotificationsFirebase {
               _logger.e('Error handling job notification', error: e);
             }
           }
+
+          if (data['type'] == 'meeting') {
+            // Navigate to a MeetingDetailsScreen or show alert dialog
+            showDialog(
+              context: navigatorKey.currentContext!,
+              builder:
+                  (context) => AlertDialog(
+                    title: Text("Meeting Scheduled"),
+                    content: Text(
+                      "You have a meeting with ${data['title']} at ${data['scheduledDateTime']}",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text("OK"),
+                      ),
+                    ],
+                  ),
+            );
+          }
+          if (data['type'] == 'application') {
+            try {
+              if (data['jobId'] == null) {
+                _logger.e('Job ID is missing in application notification data');
+                return;
+              }
+
+              // Fetch the job details
+              final job = await jobService.fetchJobById(
+                data['jobId'].toString(),
+              );
+
+              if (job == null) {
+                _logger.e('Failed to fetch job details for application');
+                return;
+              }
+
+              // Show a dialog with application details and options
+              showDialog(
+                context: navigatorKey.currentContext!,
+                builder:
+                    (context) => AlertDialog(
+                      title: Text("New Job Application"),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("${data['applicantName']} has applied for:"),
+                          SizedBox(height: 8),
+                          Text(
+                            data['jobTitle'] ?? 'Unknown job',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            "Would you like to view the application details?",
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text("Later"),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            // Navigate to application details screen
+                            // navigatorKey.currentState?.push(
+                            // MaterialPageRoute(
+                            //   builder: (context) => ApplicationDetailsScreen(
+                            //     job: job,
+                            //     applicantUsername: data['applicantUsername'] ?? '',
+                            //     applicantName: data['applicantName'] ?? '',
+                            //     token: token,
+                            //   ),
+                            // ),
+                            // );
+                          },
+                          child: Text("View Details"),
+                        ),
+                      ],
+                    ),
+              );
+            } catch (e) {
+              _logger.e('Error handling application notification', error: e);
+            }
+          }
         }
       },
     );
@@ -138,6 +226,22 @@ class PushNotificationsFirebase {
             error: e,
           );
         }
+        //         if (data['type'] == 'meeting') {
+        //   // Navigate to a MeetingDetailsScreen or show alert dialog
+        //   showDialog(
+        //     context: navigatorKey.currentContext!,
+        //     builder: (context) => AlertDialog(
+        //       title: Text("Meeting Scheduled"),
+        //       content: Text("You have a meeting with ${data['title']} at ${data['scheduledDateTime']}"),
+        //       actions: [
+        //         TextButton(
+        //           onPressed: () => Navigator.of(context).pop(),
+        //           child: Text("OK"),
+        //         ),
+        //       ],
+        //     ),
+        //   );
+        // }
       }
     });
 

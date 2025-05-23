@@ -35,27 +35,44 @@ class FCMService {
     }
 
     // 5. Send to backend
-    await _sendTokenToServer(newToken);
+    await sendTokenToServer(newToken);
   }
 
-  Future<void> _sendTokenToServer(String token) async {
+  Future<void> sendTokenToServer(String token) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       String? userId = prefs.getString('userId');
+      String? role = prefs.getString('role');
 
-      if (userId != null) {
-        // Send to token backend API
+      if (role == 'Organization') {
+        // Send token for organization
         final response = await http.post(
-          //192.168.1.7     Uri.parse('http://10.0.2.2:5000/api/users/save-fcm-token'),
-          Uri.parse('$baseUrl/users/save-fcm-token'),
+          Uri.parse('$baseUrl/organization/save-fcm-token'),
           headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'userId': userId, 'fcmToken': token}),
+          body: jsonEncode({'organizationId': userId, 'fcmToken': token}),
         );
 
         if (response.statusCode == 200) {
-          _logger.i('Token successfully saved on server');
+          _logger.i('Token saved for organization');
         } else {
-          _logger.e('Failed to save token on server');
+          _logger.e('Failed to save token for organization: ${response.body}');
+        }
+      } else {
+        if (userId != null) {
+          // Send to token backend API
+          final response = await http.post(
+            Uri.parse('$baseUrl/users/save-fcm-token'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'userId': userId, 'fcmToken': token}),
+          );
+
+          if (response.statusCode == 200) {
+            _logger.i('Token successfully saved on server');
+          } else {
+            _logger.e(
+              'Failed to save token on server: ${response.statusCode} - ${response.body}',
+            );
+          }
         }
       }
     } catch (e) {

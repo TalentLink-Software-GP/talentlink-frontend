@@ -71,7 +71,6 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
     logger.i("Firebase initialized successfully");
-    await _handleFcmRecovery();
 
     await PushNotificationsFirebase.init();
     logger.i("Push Notifications initialized");
@@ -109,18 +108,6 @@ void main() async {
       ),
     ),
   );
-}
-
-Future<void> _handleFcmRecovery() async {
-  try {
-    final token = await FirebaseMessaging.instance.getToken();
-    if (token == null) {
-      final fcmService = FCMService();
-      await fcmService.nuclearReset();
-    }
-  } catch (e) {
-    logger.e('FCM recovery failed', error: e);
-  }
 }
 
 class MyApp extends StatelessWidget {

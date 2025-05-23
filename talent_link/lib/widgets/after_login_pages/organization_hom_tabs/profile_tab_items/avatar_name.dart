@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:talent_link/services/organization_service.dart';
 import 'package:logger/logger.dart';
+import 'package:talent_link/widgets/appSetting/seeting.dart';
 
 class AvatarName extends StatefulWidget {
   final String token;
@@ -166,6 +167,16 @@ class _AvatarNameState extends State<AvatarName> {
                 onTap: () async {
                   Navigator.pop(context);
                   await removeAvatarFromBackend();
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.settings),
+                title: Text('Settings'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SettingsPage()),
+                  );
                 },
               ),
             ],
