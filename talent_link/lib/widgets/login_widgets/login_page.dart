@@ -76,9 +76,7 @@ class _LoginPageState extends State<LoginPage>
   Future<void> _handleFcmRecovery() async {
     try {
       final token = await FirebaseMessaging.instance.getToken();
-      logger.i(
-        'FCM token is $token',
-      ); // Changed to info level for normal logging
+      logger.i('FCM token is $token');
 
       if (token != null) {
         final fcmService = FCMService();
