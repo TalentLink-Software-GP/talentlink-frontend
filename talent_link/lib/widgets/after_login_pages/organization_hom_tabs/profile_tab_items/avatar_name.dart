@@ -26,7 +26,8 @@ class _AvatarNameState extends State<AvatarName> {
     super.initState();
     _orgService = OrganizationService(
       // ← Add this
-      baseUrl: 'http://10.0.2.2:5000/api/organization',
+      baseUrl:
+          '${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/organization',
       token: widget.token,
     );
     fetchOrgData();
@@ -47,7 +48,9 @@ class _AvatarNameState extends State<AvatarName> {
   }
 
   Future<String?> uploadImageToBackend(File imageFile) async {
-    final uri = Uri.parse("http://10.0.2.2:5000/api/organization/updateAvatar");
+    final uri = Uri.parse(
+      '${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/organization/updateAvatar',
+    );
 
     final request = http.MultipartRequest("POST", uri);
     request.headers['Authorization'] = 'Bearer ${widget.token}';
@@ -87,7 +90,9 @@ class _AvatarNameState extends State<AvatarName> {
   }
 
   Future<void> removeAvatarFromBackend() async {
-    final uri = Uri.parse("http://10.0.2.2:5000/api/organization/deleteAvatar");
+    final uri = Uri.parse(
+      '${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/organization/deleteAvatar',
+    );
 
     try {
       final response = await http.delete(

@@ -19,7 +19,8 @@ class _EnterResetCodeScreenState extends State<EnterResetCodeScreen> {
   bool isLoading = false;
 
   Future<void> verifyResetCode() async {
-    final String apiUrl = "http://10.0.2.2:5000/api/auth/verify-reset-code";
+    final String apiUrl =
+        "${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/auth/verify-reset-code";
     final String resetCode = codeController.text.trim();
 
     if (resetCode.isEmpty) {

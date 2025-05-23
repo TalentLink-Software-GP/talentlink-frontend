@@ -195,7 +195,7 @@ class _PostCardState extends State<PostCard>
   Future<void> handleLike() async {
     _likeController.forward().then((_) => _likeController.reverse());
     final url = Uri.parse(
-      'http://10.0.2.2:5000/api/posts/${widget.postId}/like-post',
+      '${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/posts/${widget.postId}/like-post',
     );
 
     try {

@@ -11,6 +11,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:talent_link/firebase_options.dart';
 import 'package:talent_link/services/fcm_service.dart';
 import 'package:talent_link/utils/app_lifecycle_manager.dart';
@@ -33,6 +34,9 @@ Future _firebaseBackgroundMessage(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables
+  await dotenv.load(fileName: "assets/.env");
 
   try {
     await Firebase.initializeApp(

@@ -6,7 +6,10 @@ import 'package:logger/logger.dart';
 
 class PostService {
   final String token;
-  final String baseUrl = 'http://10.0.2.2:5000/api';
+  static String get baseUrl => const String.fromEnvironment(
+    'API_URL',
+    defaultValue: 'http://10.0.2.2:5000/api',
+  );
   final _logger = Logger();
 
   PostService(this.token);

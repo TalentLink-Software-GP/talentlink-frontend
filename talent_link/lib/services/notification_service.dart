@@ -5,7 +5,10 @@ import 'package:talent_link/models/notfification_model.dart';
 import 'package:logger/logger.dart';
 
 class NotificationService {
-  static const String _baseUrl = 'http://10.0.2.2:5000/api';
+  static String get _baseUrl => const String.fromEnvironment(
+    'API_URL',
+    defaultValue: 'http://10.0.2.2:5000/api',
+  );
   late String token;
   final _logger = Logger();
 

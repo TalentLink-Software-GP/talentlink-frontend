@@ -78,7 +78,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
       String password = passwordController.text;
 
       try {
-        var url = Uri.parse('http://10.0.2.2:5000/api/auth/register');
+        var url = Uri.parse(
+          '${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/auth/register',
+        );
 
         var response = await http.post(
           url,

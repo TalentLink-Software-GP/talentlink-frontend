@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:logger/logger.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class FCMService {
   static final FirebaseMessaging _fcm = FirebaseMessaging.instance;
@@ -42,7 +43,9 @@ class FCMService {
       if (userId != null) {
         // Send to token backend API
         final response = await http.post(
-          Uri.parse('http://10.0.2.2:5000/api/users/save-fcm-token'),
+          Uri.parse(
+            '${dotenv.env['API_URL'] ?? 'http://10.0.2.2:5000/api'}/users/save-fcm-token',
+          ),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'userId': userId, 'fcmToken': token}),
         );

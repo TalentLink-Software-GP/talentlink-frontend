@@ -36,7 +36,10 @@ class _CommentsSectionState extends State<CommentsSection> {
   void initState() {
     super.initState();
     _commentService = CommentService(
-      baseUrl: "http://10.0.2.2:5000/api",
+      baseUrl: const String.fromEnvironment(
+        'API_URL',
+        defaultValue: 'http://10.0.2.2:5000/api',
+      ),
       token: widget.token,
       postId: widget.postId,
     );

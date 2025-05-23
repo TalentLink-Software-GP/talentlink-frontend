@@ -39,7 +39,7 @@ class _HomePageState extends State<HomePage>
 
   Future<void> fetchUserData() async {
     const String apiUrl =
-        "http://10.0.2.2:5000/api/skills/get-skills-education";
+        "${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/skills/get-skills-education";
     try {
       final response = await http.get(
         Uri.parse(apiUrl),

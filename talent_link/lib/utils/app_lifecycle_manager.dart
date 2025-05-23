@@ -35,7 +35,10 @@ class _AppLifecycleManagerState extends State<AppLifecycleManager>
 
     _socketService = SocketService();
     await _socketService.initializePresence(
-      url: 'http://10.0.2.2:5000',
+      url: const String.fromEnvironment(
+        'API_URL',
+        defaultValue: 'http://10.0.2.2:5000',
+      ),
       userId: widget.userId!,
       token: widget.token!,
     );

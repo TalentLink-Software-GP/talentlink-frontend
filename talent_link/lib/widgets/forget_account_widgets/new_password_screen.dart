@@ -39,7 +39,9 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
     }
 
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:5000/api/auth/set-new-password'),
+      Uri.parse(
+        '${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/auth/set-new-password',
+      ),
       headers: <String, String>{'Content-Type': 'application/json'},
       body: jsonEncode(<String, String>{
         'email': widget.email,

@@ -33,7 +33,9 @@ class _AddJobOrPostCardState extends State<AddJobOrPostCard> {
 
   Future<void> fetchOrgData() async {
     try {
-      final uri = Uri.parse("http://10.0.2.2:5000/api/organization/getOrgData");
+      final uri = Uri.parse(
+        '${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/organization/getOrgData',
+      );
 
       final response = await http.get(
         uri,

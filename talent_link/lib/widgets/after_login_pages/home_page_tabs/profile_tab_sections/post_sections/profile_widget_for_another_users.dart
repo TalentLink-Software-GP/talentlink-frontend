@@ -112,7 +112,7 @@ class _ProfileWidgetForAnotherUsersState
       debugPrint('Error in fetchUserDataAndPosts: $e');
       // Add this to see the full URL being called
       debugPrint(
-        'Attempted URL: ${_postService.baseUrl}/posts/getuser-posts-byusername/${widget.username}?page=$_page&limit=$_limit',
+        'Attempted URL: ${PostService.baseUrl}/posts/getuser-posts-byusername/${widget.username}?page=$_page&limit=$_limit',
       );
     } finally {
       setState(() {

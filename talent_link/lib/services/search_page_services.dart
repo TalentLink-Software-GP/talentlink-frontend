@@ -4,7 +4,10 @@ import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 
 class SearchPageService {
-  final String baseUrl = 'http://10.0.2.2:5000/api';
+  static String get baseUrl => const String.fromEnvironment(
+    'API_URL',
+    defaultValue: 'http://10.0.2.2:5000/api',
+  );
   final _logger = Logger();
 
   Future<List<dynamic>> fetchChatHistory(String currentUserId) async {
@@ -67,7 +70,6 @@ class SearchPageService {
       return false;
     }
   }
-
 
   Future<int> getUnreadCount(String userId, String peerId) async {
     final response = await http.get(

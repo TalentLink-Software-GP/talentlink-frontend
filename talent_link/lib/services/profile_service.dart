@@ -10,7 +10,9 @@ class ProfileService {
     String token, {
     String? username,
   }) async {
-    final uri = Uri.parse('http://10.0.2.2:5000/api/skills/get-all');
+    final uri = Uri.parse(
+      '${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/skills/get-all',
+    );
 
     final headers = {
       'Content-Type': 'application/json',
@@ -35,7 +37,9 @@ class ProfileService {
   ) async {
     _logger.i('Deleting item:', error: {'field': field, 'value': value});
     final response = await http.delete(
-      Uri.parse('http://10.0.2.2:5000/api/skills/delete-$field'),
+      Uri.parse(
+        '${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/skills/delete-$field',
+      ),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -52,7 +56,9 @@ class ProfileService {
   static Future<void> addItem(String field, String value, String token) async {
     _logger.i('Adding item:', error: {'field': field, 'value': value});
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:5000/api/skills/add-$field'),
+      Uri.parse(
+        '${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/skills/add-$field',
+      ),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -72,7 +78,9 @@ class ProfileService {
     String token,
   ) async {
     final response = await http.put(
-      Uri.parse('http://10.0.2.2:5000/api/skills/update-$field'),
+      Uri.parse(
+        '${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/skills/update-$field',
+      ),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',

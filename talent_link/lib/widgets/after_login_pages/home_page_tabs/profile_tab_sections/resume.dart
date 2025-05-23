@@ -33,7 +33,9 @@ class _ResumeState extends State<Resume> {
 
     if (result != null && result.files.single.path != null) {
       File pdfFile = File(result.files.single.path!);
-      final uri = Uri.parse("http://10.0.2.2:5000/api/users/upload-cv");
+      final uri = Uri.parse(
+        "${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/users/upload-cv",
+      );
 
       final request = http.MultipartRequest("POST", uri);
       request.headers['Authorization'] = 'Bearer ${widget.token}';

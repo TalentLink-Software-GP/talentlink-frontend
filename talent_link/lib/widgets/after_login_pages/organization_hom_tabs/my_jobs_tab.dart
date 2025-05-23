@@ -27,7 +27,8 @@ class _MyJobsTabState extends State<MyJobsTab> {
     super.initState();
     jobService = JobService(token: widget.token);
     _orgService = OrganizationService(
-      baseUrl: 'http://10.0.2.2:5000/api/organization',
+      baseUrl:
+          '${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/organization',
       token: widget.token,
     );
     fetchJobs();

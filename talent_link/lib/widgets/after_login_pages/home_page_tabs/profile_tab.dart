@@ -36,7 +36,6 @@ class _ProfileTabState extends State<ProfileTab>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-
   @override
   void initState() {
     super.initState();
@@ -370,7 +369,7 @@ class _ProfileTabState extends State<ProfileTab>
       debugPrint('Error in fetchUserDataAndPosts: $e');
       // Add this to see the full URL being called
       debugPrint(
-        'Attempted URL: ${_postService.baseUrl}/posts/getuser-posts-byusername/$username?page=$_page&limit=$_limit',
+        'Attempted URL: ${PostService.baseUrl}/posts/getuser-posts-byusername/$username?page=$_page&limit=$_limit',
       );
     } finally {
       setState(() {});

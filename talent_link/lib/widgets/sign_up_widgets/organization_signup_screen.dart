@@ -76,7 +76,7 @@ class _OrganizationSignupScreenState extends State<OrganizationSignupScreen> {
 
     try {
       final url = Uri.parse(
-        'http://10.0.2.2:5000/api/auth/register',
+        '${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/auth/register',
       ); // Replace this with your real URL
       final response = await http.post(
         url,

@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/mesage_profile.dart';
 import 'package:logger/logger.dart';
 
 class MessageService {
   final String token;
-  final String baseUrl = 'http://10.0.2.2:5000/api';
+  final String baseUrl = dotenv.env['API_URL'] ?? 'http://10.0.2.2:5000/api';
   final _logger = Logger();
 
   MessageService(this.token);
@@ -19,7 +20,7 @@ class MessageService {
     //IM HERE
     String userApiUrl;
     if (role == 'Job Seeker' || role == 'Freelancer') {
-      userApiUrl = 'http://10.0.2.2:5000/api/users/get-user-id';
+      userApiUrl = '$baseUrl/users/get-user-id';
     } else if (role == 'Organization') {
       userApiUrl =
           '$baseUrl/organization/getOrgDataWithuserName?userName=${Uri.encodeComponent(username)}';
@@ -79,7 +80,7 @@ class MessageService {
 }
 
 class MessageService2 {
-  final String baseUrl = 'http://10.0.2.2:5000/api';
+  final String baseUrl = dotenv.env['API_URL'] ?? 'http://10.0.2.2:5000/api';
 
   Future<Map<String, dynamic>?> fetchPeerInfo(String username) async {
     final res = await http.get(

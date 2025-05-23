@@ -1,3 +1,5 @@
+import 'package:logger/logger.dart';
+
 class Job {
   final String id;
   final String title;
@@ -11,6 +13,7 @@ class Job {
   final List<String> responsibilities;
   final double? matchScore;
   final String organizationId;
+  final _logger = Logger();
 
   Job({
     required this.id,
@@ -28,23 +31,28 @@ class Job {
   });
 
   factory Job.fromJson(Map<String, dynamic> json) {
-    return Job(
-      id: json['_id'],
-      title: json['title'] ?? '',
-      description: json['description'] ?? '',
-      location: json['location'] ?? '',
-      salary: json['salary']?.toString() ?? '',
-      jobType: json['jobType'] ?? '',
-      category: json['category'] ?? '',
-      deadline: json['deadline'] ?? '',
-      requirements: List<String>.from(json['requirements'] ?? []),
-      responsibilities: List<String>.from(json['responsibilities'] ?? []),
-      matchScore:
-          json['matchScore'] != null
-              ? (json['matchScore'] as num).toDouble()
-              : null,
-      organizationId: json['companyId'] ?? '',
-    );
+    try {
+      return Job(
+        id: json['_id'] ?? '',
+        title: json['title'] ?? '',
+        description: json['description'] ?? '',
+        location: json['location'] ?? '',
+        salary: json['salary']?.toString() ?? '',
+        jobType: json['jobType'] ?? '',
+        category: json['category'] ?? '',
+        deadline: json['deadline'] ?? '',
+        requirements: List<String>.from(json['requirements'] ?? []),
+        responsibilities: List<String>.from(json['responsibilities'] ?? []),
+        matchScore:
+            json['matchScore'] != null
+                ? (json['matchScore'] as num).toDouble()
+                : null,
+        organizationId: json['companyId'] ?? '',
+      );
+    } catch (e, stackTrace) {
+      Logger().e('Error parsing job JSON:', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
   Map<String, dynamic> toJson() {

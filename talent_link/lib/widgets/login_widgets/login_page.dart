@@ -1,6 +1,7 @@
 // login_page.dart
 import 'package:flutter/material.dart';
 import 'package:talent_link/utils/app_lifecycle_manager.dart';
+import 'package:talent_link/widgets/after_login_pages/admin_page.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_home_page.dart';
@@ -70,11 +71,12 @@ class _LoginPageState extends State<LoginPage>
 
     setState(() {
       isLoading = true;
-      errorMessage = null;
     });
 
     try {
-      var url = Uri.parse('http://10.0.2.2:5000/api/auth/login');
+      var url = Uri.parse(
+        '${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/auth/login',
+      );
       var response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
@@ -84,54 +86,78 @@ class _LoginPageState extends State<LoginPage>
         }),
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
         logger.i("Login successful", error: response.body);
-
-        if (!mounted) return;
 
         // Decode the token to get the role
         final decodedToken = JwtDecoder.decode(data["token"]);
         final role = decodedToken['role'];
 
-        // Navigate based on role
-        if (role == 'Organization') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => OrganizationHomePage(token: data["token"]),
-            ),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => HomePage(
-                    data: data["token"],
-                    onTokenChanged: (newToken) async {
-                      // Handle token change
-                    },
-                  ),
-            ),
-          );
-        }
+        // Use post-frame callback for navigation
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          // Navigate based on role
+          if (role == 'Admin') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => AdminHomePage()),
+            );
+          } else if (role == 'Organization') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => OrganizationHomePage(token: data["token"]),
+              ),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder:
+                    (context) => HomePage(
+                      data: data["token"],
+                      onTokenChanged: (newToken) async {
+                        // Handle token change
+                      },
+                    ),
+              ),
+            );
+          }
+        });
       } else {
         var data = jsonDecode(response.body);
-        setState(() {
-          errorMessage = data["message"] ?? "Login failed";
-        });
+        final errorMsg = data["message"] ?? "Login failed";
         logger.e("Login failed", error: response.body);
+
+        if (mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
+            );
+          });
+        }
       }
-    } catch (e) {
-      setState(() {
-        errorMessage = "Connection error. Please try again.";
+    } catch (error) {
+      if (!mounted) return;
+      logger.e("Login error", error: error);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Connection error. Please try again."),
+            backgroundColor: Colors.red,
+          ),
+        );
       });
-      logger.e("Login error", error: e);
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 

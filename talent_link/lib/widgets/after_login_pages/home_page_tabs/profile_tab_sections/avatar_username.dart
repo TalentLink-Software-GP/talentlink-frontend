@@ -32,7 +32,7 @@ class _AvatarUsernameState extends State<AvatarUsername> {
     try {
       final response = await http.get(
         Uri.parse(
-          'http://10.0.2.2:5000/api/users/getUserData?userName=$username',
+          '${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/users/getUserData?userName=$username',
         ),
         headers: {'Content-Type': 'application/json'},
       );
@@ -115,7 +115,9 @@ class _AvatarUsernameState extends State<AvatarUsername> {
   }
 
   Future<String?> uploadImageToBackend(File imageFile) async {
-    final uri = Uri.parse("http://10.0.2.2:5000/api/users/upload-avatar");
+    final uri = Uri.parse(
+      "${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/users/upload-avatar",
+    );
 
     final request = http.MultipartRequest("POST", uri);
     request.headers['Authorization'] = 'Bearer ${widget.token}';
@@ -142,7 +144,9 @@ class _AvatarUsernameState extends State<AvatarUsername> {
   }
 
   Future<void> removeAvatarFromBackend() async {
-    final uri = Uri.parse("http://10.0.2.2:5000/api/users/remove-avatar");
+    final uri = Uri.parse(
+      "${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/users/remove-avatar",
+    );
 
     try {
       final response = await http.delete(

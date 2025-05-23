@@ -15,7 +15,10 @@ class NotificationNavigator {
   final _logger = Logger();
 
   NotificationNavigator(this.context);
-  final String baseUrl = 'http://10.0.2.2:5000/api';
+  final String baseUrl = const String.fromEnvironment(
+    'API_URL',
+    defaultValue: 'http://10.0.2.2:5000/api',
+  );
   List<Map<String, dynamic>> posts = [];
 
   void navigateBasedOnType(Map notification) async {

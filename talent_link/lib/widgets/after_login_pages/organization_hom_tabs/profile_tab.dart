@@ -27,7 +27,10 @@ class _ProfileTabState extends State<ProfileTab> {
   void initState() {
     super.initState();
     _locationService = LocationService(
-      baseUrl: 'http://10.0.2.2:5000',
+      baseUrl: const String.fromEnvironment(
+        'API_URL',
+        defaultValue: 'http://10.0.2.2:5000',
+      ),
       token: widget.token,
     );
     _fetchLocation();

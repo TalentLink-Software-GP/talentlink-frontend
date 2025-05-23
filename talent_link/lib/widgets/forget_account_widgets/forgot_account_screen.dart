@@ -18,7 +18,8 @@ class _ForgotAccountScreenState extends State<ForgotAccountScreen> {
   bool isLoading = false;
 
   Future<void> sendResetLink() async {
-    final String apiUrl = "http://10.0.2.2:5000/api/auth/forgot-password";
+    final String apiUrl =
+        "${const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000/api')}/auth/forgot-password";
     final String email = emailController.text.trim();
 
     if (email.isEmpty) {
