@@ -22,7 +22,7 @@ class SettingsPage extends StatelessWidget {
             },
           ),
           const Divider(),
-          const LogoutButton(), // 👈 Add the Logout button
+          LogoutButton(), // 👈 Add the Logout button
         ],
       ),
     );
