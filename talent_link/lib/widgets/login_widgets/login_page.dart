@@ -7,6 +7,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:talent_link/services/fcm_service.dart';
 import 'package:talent_link/utils/app_lifecycle_manager.dart';
+import 'package:talent_link/widgets/admin/adminDashboard.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_home_page.dart';
@@ -133,7 +134,9 @@ class _LoginPageState extends State<LoginPage>
                   userId: userId,
                   token: data["token"],
                   child:
-                      role == 'Organization'
+                      role == 'admin'
+                          ? AdminDashboard(token: data["token"])
+                          : role == 'Organization'
                           ? OrganizationHomePage(token: data["token"])
                           : HomePage(
                             data: data["token"],
