@@ -66,7 +66,7 @@ class MessageService {
         'User Info:',
         error: {
           'userId': userInfo['userId'],
-          'avatarUrl': userInfo['avatarUrl'],
+          'avatarUrl': userInfo['avatarUrl'] ?? '',
         },
       );
 
@@ -76,7 +76,7 @@ class MessageService {
           builder:
               (_) => SearchUserPage(
                 currentUserId: userInfo['userId'],
-                avatarUrl: userInfo['avatarUrl'],
+                avatarUrl: userInfo['avatarUrl'] ?? '',
                 token: token,
               ),
         ),

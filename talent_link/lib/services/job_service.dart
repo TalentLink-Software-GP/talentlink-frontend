@@ -16,19 +16,38 @@ class JobService {
   JobService({required this.token});
   Future<Job> fetchJobById(String jobId) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/job/job/$jobId'),
-        // headers: {'Authorization': 'Bearer $token'},
-      );
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/job/job/$jobId'),
+            // headers: {'Authorization': 'Bearer $token'},
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw Exception(
+                'Request timeout - check your network connection',
+              );
+            },
+          );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return Job.fromJson(data);
       } else if (response.statusCode == 404) {
         throw Exception('Job not found');
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication failed - token may be expired');
       } else {
-        throw Exception('Failed to load job');
+        throw Exception(
+          'Failed to load job - Server returned ${response.statusCode}',
+        );
       }
+    } on http.ClientException catch (e) {
+      _logger.e("Network error fetching job:", error: e);
+      throw Exception('Network error - check your internet connection');
+    } on FormatException catch (e) {
+      _logger.e("Invalid response format:", error: e);
+      throw Exception('Invalid server response');
     } catch (e) {
       _logger.e("Error fetching job:", error: e);
       rethrow;
@@ -56,13 +75,35 @@ class JobService {
 
   Future<void> deleteJob(String jobId) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/job/deletejob?jobId=$jobId'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      if (response.statusCode != 200) {
-        throw Exception('Failed to delete job');
+      final response = await http
+          .delete(
+            Uri.parse('$baseUrl/job/deletejob?jobId=$jobId'),
+            headers: {'Authorization': 'Bearer $token'},
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw Exception(
+                'Request timeout - check your network connection',
+              );
+            },
+          );
+
+      if (response.statusCode == 401) {
+        throw Exception('Authentication failed - token may be expired');
+      } else if (response.statusCode == 404) {
+        throw Exception('Job not found');
+      } else if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to delete job - Server returned ${response.statusCode}',
+        );
       }
+    } on http.ClientException catch (e) {
+      _logger.e("Network error deleting job:", error: e);
+      throw Exception('Network error - check your internet connection');
+    } on FormatException catch (e) {
+      _logger.e("Invalid response format:", error: e);
+      throw Exception('Invalid server response');
     } catch (e) {
       _logger.e("Error deleting job:", error: e);
       rethrow;

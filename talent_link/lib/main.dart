@@ -21,6 +21,7 @@ import 'package:talent_link/utils/app_lifecycle_manager.dart';
 import 'package:talent_link/utils/push_notifications_firebase.dart';
 import 'package:talent_link/utils/theme/app_theme.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page.dart';
+import 'package:talent_link/widgets/after_login_pages/organization_home_page.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tabs/job_details_screen.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/mesage_profile.dart';
 import 'package:talent_link/widgets/appSetting/theremeProv.dart';
@@ -86,6 +87,9 @@ void main() async {
 
   final prefs = await SharedPreferences.getInstance();
   final storedToken = prefs.getString('token');
+  final storedRole = prefs.getString('role');
+  final storedUserId = prefs.getString('userId');
+  final storedUsername = prefs.getString('username');
 
   bool isValidToken = false;
 
@@ -94,17 +98,23 @@ void main() async {
       isValidToken = await validateToken(storedToken);
     } catch (e) {
       logger.e("Token validation failed: $e");
+      // Clear all stored data on token validation failure
       prefs.remove('token');
+      prefs.remove('role');
+      prefs.remove('userId');
+      prefs.remove('username');
     }
   }
 
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeProvider(),
-
       child: MyApp(
         isLoggedIn: isValidToken,
         userToken: isValidToken ? storedToken : null,
+        userRole: isValidToken ? storedRole : null,
+        userId: isValidToken ? storedUserId : null,
+        username: isValidToken ? storedUsername : null,
       ),
     ),
   );
@@ -115,6 +125,8 @@ class MyApp extends StatelessWidget {
   final String? token;
   final bool isLoggedIn;
   final String? userToken;
+  final String? userRole;
+  final String? username;
 
   const MyApp({
     this.userId,
@@ -122,6 +134,8 @@ class MyApp extends StatelessWidget {
     super.key,
     required this.isLoggedIn,
     this.userToken,
+    this.userRole,
+    this.username,
   });
 
   @override
@@ -192,10 +206,12 @@ class MyApp extends StatelessWidget {
         '/':
             (context) =>
                 isLoggedIn
-                    ? HomePage(
-                      data: userToken ?? '',
-                      onTokenChanged: (String userToken) => userToken,
-                    )
+                    ? (userRole == 'Organization'
+                        ? OrganizationHomePage(token: userToken ?? '')
+                        : HomePage(
+                          data: userToken ?? '',
+                          onTokenChanged: (String userToken) => userToken,
+                        ))
                     : StartupPage(),
 
         // '/': (context) => const StartupPage(),

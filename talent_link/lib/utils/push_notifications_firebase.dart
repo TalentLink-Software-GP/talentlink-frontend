@@ -72,11 +72,6 @@ class PushNotificationsFirebase {
                 data['jobId'].toString(),
               );
 
-              if (job == null) {
-                _logger.e('Failed to fetch job details');
-                return;
-              }
-
               navigatorKey.currentState?.push(
                 MaterialPageRoute(
                   builder:
@@ -85,6 +80,18 @@ class PushNotificationsFirebase {
               );
             } catch (e) {
               _logger.e('Error handling job notification', error: e);
+              // Show user-friendly error instead of crashing
+              if (navigatorKey.currentContext != null) {
+                ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Unable to load job details. Please check your connection and try again.',
+                    ),
+                    backgroundColor: Colors.orange,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              }
             }
           }
 
@@ -118,11 +125,6 @@ class PushNotificationsFirebase {
               final job = await jobService.fetchJobById(
                 data['jobId'].toString(),
               );
-
-              if (job == null) {
-                _logger.e('Failed to fetch job details for application');
-                return;
-              }
 
               // Show a dialog with application details and options
               showDialog(
@@ -173,6 +175,18 @@ class PushNotificationsFirebase {
               );
             } catch (e) {
               _logger.e('Error handling application notification', error: e);
+              // Show user-friendly error instead of crashing
+              if (navigatorKey.currentContext != null) {
+                ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Unable to load application details. Please check your connection and try again.',
+                    ),
+                    backgroundColor: Colors.orange,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+              }
             }
           }
         }
@@ -210,11 +224,6 @@ class PushNotificationsFirebase {
             message.data['jobId'].toString(),
           );
 
-          if (job == null) {
-            _logger.e('Failed to fetch job details');
-            return;
-          }
-
           navigatorKey.currentState?.push(
             MaterialPageRoute(
               builder: (context) => JobDetailsScreen(job: job, token: token),
@@ -225,23 +234,19 @@ class PushNotificationsFirebase {
             'Error handling job notification from opened app',
             error: e,
           );
+          // Show user-friendly error instead of crashing
+          if (navigatorKey.currentContext != null) {
+            ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Unable to load job details. Please check your connection and try again.',
+                ),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
         }
-        //         if (data['type'] == 'meeting') {
-        //   // Navigate to a MeetingDetailsScreen or show alert dialog
-        //   showDialog(
-        //     context: navigatorKey.currentContext!,
-        //     builder: (context) => AlertDialog(
-        //       title: Text("Meeting Scheduled"),
-        //       content: Text("You have a meeting with ${data['title']} at ${data['scheduledDateTime']}"),
-        //       actions: [
-        //         TextButton(
-        //           onPressed: () => Navigator.of(context).pop(),
-        //           child: Text("OK"),
-        //         ),
-        //       ],
-        //     ),
-        //   );
-        // }
       }
     });
 
