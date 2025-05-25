@@ -36,6 +36,8 @@ class _ProfileWidgetForAnotherUsersState
   String? uploadedImageUrl;
   String? fullName;
   UserProfileData? userProfileData;
+  bool isFollowing = false;
+  bool isFollowLoading = false;
 
   @override
   void initState() {
@@ -43,6 +45,7 @@ class _ProfileWidgetForAnotherUsersState
     fetchProfileData();
     _postService = PostService(widget.token);
     fetchUserDataAndPosts();
+    checkFollowStatus();
   }
 
   Future<void> fetchProfileData() async {
@@ -121,73 +124,219 @@ class _ProfileWidgetForAnotherUsersState
     }
   }
 
-  Widget buildExpandableListViewOnly(String title, List<String> items) {
+  Future<void> checkFollowStatus() async {
+    // TODO: Implement follow status check API call
+    // This is placeholder logic - replace with actual API call
+    try {
+      // Example API call structure:
+      // final response = await _postService.checkFollowStatus(widget.username);
+      // setState(() {
+      //   isFollowing = response['isFollowing'] ?? false;
+      // });
+    } catch (e) {
+      _logger.e("Error checking follow status", error: e);
+    }
+  }
+
+  Future<void> toggleFollow() async {
+    setState(() {
+      isFollowLoading = true;
+    });
+
+    try {
+      // TODO: Implement follow/unfollow API call
+      // This is placeholder logic - replace with actual API call
+      // if (isFollowing) {
+      //   await _postService.unfollowUser(widget.username);
+      // } else {
+      //   await _postService.followUser(widget.username);
+      // }
+
+      setState(() {
+        isFollowing = !isFollowing;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isFollowing
+                ? 'You are now following ${widget.username}'
+                : 'You unfollowed ${widget.username}',
+          ),
+          backgroundColor: Theme.of(context).primaryColor,
+        ),
+      );
+    } catch (e) {
+      _logger.e("Error toggling follow", error: e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error updating follow status'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        isFollowLoading = false;
+      });
+    }
+  }
+
+  Widget buildExpandableSection(
+    String title,
+    List<String> items,
+    IconData icon,
+  ) {
     final isCollapsed = collapsedSections[title] ?? true;
     final isExpanded = expandedSections[title] ?? false;
     final displayedItems = isExpanded ? items : items.take(3).toList();
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-      child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 4,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).primaryColor.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const Spacer(),
-                  IconButton(
-                    icon: Icon(
-                      isCollapsed
-                          ? Icons.label_important_outline
-                          : Icons.label_important,
-                      color: Colors.blueAccent,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        collapsedSections[title] =
-                            !(collapsedSections[title] ?? false);
-                      });
-                    },
-                  ),
-                ],
-              ),
-              if (!isCollapsed) ...[
-                const SizedBox(height: 10),
-                if (displayedItems.isEmpty)
-                  const Text(
-                    "No data available.",
-                    style: TextStyle(fontStyle: FontStyle.italic),
-                  ),
-                ...displayedItems.map(
-                  (item) => ListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(item),
+                  child: Icon(
+                    icon,
+                    color: Theme.of(context).primaryColor,
+                    size: 24,
                   ),
                 ),
-                if (items.length > 3)
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        expandedSections[title] = !isExpanded;
-                      });
-                    },
-                    child: Text(isExpanded ? "Show Less ▲" : "Show More ▼"),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
                   ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: Icon(
+                    isCollapsed ? Icons.expand_more : Icons.expand_less,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      collapsedSections[title] =
+                          !(collapsedSections[title] ?? false);
+                    });
+                  },
+                ),
               ],
+            ),
+            if (!isCollapsed) ...[
+              const SizedBox(height: 12),
+              if (displayedItems.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: Colors.grey[600],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "No $title available",
+                        style: TextStyle(
+                          fontStyle: FontStyle.italic,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ...displayedItems.map(
+                  (item) => Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).primaryColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            item,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (items.length > 3)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Center(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          expandedSections[title] = !isExpanded;
+                        });
+                      },
+                      icon: Icon(
+                        isExpanded ? Icons.expand_less : Icons.expand_more,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      label: Text(
+                        isExpanded
+                            ? "Show Less"
+                            : "Show More (${items.length - 3} more)",
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -196,143 +345,530 @@ class _ProfileWidgetForAnotherUsersState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('${widget.username}\'s Profile')),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : userData == null
-              ? const Center(child: Text('User not found'))
-              : SingleChildScrollView(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundImage:
-                          uploadedImageUrl != null &&
-                                  uploadedImageUrl!.isNotEmpty
-                              ? NetworkImage(uploadedImageUrl!)
-                              : const AssetImage(
-                                    'assets/images/default_avatar.png',
-                                  )
-                                  as ImageProvider,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      fullName ?? 'No Name',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      '@${widget.username}',
-                      style: const TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 20),
-                    const Divider(),
-                    if (userProfileData != null) ...[
-                      buildExpandableListViewOnly(
-                        "Education",
-                        userProfileData!.education,
-                      ),
-                      buildExpandableListViewOnly(
-                        "Skills",
-                        userProfileData!.skills,
-                      ),
-                      buildExpandableListViewOnly(
-                        "Experience",
-                        userProfileData!.experience,
-                      ),
-                      buildExpandableListViewOnly(
-                        "Certifications",
-                        userProfileData!.certifications,
-                      ),
-                      buildExpandableListViewOnly(
-                        "Languages",
-                        userProfileData!.languages,
-                      ),
-                    ],
-
-                    const Divider(),
-                    const SizedBox(height: 10),
-                    if (userPosts.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(20.0),
-                        child: Text('No posts found'),
-                      )
-                    else
-                      Column(
-                        children:
-                            userPosts.map((post) {
-                              final authorName = fullName ?? 'Unknown Author';
-
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8.0,
-                                  horizontal: 16.0,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Theme.of(context).primaryColor.withOpacity(0.05),
+              Colors.white,
+              Theme.of(context).primaryColor.withOpacity(0.05),
+            ],
+          ),
+        ),
+        child:
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : userData == null
+                ? const Center(child: Text('User not found'))
+                : SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      // Profile Header Section
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Theme.of(context).primaryColor.withOpacity(0.9),
+                              Theme.of(context).primaryColor.withOpacity(0.7),
+                              Theme.of(context).primaryColor.withOpacity(0.5),
+                            ],
+                          ),
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(30),
+                            bottomRight: Radius.circular(30),
+                          ),
+                        ),
+                        child: SafeArea(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              children: [
+                                // Back Button
+                                Row(
+                                  children: [
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: IconButton(
+                                        icon: const Icon(
+                                          Icons.arrow_back_ios_new,
+                                          color: Colors.white,
+                                        ),
+                                        onPressed: () => Navigator.pop(context),
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      'Profile',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    const SizedBox(
+                                      width: 48,
+                                    ), // Balance the back button
+                                  ],
                                 ),
-                                child: PostCard(
-                                  postId: post['id'],
-                                  postText: post['text'],
-                                  authorName: authorName,
-
-                                  timestamp: post['time'],
-                                  authorAvatarUrl: post['avatarUrl'] ?? '',
-                                  isOwner: false,
-                                  isLiked: post['isLiked'] ?? false,
-                                  likeCount: post['likeCount'] ?? 0,
-                                  onLike: () async {
-                                    try {
-                                      setState(() {
-                                        post['isLiked'] =
-                                            !(post['isLiked'] ?? false);
-                                        if (post['isLiked']) {
-                                          post['likeCount'] =
-                                              (post['likeCount'] ?? 0) + 1;
-                                        } else {
-                                          post['likeCount'] =
-                                              (post['likeCount'] ?? 1) - 1;
-                                        }
-                                      });
-                                    } catch (e) {
-                                      ScaffoldMessenger.of(
+                                const SizedBox(height: 32),
+                                // Avatar and Name
+                                Hero(
+                                  tag: 'profile-avatar-${widget.username}',
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.white.withOpacity(0.2),
+                                      border: Border.all(
+                                        color: Colors.white.withOpacity(0.3),
+                                        width: 3,
+                                      ),
+                                    ),
+                                    child: CircleAvatar(
+                                      radius: 60,
+                                      backgroundColor: Colors.white,
+                                      child: CircleAvatar(
+                                        radius: 56,
+                                        backgroundImage:
+                                            uploadedImageUrl != null &&
+                                                    uploadedImageUrl!.isNotEmpty
+                                                ? NetworkImage(
+                                                  uploadedImageUrl!,
+                                                )
+                                                : const AssetImage(
+                                                      'assets/images/default_avatar.png',
+                                                    )
+                                                    as ImageProvider,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  fullName ?? 'No Name',
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '@${widget.username}',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                                // Follow Button
+                                Container(
+                                  width: double.infinity,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    gradient:
+                                        isFollowing
+                                            ? null
+                                            : LinearGradient(
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                              colors: [
+                                                Colors.white,
+                                                Colors.white.withOpacity(0.9),
+                                              ],
+                                            ),
+                                    color:
+                                        isFollowing
+                                            ? Colors.white.withOpacity(0.2)
+                                            : null,
+                                    border:
+                                        isFollowing
+                                            ? Border.all(
+                                              color: Colors.white.withOpacity(
+                                                0.5,
+                                              ),
+                                              width: 2,
+                                            )
+                                            : null,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(16),
+                                      onTap:
+                                          isFollowLoading ? null : toggleFollow,
+                                      child: Center(
+                                        child:
+                                            isFollowLoading
+                                                ? SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                          Color
+                                                        >(
+                                                          isFollowing
+                                                              ? Colors.white
+                                                              : Theme.of(
+                                                                context,
+                                                              ).primaryColor,
+                                                        ),
+                                                  ),
+                                                )
+                                                : Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      isFollowing
+                                                          ? Icons.person_remove
+                                                          : Icons.person_add,
+                                                      color:
+                                                          isFollowing
+                                                              ? Colors.white
+                                                              : Theme.of(
+                                                                context,
+                                                              ).primaryColor,
+                                                      size: 22,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      isFollowing
+                                                          ? 'Unfollow'
+                                                          : 'Follow',
+                                                      style: TextStyle(
+                                                        color:
+                                                            isFollowing
+                                                                ? Colors.white
+                                                                : Theme.of(
+                                                                  context,
+                                                                ).primaryColor,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Summary Section
+                      if (userProfileData != null) ...[
+                        Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Theme.of(
+                                  context,
+                                ).primaryColor.withOpacity(0.08),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(
+                                          context,
+                                        ).primaryColor.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(
+                                        Icons.description_outlined,
+                                        color: Theme.of(context).primaryColor,
+                                        size: 24,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    const Text(
+                                      "Summary",
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                userProfileData!.summary.isNotEmpty
+                                    ? Text(
+                                      userProfileData!.summary,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        color: Colors.black87,
+                                        height: 1.6,
+                                      ),
+                                    )
+                                    : Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[50],
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.info_outline,
+                                            color: Colors.grey[600],
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            "No summary provided",
+                                            style: TextStyle(
+                                              fontStyle: FontStyle.italic,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                      // Profile Sections
+                      if (userProfileData != null) ...[
+                        buildExpandableSection(
+                          "Education",
+                          userProfileData!.education,
+                          Icons.school_outlined,
+                        ),
+                        buildExpandableSection(
+                          "Skills",
+                          userProfileData!.skills,
+                          Icons.star_outline,
+                        ),
+                        buildExpandableSection(
+                          "Experience",
+                          userProfileData!.experience,
+                          Icons.work_outline,
+                        ),
+                        buildExpandableSection(
+                          "Certifications",
+                          userProfileData!.certifications,
+                          Icons.verified_outlined,
+                        ),
+                        buildExpandableSection(
+                          "Languages",
+                          userProfileData!.languages,
+                          Icons.language_outlined,
+                        ),
+                      ],
+                      // Posts Section
+                      Container(
+                        margin: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Theme.of(
+                                context,
+                              ).primaryColor.withOpacity(0.08),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(
                                         context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Failed to like post: $e',
+                                      ).primaryColor.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      Icons.article_outlined,
+                                      color: Theme.of(context).primaryColor,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Posts (${userPosts.length})',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              if (userPosts.isEmpty)
+                                Container(
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[50],
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Center(
+                                    child: Column(
+                                      children: [
+                                        Icon(
+                                          Icons.article_outlined,
+                                          color: Colors.grey[400],
+                                          size: 48,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          'No posts yet',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey[600],
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
-                                      );
-                                    }
-                                  },
-                                  onComment: () {},
-                                  currentUserAvatar:
-                                      userData?['avatarUrl'] ?? '',
-                                  currentUserName: userData?['username'] ?? '',
-                                  token: widget.token,
-                                  initialComments:
-                                      List<Map<String, dynamic>>.from(
-                                        (post['comments'] ?? []).map(
-                                          (c) => {
-                                            '_id': c['_id'],
-                                            'text': c['text'],
-                                            'author': c['author'],
-                                            'avatarUrl': c['avatarUrl'],
-                                          },
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '${fullName ?? widget.username} hasn\'t shared any posts',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[500],
+                                          ),
+                                          textAlign: TextAlign.center,
                                         ),
-                                      ),
-                                  username: authorName,
-                                  onDelete: null,
-                                  onUpdate: null,
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              else
+                                Column(
+                                  children:
+                                      userPosts.map((post) {
+                                        final authorName =
+                                            fullName ?? 'Unknown Author';
+                                        return Container(
+                                          margin: const EdgeInsets.only(
+                                            bottom: 16,
+                                          ),
+                                          child: PostCard(
+                                            postId: post['id'],
+                                            postText: post['text'],
+                                            authorName: authorName,
+                                            timestamp: post['time'],
+                                            authorAvatarUrl:
+                                                post['avatarUrl'] ?? '',
+                                            isOwner: false,
+                                            isLiked: post['isLiked'] ?? false,
+                                            likeCount: post['likeCount'] ?? 0,
+                                            onLike: () async {
+                                              try {
+                                                setState(() {
+                                                  post['isLiked'] =
+                                                      !(post['isLiked'] ??
+                                                          false);
+                                                  if (post['isLiked']) {
+                                                    post['likeCount'] =
+                                                        (post['likeCount'] ??
+                                                            0) +
+                                                        1;
+                                                  } else {
+                                                    post['likeCount'] =
+                                                        (post['likeCount'] ??
+                                                            1) -
+                                                        1;
+                                                  }
+                                                });
+                                              } catch (e) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      'Failed to like post: $e',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            onComment: () {},
+                                            currentUserAvatar:
+                                                userData?['avatarUrl'] ?? '',
+                                            currentUserName:
+                                                userData?['username'] ?? '',
+                                            token: widget.token,
+                                            initialComments:
+                                                List<Map<String, dynamic>>.from(
+                                                  (post['comments'] ?? []).map(
+                                                    (c) => {
+                                                      '_id': c['_id'],
+                                                      'text': c['text'],
+                                                      'author': c['author'],
+                                                      'avatarUrl':
+                                                          c['avatarUrl'],
+                                                    },
+                                                  ),
+                                                ),
+                                            username: authorName,
+                                            onDelete: null,
+                                            onUpdate: null,
+                                          ),
+                                        );
+                                      }).toList(),
                                 ),
-                              );
-                            }).toList(),
+                            ],
+                          ),
+                        ),
                       ),
-                  ],
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
-              ),
+      ),
     );
   }
 }

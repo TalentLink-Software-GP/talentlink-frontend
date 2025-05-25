@@ -169,16 +169,6 @@ class _AvatarNameState extends State<AvatarName> {
                   await removeAvatarFromBackend();
                 },
               ),
-              ListTile(
-                leading: Icon(Icons.settings),
-                title: Text('Settings'),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SettingsPage()),
-                  );
-                },
-              ),
             ],
           ),
     );

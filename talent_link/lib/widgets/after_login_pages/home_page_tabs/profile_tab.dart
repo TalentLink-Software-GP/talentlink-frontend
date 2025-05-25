@@ -6,6 +6,7 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_card.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/resume.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/user_data.dart';
+import 'package:talent_link/widgets/appSetting/seeting.dart';
 import 'package:talent_link/models/user_profile_data.dart';
 import 'package:logger/logger.dart';
 
@@ -35,7 +36,6 @@ class _ProfileTabState extends State<ProfileTab>
   String? uploadedImageUrl;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-
 
   @override
   void initState() {
@@ -420,8 +420,45 @@ class _ProfileTabState extends State<ProfileTab>
                   ),
                   child: SafeArea(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 32),
-                      child: AvatarUsername(token: widget.token),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 32,
+                        horizontal: 16,
+                      ),
+                      child: Stack(
+                        children: [
+                          Center(child: AvatarUsername(token: widget.token)),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.settings,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => SettingsPage(),
+                                    ),
+                                  );
+                                },
+                                tooltip: 'Settings',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

@@ -107,34 +107,91 @@ class SearchUserPageState extends State<SearchUserPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Search & Chat"),
-        backgroundColor: Colors.blueAccent,
-      ),
-      body: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.deepPurpleAccent, Colors.blueAccent],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
+        title: const Text(
+          "Messages",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).primaryColor,
+                Theme.of(context).primaryColor.withOpacity(0.8),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).primaryColor.withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+        ),
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new),
+            onPressed: () => Navigator.of(context).pop(),
+            color: Colors.white,
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Theme.of(context).primaryColor.withOpacity(0.05),
+              Colors.white,
+              Theme.of(context).primaryColor.withOpacity(0.05),
+            ],
+          ),
+        ),
+        child: Column(
+          children: [
+            // Search Bar
+            Container(
+              padding: const EdgeInsets.all(16.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).primaryColor.withOpacity(0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
                 child: TextField(
                   controller: searchController,
                   decoration: InputDecoration(
                     hintText: "Search users...",
-                    filled: true,
-                    fillColor: Colors.white.withAlpha(204),
-                    prefixIcon: Icon(Icons.search, color: Colors.blueAccent),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
+                    hintStyle: TextStyle(color: Colors.grey[500]),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
                     ),
                   ),
                   onChanged: (query) {
@@ -152,17 +209,44 @@ class SearchUserPageState extends State<SearchUserPage> {
                   },
                 ),
               ),
-              if (!isSearching) Expanded(child: buildChatHistory()),
-            ],
-          ),
-          if (isSearching) buildSearchResultsWindow(),
-        ],
+            ),
+            // Content
+            if (!isSearching) Expanded(child: buildChatHistory()),
+            if (isSearching) Expanded(child: buildSearchResults()),
+          ],
+        ),
       ),
     );
   }
 
   Widget buildChatHistory() {
+    if (chatHistory.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[400]),
+            SizedBox(height: 16),
+            Text(
+              "No conversations yet",
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Start chatting with other users",
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
+      padding: EdgeInsets.symmetric(horizontal: 16),
       itemCount: chatHistory.length,
       itemBuilder: (context, index) {
         final user = chatHistory[index];
@@ -173,11 +257,11 @@ class SearchUserPageState extends State<SearchUserPage> {
         if (timeDifference.inMinutes < 1) {
           timeDisplay = 'Just now';
         } else if (timeDifference.inMinutes < 60) {
-          timeDisplay = '${timeDifference.inMinutes} minutes ago';
+          timeDisplay = '${timeDifference.inMinutes}m ago';
         } else if (timeDifference.inHours < 24) {
-          timeDisplay = '${timeDifference.inHours} hours ago';
+          timeDisplay = '${timeDifference.inHours}h ago';
         } else {
-          timeDisplay = '${timeDifference.inDays} days ago';
+          timeDisplay = '${timeDifference.inDays}d ago';
         }
 
         return Dismissible(
@@ -187,83 +271,151 @@ class SearchUserPageState extends State<SearchUserPage> {
             deleteChatHistory(user['_id']);
           },
           background: Container(
-            color: Colors.redAccent,
+            margin: EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(16),
+            ),
             alignment: Alignment.centerRight,
             padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Icon(Icons.delete, color: Colors.white),
+            child: Icon(Icons.delete_outline, color: Colors.white, size: 28),
           ),
-          child: Card(
-            margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
+          child: Container(
+            margin: EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            elevation: 4,
-            child: ListTile(
-              leading: Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 25,
-                    backgroundImage:
-                        user['avatarUrl'] != null &&
-                                user['avatarUrl'].isNotEmpty
-                            ? NetworkImage(user['avatarUrl'])
-                            : AssetImage('assets/images/avatarPlaceholder.jpg')
-                                as ImageProvider,
-                  ),
-
-                  //TODO: when user1 send a message to user2 i need the Count of notification (finalcount or unReadCount) to be in realTime that dont need to refresh the page to show the notifications
-                  if ((user['unreadCount'] ?? 0) > 0) // here's
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: Container(
-                        padding: EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: BoxConstraints(
-                          minWidth: 20,
-                          minHeight: 20,
-                        ),
-                        child: Text(
-                          '${user['unreadCount']}',
-                          style: TextStyle(color: Colors.white, fontSize: 12),
-                          textAlign: TextAlign.center,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder:
+                          (_) => ChatPage(
+                            currentUserId: widget.currentUserId,
+                            peerUserId: user['_id'],
+                            peerUsername: user['username'],
+                            currentuserAvatarUrl: widget.avatarUrl,
+                            token: widget.token,
+                            onChatClosed: () {
+                              fetchChatHistory();
+                            },
+                          ),
+                    ),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Stack(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Theme.of(context).primaryColor,
+                                  Theme.of(
+                                    context,
+                                  ).primaryColor.withOpacity(0.7),
+                                ],
+                              ),
+                            ),
+                            child: CircleAvatar(
+                              radius: 24,
+                              backgroundColor: Colors.white,
+                              child: CircleAvatar(
+                                radius: 22,
+                                backgroundImage:
+                                    user['avatarUrl'] != null &&
+                                            user['avatarUrl'].isNotEmpty
+                                        ? NetworkImage(user['avatarUrl'])
+                                        : AssetImage(
+                                              'assets/images/avatarPlaceholder.jpg',
+                                            )
+                                            as ImageProvider,
+                              ),
+                            ),
+                          ),
+                          //TODO: when user1 send a message to user2 i need the Count of notification (finalcount or unReadCount) to be in realTime that dont need to refresh the page to show the notifications
+                          if ((user['unreadCount'] ?? 0) > 0) // here's
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: Container(
+                                padding: EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                                constraints: BoxConstraints(
+                                  minWidth: 20,
+                                  minHeight: 20,
+                                ),
+                                child: Text(
+                                  '${user['unreadCount']}',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user['username'],
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Last active: $timeDisplay',
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                ],
-              ),
-
-              title: Text(
-                user['username'],
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Text(
-                'Last chatted: $timeDisplay',
-                style: TextStyle(color: Colors.grey),
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (_) => ChatPage(
-                          currentUserId: widget.currentUserId,
-                          peerUserId: user['_id'],
-                          peerUsername: user['username'],
-                          currentuserAvatarUrl: widget.avatarUrl,
-                          token: widget.token,
-                          onChatClosed: () {
-                            fetchChatHistory();
-
-                            // currentuserAvatarUrl:widget.avatarUrl;
-                          },
-                        ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.grey[400],
+                        size: 16,
+                      ),
+                    ],
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
         );
@@ -271,44 +423,56 @@ class SearchUserPageState extends State<SearchUserPage> {
     );
   }
 
-  Widget buildSearchResultsWindow() {
-    return Positioned(
-      top: 90,
-      left: 20,
-      right: 20,
-      bottom: 0,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withAlpha(51),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 10,
-              offset: Offset(0, 5),
+  Widget buildSearchResults() {
+    if (searchResults.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+            SizedBox(height: 16),
+            Text(
+              "No users found",
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Try searching with different keywords",
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
           ],
         ),
-        child: ListView.builder(
-          itemCount: searchResults.length,
-          itemBuilder: (context, index) {
-            final user = searchResults[index];
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundImage:
-                    user['avatarUrl'] != null && user['avatarUrl'].isNotEmpty
-                        ? NetworkImage(user['avatarUrl'])
-                        : AssetImage('assets/images/avatarPlaceholder.jpg')
-                            as ImageProvider,
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      itemCount: searchResults.length,
+      itemBuilder: (context, index) {
+        final user = searchResults[index];
+        return Container(
+          margin: EdgeInsets.symmetric(vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-              title: Text(
-                user['username'],
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Text(user['email']),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
               onTap: () {
-                Navigator.push(
-                  context,
+                Navigator.of(context).push(
                   MaterialPageRoute(
                     builder:
                         (_) => ChatPage(
@@ -316,7 +480,6 @@ class SearchUserPageState extends State<SearchUserPage> {
                           peerUserId: user['_id'],
                           peerUsername: user['username'],
                           token: widget.token,
-
                           currentuserAvatarUrl: widget.avatarUrl,
                           onChatClosed: () {
                             fetchChatHistory();
@@ -325,10 +488,88 @@ class SearchUserPageState extends State<SearchUserPage> {
                   ),
                 );
               },
-            );
-          },
-        ),
-      ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Theme.of(context).primaryColor,
+                            Theme.of(context).primaryColor.withOpacity(0.7),
+                          ],
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Colors.white,
+                        child: CircleAvatar(
+                          radius: 22,
+                          backgroundImage:
+                              user['avatarUrl'] != null &&
+                                      user['avatarUrl'].isNotEmpty
+                                  ? NetworkImage(user['avatarUrl'])
+                                  : AssetImage(
+                                        'assets/images/avatarPlaceholder.jpg',
+                                      )
+                                      as ImageProvider,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user['username'],
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            user['email'],
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        "Chat",
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -406,7 +647,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     // Initialize status tracking
     _initializePresence();
 
-    _markMessagesAsRead(); // Add this line
+    _markMessagesAsRead();
   }
 
   void _initializePresence() {
@@ -641,8 +882,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
     socketService.emitCall('callRequest', callData);
 
-    Navigator.push(
-      context,
+    Navigator.of(context).push(
       MaterialPageRoute(
         builder:
             (context) => VideoWidget(
@@ -686,8 +926,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         incomingCallData = null;
       });
 
-      Navigator.push(
-        context,
+      Navigator.of(context).push(
         MaterialPageRoute(
           builder:
               (context) => VideoWidget(
@@ -753,330 +992,118 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.indigo.shade800,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-        ),
-        title: GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder:
-                    (context) => ProfileWidgetForAnotherUsers(
-                      username: widget.peerUsername,
-                      token: widget.token,
-                    ),
-              ),
-            );
-          },
-          child: Row(
-            children: [
-              Hero(
-                tag: 'avatar-$peerUsername',
-                child: Container(
-                  padding: EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 8,
-                        offset: Offset(0, 3),
+        title: Center(
+          child: GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder:
+                      (context) => ProfileWidgetForAnotherUsers(
+                        username: widget.peerUsername,
+                        token: widget.token,
                       ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundImage:
-                        peerAvatar.isNotEmpty
-                            ? NetworkImage(peerAvatar)
-                            : AssetImage('assets/images/avatarPlaceholder.jpg')
-                                as ImageProvider,
-                  ),
                 ),
-              ),
-              SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    peerUsername.isNotEmpty ? peerUsername : 'Loading...',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Text(
-                    isOnline
-                        ? 'Online'
-                        : lastSeen != null
-                        ? 'Last seen ${DateFormat.jm().format(lastSeen!)}'
-                        : 'Offline',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isOnline ? Colors.greenAccent : Colors.grey,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, size: 22),
-          onPressed: () {
-            widget.onChatClosed();
-            Navigator.pop(context);
-          },
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.videocam, color: Colors.white),
-            onPressed: _initiateVideoCall,
-          ),
-          IconButton(
-            icon: Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () => _showChatOptions(context),
-          ),
-        ],
-      ),
-      body: Stack(
-        // Changed from Container to Stack
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF1A237E),
-                  Color(0xFF3949AB),
-                  Color(0xFF5C6BC0),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-            child: Column(
+              );
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Date indicator
-                Container(
-                  margin: EdgeInsets.symmetric(vertical: 12),
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(51),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'Today',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                Hero(
+                  tag: 'avatar-$peerUsername',
+                  child: Container(
+                    padding: EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.15),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Colors.white,
+                      child: CircleAvatar(
+                        radius: 16,
+                        backgroundImage:
+                            peerAvatar.isNotEmpty
+                                ? NetworkImage(peerAvatar)
+                                : AssetImage(
+                                      'assets/images/avatarPlaceholder.jpg',
+                                    )
+                                    as ImageProvider,
+                      ),
                     ),
                   ),
                 ),
-                Expanded(
-                  child: ListView.builder(
-                    reverse: true,
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      var msg = messages[messages.length - 1 - index];
-                      var isMe = msg['senderId'] == widget.currentUserId;
-                      var time =
-                          msg['timestamp'] != null
-                              ? DateFormat(
-                                'hh:mm a',
-                              ).format(DateTime.parse(msg['timestamp']))
-                              : "";
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          mainAxisAlignment:
-                              isMe
-                                  ? MainAxisAlignment.end
-                                  : MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            if (!isMe)
-                              CircleAvatar(
-                                radius: 12,
-                                backgroundImage:
-                                    peerAvatar.isNotEmpty
-                                        ? NetworkImage(peerAvatar)
-                                        : AssetImage(
-                                              'assets/images/avatarPlaceholder.jpg',
-                                            )
-                                            as ImageProvider,
-                              ),
-                            if (!isMe) SizedBox(width: 8),
-                            Container(
-                              constraints: BoxConstraints(
-                                maxWidth:
-                                    MediaQuery.of(context).size.width * 0.7,
-                              ),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color:
-                                    isMe
-                                        ? Colors.indigoAccent.shade400
-                                        : Colors.white.withAlpha(230),
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(18),
-                                  topRight: Radius.circular(18),
-                                  bottomLeft:
-                                      isMe
-                                          ? Radius.circular(18)
-                                          : Radius.circular(0),
-                                  bottomRight:
-                                      isMe
-                                          ? Radius.circular(0)
-                                          : Radius.circular(18),
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black12,
-                                    blurRadius: 3,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    msg['message'],
-                                    style: TextStyle(
-                                      color:
-                                          isMe ? Colors.white : Colors.black87,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        time,
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color:
-                                              isMe
-                                                  ? Colors.white70
-                                                  : Colors.black54,
-                                        ),
-                                      ),
-                                      if (isMe)
-                                        // TODO: when user1 send message to user2 and user2 is in chat i need to show for user 1 that user2 seen the message, i do that but i need it in realTime
-                                        Padding(
-                                          padding: EdgeInsets.only(left: 4),
-                                          child: Icon(
-                                            msg['isRead'] == true
-                                                ? Icons.done_all
-                                                : Icons.done,
-                                            size: 14,
-                                            color:
-                                                msg['isRead'] == true
-                                                    ? Colors.blue[200]
-                                                    : Colors.white70,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (isMe) SizedBox(width: 8),
-                            if (isMe)
-                              CircleAvatar(
-                                radius: 12,
-                                backgroundImage:
-                                    widget.currentuserAvatarUrl.isNotEmpty
-                                        ? NetworkImage(
-                                          widget.currentuserAvatarUrl,
-                                        )
-                                        : AssetImage(
-                                              'assets/images/avatarPlaceholder.jpg',
-                                            )
-                                            as ImageProvider,
-                              ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(26),
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
+                SizedBox(width: 16),
+                Flexible(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.attach_file_rounded,
-                          color: Colors.white70,
+                      Text(
+                        peerUsername.isNotEmpty ? peerUsername : 'Loading...',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 17,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
                         ),
-                        onPressed: () => _showAttachmentOptions(context),
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      Expanded(
-                        child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(51),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: Colors.white24),
+                      SizedBox(height: 2),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration: BoxDecoration(
+                              color:
+                                  isOnline
+                                      ? Colors.greenAccent
+                                      : Colors.white.withOpacity(0.6),
+                              shape: BoxShape.circle,
+                              boxShadow:
+                                  isOnline
+                                      ? [
+                                        BoxShadow(
+                                          color: Colors.greenAccent.withOpacity(
+                                            0.4,
+                                          ),
+                                          blurRadius: 4,
+                                          spreadRadius: 1,
+                                        ),
+                                      ]
+                                      : null,
+                            ),
                           ),
-                          child: TextField(
-                            controller: messageController,
-                            style: TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              hintText: 'Type a message...',
-                              hintStyle: TextStyle(color: Colors.white70),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 12,
+                          SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              isOnline
+                                  ? 'Online'
+                                  : lastSeen != null
+                                  ? 'Last seen ${DateFormat.jm().format(lastSeen!)}'
+                                  : 'Offline',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withOpacity(0.9),
+                                fontWeight: FontWeight.w400,
+                                letterSpacing: 0.2,
                               ),
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: null,
                           ),
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.indigoAccent, Colors.purpleAccent],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.purpleAccent.withAlpha(77),
-                              blurRadius: 8,
-                              offset: Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: IconButton(
-                          icon: Icon(Icons.send_rounded, color: Colors.white),
-                          onPressed: sendMessage,
-                        ),
+                        ],
                       ),
                     ],
                   ),
@@ -1084,28 +1111,401 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               ],
             ),
           ),
-          // Now the call notification is properly placed in the Stack
-          if (showCallNotification && incomingCallData != null)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: SafeArea(
-                child: CallNotification(
-                  callerName:
-                      incomingCallData!['callerName'] ?? 'Unknown Caller',
-                  onDismiss: () {
-                    setState(() {
-                      showCallNotification = false;
-                      incomingCallData = null;
-                    });
-                  },
-                  onReject: _rejectCall,
-                  onAccept: _acceptCall,
-                ),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).primaryColor,
+                Theme.of(context).primaryColor.withOpacity(0.8),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).primaryColor.withOpacity(0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+        ),
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new),
+            onPressed: () {
+              widget.onChatClosed();
+              Navigator.of(context).pop();
+            },
+            color: Colors.white,
+          ),
+        ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.videocam),
+              onPressed: _initiateVideoCall,
+              color: Colors.white,
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.more_vert),
+              onPressed: () => _showChatOptions(context),
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Theme.of(context).primaryColor.withOpacity(0.05),
+              Colors.white,
+              Theme.of(context).primaryColor.withOpacity(0.05),
+            ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Chat Content
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  // Date indicator
+                  Container(
+                    margin: EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Today',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  // Messages List
+                  Expanded(
+                    child: ListView.builder(
+                      reverse: true,
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        var msg = messages[messages.length - 1 - index];
+                        var isMe = msg['senderId'] == widget.currentUserId;
+                        var time =
+                            msg['timestamp'] != null
+                                ? DateFormat(
+                                  'hh:mm a',
+                                ).format(DateTime.parse(msg['timestamp']))
+                                : "";
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: 16),
+                          child: Row(
+                            mainAxisAlignment:
+                                isMe
+                                    ? MainAxisAlignment.end
+                                    : MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              if (!isMe)
+                                Container(
+                                  padding: EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Theme.of(context).primaryColor,
+                                        Theme.of(
+                                          context,
+                                        ).primaryColor.withOpacity(0.7),
+                                      ],
+                                    ),
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 14,
+                                    backgroundColor: Colors.white,
+                                    child: CircleAvatar(
+                                      radius: 12,
+                                      backgroundImage:
+                                          peerAvatar.isNotEmpty
+                                              ? NetworkImage(peerAvatar)
+                                              : AssetImage(
+                                                    'assets/images/avatarPlaceholder.jpg',
+                                                  )
+                                                  as ImageProvider,
+                                    ),
+                                  ),
+                                ),
+                              if (!isMe) SizedBox(width: 8),
+                              Flexible(
+                                child: Container(
+                                  constraints: BoxConstraints(
+                                    maxWidth:
+                                        MediaQuery.of(context).size.width * 0.7,
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        isMe
+                                            ? Theme.of(context).primaryColor
+                                            : Colors.white,
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(20),
+                                      topRight: Radius.circular(20),
+                                      bottomLeft:
+                                          isMe
+                                              ? Radius.circular(20)
+                                              : Radius.circular(4),
+                                      bottomRight:
+                                          isMe
+                                              ? Radius.circular(4)
+                                              : Radius.circular(20),
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color:
+                                            isMe
+                                                ? Theme.of(
+                                                  context,
+                                                ).primaryColor.withOpacity(0.3)
+                                                : Colors.grey.withOpacity(0.15),
+                                        blurRadius: 8,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        msg['message'],
+                                        style: TextStyle(
+                                          color:
+                                              isMe
+                                                  ? Colors.white
+                                                  : Colors.grey[800],
+                                          fontSize: 15,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                      SizedBox(height: 6),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            time,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color:
+                                                  isMe
+                                                      ? Colors.white
+                                                          .withOpacity(0.8)
+                                                      : Colors.grey[500],
+                                            ),
+                                          ),
+                                          if (isMe)
+                                            // TODO: when user1 send message to user2 and user2 is in chat i need to show for user 1 that user2 seen the message, i do that but i need it in realTime
+                                            Padding(
+                                              padding: EdgeInsets.only(left: 6),
+                                              child: Icon(
+                                                msg['isRead'] == true
+                                                    ? Icons.done_all
+                                                    : Icons.done,
+                                                size: 14,
+                                                color:
+                                                    msg['isRead'] == true
+                                                        ? Colors.white
+                                                        : Colors.white
+                                                            .withOpacity(0.6),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              if (isMe) SizedBox(width: 8),
+                              if (isMe)
+                                Container(
+                                  padding: EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Theme.of(context).primaryColor,
+                                        Theme.of(
+                                          context,
+                                        ).primaryColor.withOpacity(0.7),
+                                      ],
+                                    ),
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 14,
+                                    backgroundColor: Colors.white,
+                                    child: CircleAvatar(
+                                      radius: 12,
+                                      backgroundImage:
+                                          widget.currentuserAvatarUrl != null &&
+                                                  widget
+                                                      .currentuserAvatarUrl
+                                                      .isNotEmpty
+                                              ? NetworkImage(
+                                                widget.currentuserAvatarUrl,
+                                              )
+                                              : AssetImage(
+                                                    'assets/images/avatarPlaceholder.jpg',
+                                                  )
+                                                  as ImageProvider,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  // Input Area
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(24),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: Colors.grey[200]!,
+                                width: 1,
+                              ),
+                            ),
+                            child: TextField(
+                              controller: messageController,
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontSize: 16,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'Type a message...',
+                                hintStyle: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 16,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 14,
+                                ),
+                                filled: true,
+                                fillColor: Colors.transparent,
+                              ),
+                              maxLines: null,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Theme.of(context).primaryColor,
+                                Theme.of(context).primaryColor.withOpacity(0.8),
+                              ],
+                            ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Theme.of(
+                                  context,
+                                ).primaryColor.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            icon: Icon(Icons.send_rounded, color: Colors.white),
+                            onPressed: sendMessage,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-        ],
+            // Call notification overlay
+            if (showCallNotification && incomingCallData != null)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: SafeArea(
+                  child: CallNotification(
+                    callerName:
+                        incomingCallData!['callerName'] ?? 'Unknown Caller',
+                    onDismiss: () {
+                      setState(() {
+                        showCallNotification = false;
+                        incomingCallData = null;
+                      });
+                    },
+                    onReject: _rejectCall,
+                    onAccept: _acceptCall,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1119,131 +1519,79 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           (context) => Container(
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.indigo.shade900,
+              color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: Icon(Icons.search, color: Colors.white),
-                  title: Text(
-                    'Search in conversation',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  onTap: () => Navigator.pop(context),
-                ),
-                ListTile(
-                  leading: Icon(Icons.notifications, color: Colors.white),
-                  title: Text(
-                    'Mute notifications',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  onTap: () => Navigator.pop(context),
-                ),
-                ListTile(
-                  leading: Icon(Icons.delete_outline, color: Colors.redAccent),
-                  title: Text(
-                    'Clear chat',
-                    style: TextStyle(color: Colors.redAccent),
-                  ),
-                  onTap: () => Navigator.pop(context),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  blurRadius: 10,
+                  offset: Offset(0, -2),
                 ),
               ],
             ),
-          ),
-    );
-  }
-
-  void _showAttachmentOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder:
-          (context) => Container(
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.indigo.shade900,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _attachmentOption(
-                      context,
-                      Icons.photo,
-                      'Gallery',
-                      Colors.green,
-                    ),
-                    _attachmentOption(
-                      context,
-                      Icons.camera_alt,
-                      'Camera',
-                      Colors.blue,
-                    ),
-                    _attachmentOption(
-                      context,
-                      Icons.insert_drive_file,
-                      'Document',
-                      Colors.orange,
-                    ),
-                  ],
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
                 SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _attachmentOption(
-                      context,
-                      Icons.location_on,
-                      'Location',
-                      Colors.red,
+                ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    _attachmentOption(
-                      context,
-                      Icons.person,
-                      'Contact',
-                      Colors.purple,
+                    child: Icon(
+                      Icons.search,
+                      color: Theme.of(context).primaryColor,
                     ),
-                    _attachmentOption(
-                      context,
-                      Icons.music_note,
-                      'Audio',
-                      Colors.teal,
+                  ),
+                  title: Text(
+                    'Search in conversation',
+                    style: TextStyle(color: Colors.grey[800]),
+                  ),
+                  onTap: () => Navigator.of(context).pop(),
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  ],
+                    child: Icon(Icons.notifications, color: Colors.orange),
+                  ),
+                  title: Text(
+                    'Mute notifications',
+                    style: TextStyle(color: Colors.grey[800]),
+                  ),
+                  onTap: () => Navigator.of(context).pop(),
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.delete_outline, color: Colors.red),
+                  ),
+                  title: Text(
+                    'Clear chat',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  onTap: () => Navigator.of(context).pop(),
                 ),
               ],
             ),
           ),
-    );
-  }
-
-  //awad
-  Widget _attachmentOption(
-    BuildContext context,
-    IconData icon,
-    String label,
-    Color color,
-  ) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: color.withAlpha(51),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: color, size: 30),
-        ),
-        SizedBox(height: 8),
-        Text(label, style: TextStyle(color: Colors.white70)),
-      ],
     );
   }
 }

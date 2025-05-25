@@ -40,39 +40,11 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
-    fetchUserData();
     _messageService = MessageService(widget.data);
-  }
-
-  Future<void> fetchUserData() async {
-    String apiUrl =
-        //192.168.1.7             "http://10.0.2.2:5000/api/skills/get-skills-education";
-        "$baseUrl/skills/get-skills-education";
-    try {
-      final response = await http.get(
-        Uri.parse(apiUrl),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer ${widget.data}",
-        },
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          userSkills = List<String>.from(data["skills"] ?? []);
-          userEducation = List<String>.from(data["education"] ?? []);
-        });
-      } else {
-        _logger.e("Failed to fetch data", error: response.statusCode);
-      }
-    } catch (e) {
-      _logger.e("Error fetching data", error: e);
-    }
   }
 
   void _onItemTapped(int index) {
     setState(() {
-      fetchUserData();
       _selectedIndex = index;
     });
   }
