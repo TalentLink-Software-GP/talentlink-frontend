@@ -10,6 +10,7 @@ import 'package:logger/logger.dart';
 import 'package:talent_link/services/socket_service.dart';
 import 'package:talent_link/services/message_service.dart';
 import 'package:talent_link/services/search_page_services.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/messageBlocking.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/profile_widget_for_another_users.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/call_notification.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/videoCalling/video_widget.dart';
@@ -612,6 +613,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   String peerUsername = '';
   String peerAvatar = '';
 
+  bool canMessage = false;
+  bool checkingFollowStatus = true;
+  bool currentUserFollowsPeer = false;
+  bool peerFollowsCurrentUser = false;
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
@@ -641,6 +647,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     socketService.startHealthChecks();
 
     fetchPeerInfo();
+    _checkMutualFollow();
     fetchMessages();
     initSocket();
 
@@ -648,6 +655,32 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _initializePresence();
 
     _markMessagesAsRead();
+  }
+
+  Future<void> _checkMutualFollow() async {
+    setState(() => checkingFollowStatus = true);
+
+    final result = await messageService.checkMutualFollow(
+      widget.currentUserId,
+      widget.peerUserId,
+      widget.token,
+    );
+
+    _logger.i("Mutual follow check result: $result");
+
+    if (mounted) {
+      setState(() {
+        currentUserFollowsPeer = result['user1FollowsUser2'] ?? false;
+        peerFollowsCurrentUser = result['user2FollowsUser1'] ?? false;
+        // canMessage = currentUserFollowsPeer && peerFollowsCurrentUser;
+        canMessage = result['canMessage'] ?? false;
+        checkingFollowStatus = false;
+      });
+    }
+
+    _logger.i(
+      "Updated state - canMessage: $canMessage, currentFollowsPeer: $currentUserFollowsPeer, peerFollowsCurrent: $peerFollowsCurrentUser",
+    );
   }
 
   void _initializePresence() {
@@ -806,6 +839,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Future<void> sendMessage() async {
     if (messageController.text.trim().isEmpty) return;
+    if (!canMessage) return;
 
     setState(() {
       isSending = true;
@@ -991,6 +1025,18 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    if (checkingFollowStatus) {
+      return Scaffold(
+        appBar: AppBar(title: Text(peerUsername)),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    } else if (!canMessage) {
+      return MessagingBlockedScreen(
+        peerUsername: peerUsername,
+        currentUserFollowsPeer: currentUserFollowsPeer,
+        peerFollowsCurrentUser: peerFollowsCurrentUser,
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: Center(
@@ -1509,89 +1555,86 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       ),
     );
   }
+}
 
-  // Add these helper methods to your class
-  void _showChatOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder:
-          (context) => Container(
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  blurRadius: 10,
-                  offset: Offset(0, -2),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                SizedBox(height: 20),
-                ListTile(
-                  leading: Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.search,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                  title: Text(
-                    'Search in conversation',
-                    style: TextStyle(color: Colors.grey[800]),
-                  ),
-                  onTap: () => Navigator.of(context).pop(),
-                ),
-                ListTile(
-                  leading: Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.notifications, color: Colors.orange),
-                  ),
-                  title: Text(
-                    'Mute notifications',
-                    style: TextStyle(color: Colors.grey[800]),
-                  ),
-                  onTap: () => Navigator.of(context).pop(),
-                ),
-                ListTile(
-                  leading: Container(
-                    padding: EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.delete_outline, color: Colors.red),
-                  ),
-                  title: Text(
-                    'Clear chat',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                  onTap: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
+// Add these helper methods to your class
+void _showChatOptions(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder:
+        (context) => Container(
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.2),
+                blurRadius: 10,
+                offset: Offset(0, -2),
+              ),
+            ],
           ),
-    );
-  }
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              SizedBox(height: 20),
+              ListTile(
+                leading: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.search,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                title: Text(
+                  'Search in conversation',
+                  style: TextStyle(color: Colors.grey[800]),
+                ),
+                onTap: () => Navigator.of(context).pop(),
+              ),
+              ListTile(
+                leading: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.notifications, color: Colors.orange),
+                ),
+                title: Text(
+                  'Mute notifications',
+                  style: TextStyle(color: Colors.grey[800]),
+                ),
+                onTap: () => Navigator.of(context).pop(),
+              ),
+              ListTile(
+                leading: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.delete_outline, color: Colors.red),
+                ),
+                title: Text('Clear chat', style: TextStyle(color: Colors.red)),
+                onTap: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        ),
+  );
 }

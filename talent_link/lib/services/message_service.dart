@@ -151,4 +151,32 @@ class MessageService2 {
       return false;
     }
   }
+
+  Future<Map<String, dynamic>> checkMutualFollow(
+    String currentUserId,
+    String peerUserId,
+    String token,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/messages/checkfollow/$currentUserId/$peerUserId'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return {
+        'canMessage': false,
+        'user1FollowsUser2': false,
+        'user2FollowsUser1': false,
+      };
+    } catch (e) {
+      return {
+        'canMessage': false,
+        'user1FollowsUser2': false,
+        'user2FollowsUser1': false,
+      };
+    }
+  }
 }

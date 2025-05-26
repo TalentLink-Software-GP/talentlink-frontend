@@ -1,43 +1,62 @@
-//new api all fixed i used api.env
-
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:talent_link/services/message_service.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/map_screen.dart';
-import 'dart:convert';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab.dart';
-import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/exploreUser.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notifications_for_user.dart';
-import 'package:talent_link/widgets/appSetting/logout.dart';
-import 'package:talent_link/widgets/appSetting/seeting.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_creator.dart';
 import 'package:talent_link/widgets/login_widgets/login_page.dart';
-import '../after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_creator.dart';
+import 'package:talent_link/widgets/web_layouts/web_navigation.dart';
+import 'package:talent_link/utils/responsive/responsive_layout.dart';
 import 'package:logger/logger.dart';
 
 final String baseUrl = dotenv.env['BASE_URL']!;
 
-class HomePage extends StatefulWidget {
+class WebHomePage extends StatefulWidget {
   final String data; // Token
   final Function(String) onTokenChanged;
 
-  const HomePage({super.key, required this.data, required this.onTokenChanged});
+  const WebHomePage({
+    super.key,
+    required this.data,
+    required this.onTokenChanged,
+  });
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<WebHomePage> createState() => _WebHomePageState();
 }
 
-class _HomePageState extends State<HomePage>
+class _WebHomePageState extends State<WebHomePage>
     with AutomaticKeepAliveClientMixin {
   final _logger = Logger();
   @override
   bool get wantKeepAlive => true;
   int _selectedIndex = 0;
-  List<String> userSkills = [];
-  List<String> userEducation = [];
   late MessageService _messageService;
+
+  final List<NavigationItem> _navigationItems = const [
+    NavigationItem(
+      icon: Icons.home_outlined,
+      activeIcon: Icons.home,
+      label: "Home",
+    ),
+    NavigationItem(
+      icon: Icons.find_in_page_outlined,
+      activeIcon: Icons.find_in_page,
+      label: "Jobs",
+    ),
+    NavigationItem(
+      icon: Icons.map_outlined,
+      activeIcon: Icons.map,
+      label: "Map",
+    ),
+    NavigationItem(
+      icon: Icons.person_outline,
+      activeIcon: Icons.person,
+      label: "Profile",
+    ),
+  ];
 
   @override
   void initState() {
@@ -63,24 +82,24 @@ class _HomePageState extends State<HomePage>
     _messageService.navigateToSearchPage(context);
   }
 
-  Future<String> getCurrentUsername() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('username') ?? 'defaultUsername';
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
+    return ResponsiveLayout(
+      mobile: _buildMobileLayout(context),
+      desktop: _buildWebLayout(context),
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context) {
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).unfocus();
       },
       behavior: HitTestBehavior.opaque,
-
       child: Scaffold(
         resizeToAvoidBottomInset: true,
-
         appBar: AppBar(
           title: const Text(
             "TalentLink",
@@ -132,32 +151,6 @@ class _HomePageState extends State<HomePage>
                 borderRadius: BorderRadius.circular(8),
               ),
               child: IconButton(
-                icon: const Icon(Icons.search),
-                color: Colors.white,
-                onPressed: () async {
-                  final username = await getCurrentUsername();
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => ExploreUserPage(
-                            username: username,
-                            token: widget.data,
-                          ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: IconButton(
                 icon: const Icon(Icons.notifications_outlined),
                 color: Colors.white,
                 onPressed: () {
@@ -194,58 +187,79 @@ class _HomePageState extends State<HomePage>
             ],
           ),
         ),
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
-                blurRadius: 10,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: BottomNavigationBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            currentIndex: _selectedIndex,
-            onTap: _onItemTapped,
-            selectedItemColor: Theme.of(context).primaryColor,
-            unselectedItemColor: Colors.grey.shade600,
-            type: BottomNavigationBarType.fixed,
-            selectedLabelStyle: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
-            unselectedLabelStyle: const TextStyle(
-              fontWeight: FontWeight.normal,
-              fontSize: 12,
-            ),
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined),
-                activeIcon: Icon(Icons.home),
-                label: "Home",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.find_in_page_outlined),
-                activeIcon: Icon(Icons.find_in_page),
-                label: "Jobs",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.map_outlined),
-                activeIcon: Icon(Icons.map),
-                label: "Map",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline),
-                activeIcon: Icon(Icons.person),
-                label: "Profile",
-              ),
-            ],
-          ),
+        bottomNavigationBar: WebNavigation(
+          selectedIndex: _selectedIndex,
+          onItemTapped: _onItemTapped,
+          items: _navigationItems,
         ),
       ),
+    );
+  }
+
+  Widget _buildWebLayout(BuildContext context) {
+    return WebNavigationLayout(
+      selectedIndex: _selectedIndex,
+      onItemTapped: _onItemTapped,
+      navigationItems: _navigationItems,
+      headerActions: [
+        IconButton(
+          icon: const Icon(Icons.message_outlined),
+          onPressed: _handleSearchNavigation,
+          tooltip: 'Messages',
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          icon: const Icon(Icons.notifications_outlined),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => NotificationsPage()),
+            );
+          },
+          tooltip: 'Notifications',
+        ),
+        const SizedBox(width: 16),
+      ],
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            _buildWebPostCreator(),
+            _buildWebJobsScreen(),
+            _buildWebMapScreen(),
+            _buildWebProfileTab(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWebPostCreator() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 800),
+      child: PostCreator(token: widget.data),
+    );
+  }
+
+  Widget _buildWebJobsScreen() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 1000),
+      child: JobsScreenTab(token: widget.data),
+    );
+  }
+
+  Widget _buildWebMapScreen() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 1200),
+      child: MapScreen(token: widget.data),
+    );
+  }
+
+  Widget _buildWebProfileTab() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 800),
+      child: ProfileTab(token: widget.data, onLogout: _handleLogout),
     );
   }
 }

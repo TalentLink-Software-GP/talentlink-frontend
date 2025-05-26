@@ -21,12 +21,15 @@ import 'package:talent_link/utils/app_lifecycle_manager.dart';
 import 'package:talent_link/utils/push_notifications_firebase.dart';
 import 'package:talent_link/utils/theme/app_theme.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page.dart';
+import 'package:talent_link/widgets/after_login_pages/web_home_page.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_home_page.dart';
+import 'package:talent_link/widgets/after_login_pages/web_organization_home_page.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tabs/job_details_screen.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/mesage_profile.dart';
 import 'package:talent_link/widgets/appSetting/theremeProv.dart';
 import 'package:talent_link/widgets/sign_up_widgets/account_created_screen.dart';
 import 'package:talent_link/widgets/applicatin_startup/startup_page.dart';
+import 'package:talent_link/widgets/applicatin_startup/web_startup_page.dart';
 import 'package:talent_link/widgets/sign_up_widgets/signup_page.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -207,12 +210,12 @@ class MyApp extends StatelessWidget {
             (context) =>
                 isLoggedIn
                     ? (userRole == 'Organization'
-                        ? OrganizationHomePage(token: userToken ?? '')
-                        : HomePage(
+                        ? WebOrganizationHomePage(token: userToken ?? '')
+                        : WebHomePage(
                           data: userToken ?? '',
                           onTokenChanged: (String userToken) => userToken,
                         ))
-                    : StartupPage(),
+                    : const WebStartupPage(),
 
         // '/': (context) => const StartupPage(),
         '/chat': (context) {

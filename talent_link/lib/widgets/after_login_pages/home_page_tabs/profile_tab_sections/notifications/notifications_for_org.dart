@@ -52,7 +52,7 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
                 'read': notification.read ?? false,
                 'type': notificationType,
                 'jobId': notification.jobId,
-                'senderId': notification.senderId,
+                'sender': notification.sender,
                 'postId': notification.postId,
               };
             }).toList();
@@ -78,7 +78,7 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
                 'timestamp': notification.timestamp,
                 'type': 'applyjob',
                 'jobId': notification.jobId,
-                'senderId': notification.senderId,
+                'sender': notification.sender,
                 'postId': notification.postId,
                 'read': notification.read ?? false,
               };

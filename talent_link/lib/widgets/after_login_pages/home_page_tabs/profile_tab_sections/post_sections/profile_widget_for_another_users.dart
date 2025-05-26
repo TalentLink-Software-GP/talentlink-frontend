@@ -1,9 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 import 'package:talent_link/models/user_profile_data.dart';
 import 'package:talent_link/services/post_service.dart';
 import 'package:talent_link/services/profile_service.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/followers_list_screen.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_card.dart';
 import 'package:logger/logger.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class ProfileWidgetForAnotherUsers extends StatefulWidget {
   final String username;
@@ -38,14 +44,24 @@ class _ProfileWidgetForAnotherUsersState
   UserProfileData? userProfileData;
   bool isFollowing = false;
   bool isFollowLoading = false;
+  int followersCount = 0;
+  int followingCount = 0;
 
   @override
   void initState() {
     super.initState();
-    fetchProfileData();
     _postService = PostService(widget.token);
-    fetchUserDataAndPosts();
-    checkFollowStatus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
+  }
+
+  Future<void> _loadData() async {
+    await Future.wait([
+      fetchProfileData(), fetchFollowerStats(), // Add this line
+      fetchUserDataAndPosts(),
+    ]);
+    await checkFollowStatus();
   }
 
   Future<void> fetchProfileData() async {
@@ -125,60 +141,114 @@ class _ProfileWidgetForAnotherUsersState
   }
 
   Future<void> checkFollowStatus() async {
-    // TODO: Implement follow status check API call
-    // This is placeholder logic - replace with actual API call
     try {
-      // Example API call structure:
-      // final response = await _postService.checkFollowStatus(widget.username);
-      // setState(() {
-      //   isFollowing = response['isFollowing'] ?? false;
-      // });
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/followingStatus/${widget.username}'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        setState(() {
+          isFollowing = responseData['isFollowing'] ?? false;
+        });
+      } else {
+        setState(() {
+          isFollowing = false;
+        });
+      }
     } catch (e) {
-      _logger.e("Error checking follow status", error: e);
+      setState(() {
+        isFollowing = false;
+      });
     }
   }
 
   Future<void> toggleFollow() async {
+    if (!mounted) return;
+
     setState(() {
       isFollowLoading = true;
     });
 
     try {
-      // TODO: Implement follow/unfollow API call
-      // This is placeholder logic - replace with actual API call
-      // if (isFollowing) {
-      //   await _postService.unfollowUser(widget.username);
-      // } else {
-      //   await _postService.followUser(widget.username);
-      // }
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/followingSys/${widget.username}/follow'),
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+          'Content-Type': 'application/json',
+        },
+      );
 
-      setState(() {
-        isFollowing = !isFollowing;
-      });
+      if (response.statusCode == 200) {
+        // Immediately update UI optimistically
+        setState(() {
+          isFollowing = !isFollowing;
+        });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isFollowing
-                ? 'You are now following ${widget.username}'
-                : 'You unfollowed ${widget.username}',
+        // Then verify with server
+        await checkFollowStatus();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isFollowing
+                  ? 'You are now following ${widget.username}'
+                  : 'You unfollowed ${widget.username}',
+            ),
           ),
-          backgroundColor: Theme.of(context).primaryColor,
-        ),
-      );
+        );
+      } else {
+        // Revert if failed
+        setState(() {
+          isFollowing = !isFollowing;
+        });
+        throw Exception(response.body);
+      }
     } catch (e) {
-      _logger.e("Error toggling follow", error: e);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error updating follow status'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
     } finally {
-      setState(() {
-        isFollowLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isFollowLoading = false;
+        });
+      }
     }
+  }
+
+  Future<void> fetchFollowerStats() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/user-stats/${widget.username}'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        setState(() {
+          followersCount = responseData['followersCount'] ?? 0;
+          followingCount = responseData['followingCount'] ?? 0;
+        });
+      }
+    } catch (e) {
+      print('Error fetching follower stats: $e');
+    }
+  }
+
+  void _showFollowList(BuildContext context, bool showFollowers) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => FollowersListScreen(
+              token: widget.token,
+              username: widget.username,
+              showFollowers: showFollowers,
+            ),
+      ),
+    );
   }
 
   Widget buildExpandableSection(
@@ -342,6 +412,32 @@ class _ProfileWidgetForAnotherUsersState
     );
   }
 
+  Widget _buildCountWidget(int count, String label, bool isFollowers) {
+    return GestureDetector(
+      onTap: () => _showFollowList(context, isFollowers),
+      child: Column(
+        children: [
+          Text(
+            count.toString(),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.8),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -422,6 +518,7 @@ class _ProfileWidgetForAnotherUsersState
                                 // Avatar and Name
                                 Hero(
                                   tag: 'profile-avatar-${widget.username}',
+
                                   child: Container(
                                     padding: const EdgeInsets.all(4),
                                     decoration: BoxDecoration(
@@ -469,6 +566,23 @@ class _ProfileWidgetForAnotherUsersState
                                     color: Colors.white.withOpacity(0.9),
                                     fontWeight: FontWeight.w500,
                                   ),
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    _buildCountWidget(
+                                      followersCount,
+                                      'Followers',
+                                      true,
+                                    ),
+                                    const SizedBox(width: 24),
+                                    _buildCountWidget(
+                                      followingCount,
+                                      'Following',
+                                      false,
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: 24),
                                 // Follow Button

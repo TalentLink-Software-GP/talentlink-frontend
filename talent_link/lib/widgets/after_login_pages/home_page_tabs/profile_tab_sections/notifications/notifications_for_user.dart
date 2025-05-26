@@ -31,11 +31,17 @@ class NotificationsPageState extends State<NotificationsPage>
       if (mounted) {
         final userNotificationsList =
             userNotifications.map((notification) {
-              String notificationType = 'post';
+              String notificationType = 'post'; // Default type
               final title = notification.title?.toLowerCase() ?? '';
               final body = notification.body?.toLowerCase() ?? '';
 
-              if (title.contains('like') || body.contains('like')) {
+              if (title.contains('follower') ||
+                  body.contains('follower') ||
+                  title.contains('following') ||
+                  body.contains('following') ||
+                  title.contains('started following')) {
+                notificationType = 'follower';
+              } else if (title.contains('like') || body.contains('like')) {
                 notificationType = 'like';
               } else if (title.contains('comment') ||
                   body.contains('comment')) {
@@ -50,13 +56,14 @@ class NotificationsPageState extends State<NotificationsPage>
                 'body': notification.body,
                 'timestamp': notification.timestamp,
                 'read': notification.read ?? false,
-                'type': notificationType,
-                'jobId': notification.jobId,
-                'senderId': notification.senderId,
-                'postId': notification.postId,
+                'type':
+                    notificationType, // Use OUR detected type, not the backend type
+                'jobId': notification.jobId ?? 'No jobId',
+                'postId': notification.postId ?? 'No postId',
+
+                'sender': notification.sender ?? 'No sender',
               };
             }).toList();
-
         communityNotifs.addAll(userNotificationsList);
         communityNotifs.sort((a, b) {
           final aTime = DateTime.tryParse(a['timestamp']) ?? DateTime.now();
@@ -64,7 +71,6 @@ class NotificationsPageState extends State<NotificationsPage>
           return bTime.compareTo(aTime);
         });
       }
-
       final jobNotifsFromApi =
           await _notificationService.fetchJobNotifications();
       if (mounted) {
@@ -77,7 +83,6 @@ class NotificationsPageState extends State<NotificationsPage>
                 'timestamp': notification.timestamp,
                 'type': 'job',
                 'jobId': notification.jobId,
-                'senderId': notification.senderId,
                 'postId': notification.postId,
                 'read': notification.read ?? false,
               };
@@ -156,7 +161,7 @@ class NotificationsPageState extends State<NotificationsPage>
         return Icons.comment_rounded;
       case 'reply':
         return Icons.reply_rounded;
-      case 'friend':
+      case 'follower':
         return Icons.person_add_rounded;
       case 'system':
         return Icons.system_update_rounded;
@@ -184,6 +189,8 @@ class NotificationsPageState extends State<NotificationsPage>
         return Colors.blue;
       case 'reply':
         return Colors.green;
+      case 'follower':
+        return const Color.fromARGB(255, 175, 173, 76);
       case 'job':
         return primaryColor;
       case 'meeting':

@@ -5,7 +5,6 @@ class NotificationModel {
   final String? timestamp;
   final String? reciver;
   final String? jobId;
-  final String? senderId;
   final String? postId;
   final bool? read;
 
@@ -14,6 +13,7 @@ class NotificationModel {
   final String? applicantId;
   final String? scheduledDateTime;
   final String? organizationId;
+  final String? sender;
 
   NotificationModel({
     this.id,
@@ -22,7 +22,6 @@ class NotificationModel {
     this.timestamp,
     this.reciver,
     this.jobId,
-    this.senderId,
     this.postId,
     this.read,
     this.meetingLink,
@@ -30,6 +29,7 @@ class NotificationModel {
     this.applicantId,
     this.scheduledDateTime,
     this.organizationId,
+    this.sender,
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
@@ -40,7 +40,6 @@ class NotificationModel {
       timestamp: json['timestamp']?.toString() ?? 'Unknown time',
       reciver: json['reciver'] ?? 'No reciver',
       jobId: json['jobId'] ?? 'No jobId',
-      senderId: json['senderId'] ?? 'No senderId',
       postId: json['postId'] ?? 'No postId',
       read: json['read'] ?? false,
       meetingLink: json['meetingLink'] ?? 'No meetingLink',
@@ -48,6 +47,7 @@ class NotificationModel {
       applicantId: json['applicantId'] ?? 'No applicantId',
       scheduledDateTime: json['scheduledDateTime'] ?? 'No scheduledDateTime',
       organizationId: json['organizationId'] ?? 'No organizationId',
+      sender: json['sender'] ?? 'No sender',
     );
   }
 }
