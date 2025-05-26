@@ -1025,18 +1025,18 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    if (checkingFollowStatus) {
-      return Scaffold(
-        appBar: AppBar(title: Text(peerUsername)),
-        body: Center(child: CircularProgressIndicator()),
-      );
-    } else if (!canMessage) {
-      return MessagingBlockedScreen(
-        peerUsername: peerUsername,
-        currentUserFollowsPeer: currentUserFollowsPeer,
-        peerFollowsCurrentUser: peerFollowsCurrentUser,
-      );
-    }
+    // if (checkingFollowStatus) {
+    //   return Scaffold(
+    //     appBar: AppBar(title: Text(peerUsername)),
+    //     body: Center(child: CircularProgressIndicator()),
+    //   );
+    // } else if (!canMessage) {
+    //   return MessagingBlockedScreen(
+    //     peerUsername: peerUsername,
+    //     currentUserFollowsPeer: currentUserFollowsPeer,
+    //     peerFollowsCurrentUser: peerFollowsCurrentUser,
+    //   );
+    // }
     return Scaffold(
       appBar: AppBar(
         title: Center(
