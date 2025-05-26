@@ -123,45 +123,76 @@ class _ApplicationsTabState extends State<ApplicationsTab>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextButton(
-                      onPressed: () async {
-                        final orgId = await getCurrentUserId();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) => OrganizationMeetingsPage(
-                                  organizationId: orgId,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Applications",
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).primaryColor,
                                 ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Manage your job applications",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: Theme.of(context).primaryColor,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
                         ),
-                      ),
-                      child: const Text(
-                        "View Meetings",
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
+                        const SizedBox(width: 16),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Theme.of(
+                                context,
+                              ).primaryColor.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: IconButton(
+                            onPressed: () async {
+                              final orgId = await getCurrentUserId();
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => OrganizationMeetingsPage(
+                                        organizationId: orgId,
+                                      ),
+                                ),
+                              );
+                            },
+                            icon: Icon(
+                              Icons.calendar_month_rounded,
+                              color: Theme.of(context).primaryColor,
+                              size: 24,
+                            ),
+                            tooltip: "View Meetings",
+                            padding: const EdgeInsets.all(12),
+                            constraints: const BoxConstraints(
+                              minWidth: 48,
+                              minHeight: 48,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      "Applications",
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-                    Text(
-                      "Manage your job applications",
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                    ),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),

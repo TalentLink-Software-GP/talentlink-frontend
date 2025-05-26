@@ -114,113 +114,166 @@ class _FilterJobsTabState extends State<FilterJobsTab> {
       context: context,
       builder: (context) {
         final theme = Theme.of(context);
+        final mediaQuery = MediaQuery.of(context);
+        final screenHeight = mediaQuery.size.height;
+        final screenWidth = mediaQuery.size.width;
+
         return Dialog(
+          insetPadding: const EdgeInsets.all(16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           child: Container(
-            padding: const EdgeInsets.all(20),
+            width: screenWidth > 400 ? 400 : screenWidth - 32,
+            constraints: BoxConstraints(
+              maxHeight: screenHeight * 0.85,
+              minHeight: 300,
+            ),
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Filter Jobs',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                // Fixed header
+                Container(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 8, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Filter Jobs',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                        padding: const EdgeInsets.all(8),
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: Divider(),
+                ),
+                // Scrollable content
+                Flexible(
+                  child: Container(
+                    width: double.infinity,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 16),
+                          _buildFilterDropdown(
+                            label: "Job Type",
+                            value: selectedJobType,
+                            items: jobTypes,
+                            onChanged: (value) {
+                              setState(() => selectedJobType = value);
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _buildFilterDropdown(
+                            label: "Location",
+                            value: selectedLocation,
+                            items: locations,
+                            onChanged: (value) {
+                              setState(() => selectedLocation = value);
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _buildFilterDropdown(
+                            label: "Category",
+                            value: selectedCategory,
+                            items: categories,
+                            onChanged: (value) {
+                              setState(() => selectedCategory = value);
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                        ],
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
+                  ),
                 ),
-                const Divider(),
-                const SizedBox(height: 16),
-                Flexible(
-                  child: SingleChildScrollView(
-                    child: Column(
+                // Fixed footer with safe area
+                Container(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                  child: SafeArea(
+                    top: false,
+                    child: Row(
                       children: [
-                        _buildFilterDropdown(
-                          label: "Job Type",
-                          value: selectedJobType,
-                          items: jobTypes,
-                          onChanged: (value) {
-                            setState(() => selectedJobType = value);
-                          },
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              setState(() {
+                                selectedJobType = null;
+                                selectedLocation = null;
+                                selectedCategory = null;
+                                _applyFilters();
+                              });
+                              Navigator.pop(context);
+                            },
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: theme.colorScheme.outline,
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Clear All',
+                                style: TextStyle(
+                                  color: theme.primaryColor,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 16),
-                        _buildFilterDropdown(
-                          label: "Location",
-                          value: selectedLocation,
-                          items: locations,
-                          onChanged: (value) {
-                            setState(() => selectedLocation = value);
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        _buildFilterDropdown(
-                          label: "Category",
-                          value: selectedCategory,
-                          items: categories,
-                          onChanged: (value) {
-                            setState(() => selectedCategory = value);
-                          },
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              _applyFilters();
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: theme.primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'Apply',
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          setState(() {
-                            selectedJobType = null;
-                            selectedLocation = null;
-                            selectedCategory = null;
-                            _applyFilters();
-                          });
-                          Navigator.pop(context);
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: theme.colorScheme.outline),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          'Clear All',
-                          style: TextStyle(color: theme.primaryColor),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          _applyFilters();
-                          Navigator.pop(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text('Apply'),
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -238,6 +291,7 @@ class _FilterJobsTabState extends State<FilterJobsTab> {
   }) {
     return DropdownButtonFormField<String>(
       value: value,
+      isExpanded: true,
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -248,9 +302,13 @@ class _FilterJobsTabState extends State<FilterJobsTab> {
       ),
       items:
           items.map((item) {
-            return DropdownMenuItem<String>(value: item, child: Text(item));
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(item, overflow: TextOverflow.ellipsis, maxLines: 1),
+            );
           }).toList(),
       onChanged: onChanged,
+      menuMaxHeight: 200,
     );
   }
 
