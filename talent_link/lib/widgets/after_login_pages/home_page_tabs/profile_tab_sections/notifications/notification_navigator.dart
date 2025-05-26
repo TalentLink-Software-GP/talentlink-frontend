@@ -11,6 +11,7 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/single_post_piew_for_notification.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_card.dart';
 import 'package:logger/logger.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/profile_widget_for_another_users.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/meeting/joinMeeting.dart';
 
 final String baseUrl = dotenv.env['BASE_URL']!;
@@ -25,6 +26,8 @@ class NotificationNavigator {
   List<Map<String, dynamic>> posts = [];
 
   void navigateBasedOnType(Map notification) async {
+    debugPrint('Notification received: ${notification.toString()}');
+
     final String type = notification['type'] ?? 'unknown';
     final String myJobId = notification['jobId'] ?? '';
     final String postId = notification['postId'] ?? '';
@@ -32,6 +35,7 @@ class NotificationNavigator {
     final String meetingId = notification['meetingId'] ?? '';
     final String meetingLink = notification['meetingLink'] ?? '';
     final String scheduledDateTime = notification['scheduledDateTime'] ?? '';
+    final sender = notification['sender'] ?? '';
 
     switch (type) {
       case 'job':
@@ -53,12 +57,51 @@ class NotificationNavigator {
       case 'post':
         _navigateToPost(postId, type);
         break;
+
+      case 'follower': // Changed to lowercase to match
+        _navigateToFollower(sender, type);
+        break;
       case 'meeting':
         _navigateToMeeting(meetingId, meetingLink, scheduledDateTime);
         break;
       default:
         _showUnsupportedTypeMessage(type);
         break;
+    }
+  }
+
+  Future<void> _navigateToFollower(String sender, String type) async {
+    try {
+      _showLoadingDialog();
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      // Fetch the follower's username first
+      // final userResponse = await http.get(
+      //   Uri.parse('$baseUrl/users/$senderId'),
+      //   headers: {'Authorization': 'Bearer $token'},
+      // );
+      final userData = sender;
+
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context); // Dismiss loading dialog
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) => ProfileWidgetForAnotherUsers(
+                username: userData,
+                token: token,
+              ),
+        ),
+      );
+    } catch (e) {
+      if (Navigator.canPop(context)) Navigator.pop(context);
+      _logger.e("Error in _navigateToFollower", error: e);
+      _showErrorMessage('Error loading profile: ${e.toString()}');
     }
   }
 
