@@ -3,11 +3,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:talent_link/services/message_service.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/map_screen.dart';
 import 'dart:convert';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/exploreUser.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notifications_for_user.dart';
 import 'package:talent_link/widgets/appSetting/logout.dart';
 import 'package:talent_link/widgets/appSetting/seeting.dart';
@@ -59,6 +61,11 @@ class _HomePageState extends State<HomePage>
 
   void _handleSearchNavigation() {
     _messageService.navigateToSearchPage(context);
+  }
+
+  Future<String> getCurrentUsername() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('username') ?? 'defaultUsername';
   }
 
   @override
@@ -118,6 +125,32 @@ class _HomePageState extends State<HomePage>
             ),
           ),
           actions: [
+            Container(
+              margin: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.search),
+                color: Colors.white,
+                onPressed: () async {
+                  final username = await getCurrentUsername();
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => ExploreUserPage(
+                            username: username,
+                            token: widget.data,
+                          ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
             Container(
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
