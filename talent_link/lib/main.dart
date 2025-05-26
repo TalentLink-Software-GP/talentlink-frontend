@@ -9,6 +9,7 @@
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
@@ -210,14 +211,19 @@ class MyApp extends StatelessWidget {
             (context) =>
                 isLoggedIn
                     ? (userRole == 'Organization'
-                        ? WebOrganizationHomePage(token: userToken ?? '')
-                        : WebHomePage(
-                          data: userToken ?? '',
-                          onTokenChanged: (String userToken) => userToken,
-                        ))
-                    : const WebStartupPage(),
-
-        // '/': (context) => const StartupPage(),
+                        ? (kIsWeb
+                            ? WebOrganizationHomePage(token: userToken ?? '')
+                            : OrganizationHomePage(token: userToken ?? ''))
+                        : (kIsWeb
+                            ? WebHomePage(
+                              data: userToken ?? '',
+                              onTokenChanged: (String userToken) => userToken,
+                            )
+                            : HomePage(
+                              data: userToken ?? '',
+                              onTokenChanged: (String userToken) => userToken,
+                            )))
+                    : (kIsWeb ? const WebStartupPage() : const StartupPage()),
         '/chat': (context) {
           final args =
               ModalRoute.of(context)?.settings.arguments as Map<String, String>;
