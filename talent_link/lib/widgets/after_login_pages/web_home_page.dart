@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:talent_link/services/message_service.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tabs/web_jobs_screen_tab.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/web_map_screen.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/web_profile_tab.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/web_notifications_for_user.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/web_post_creator.dart';
+import 'package:talent_link/widgets/login_widgets/login_page.dart';
+import 'package:talent_link/widgets/web_layouts/web_navigation.dart';
+import 'package:talent_link/utils/responsive/responsive_layout.dart';
+import 'package:logger/logger.dart';
+
+// Import mobile versions for fallback
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/map_screen.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notifications_for_user.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_creator.dart';
-import 'package:talent_link/widgets/login_widgets/login_page.dart';
-import 'package:talent_link/widgets/web_layouts/web_navigation.dart';
-import 'package:talent_link/utils/responsive/responsive_layout.dart';
-import 'package:logger/logger.dart';
 
 final String baseUrl = dotenv.env['BASE_URL']!;
 
@@ -213,7 +220,7 @@ class _WebHomePageState extends State<WebHomePage>
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => NotificationsPage()),
+              MaterialPageRoute(builder: (context) => WebNotificationsPage()),
             );
           },
           tooltip: 'Notifications',
@@ -236,30 +243,18 @@ class _WebHomePageState extends State<WebHomePage>
   }
 
   Widget _buildWebPostCreator() {
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 800),
-      child: PostCreator(token: widget.data),
-    );
+    return WebPostCreator(token: widget.data);
   }
 
   Widget _buildWebJobsScreen() {
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 1000),
-      child: JobsScreenTab(token: widget.data),
-    );
+    return WebJobsScreenTab(token: widget.data);
   }
 
   Widget _buildWebMapScreen() {
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 1200),
-      child: MapScreen(token: widget.data),
-    );
+    return WebMapScreen(token: widget.data);
   }
 
   Widget _buildWebProfileTab() {
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 800),
-      child: ProfileTab(token: widget.data, onLogout: _handleLogout),
-    );
+    return WebProfileTab(token: widget.data, onLogout: _handleLogout);
   }
 }

@@ -9,6 +9,7 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab
 import 'package:talent_link/widgets/web_layouts/web_navigation.dart';
 import 'package:talent_link/utils/responsive/responsive_layout.dart';
 import 'package:logger/logger.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/web_notifications_for_user.dart';
 
 class WebOrganizationHomePage extends StatefulWidget {
   final String token;
@@ -146,7 +147,7 @@ class _WebOrganizationHomePageState extends State<WebOrganizationHomePage>
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const OrgNotificationsPage(),
+                      builder: (context) => const WebNotificationsPage(),
                     ),
                   );
                 },
@@ -204,7 +205,7 @@ class _WebOrganizationHomePageState extends State<WebOrganizationHomePage>
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const OrgNotificationsPage(),
+                builder: (context) => const WebNotificationsPage(),
               ),
             );
           },
