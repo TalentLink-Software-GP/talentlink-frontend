@@ -92,19 +92,41 @@ class _WebLoginPageState extends State<WebLoginPage>
     });
 
     try {
+      logger.i("Starting web login process...");
+      logger.i("Base URL: $baseUrl");
+      logger.i("Email: ${emailController.text}");
+
       var url = Uri.parse('$baseUrl/auth/login');
-      var response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "email": emailController.text,
-          "password": passwordController.text,
-        }),
-      );
+      logger.i("Making request to: $url");
+
+      // Create HTTP client with timeout
+      final client = http.Client();
+
+      var response = await client
+          .post(
+            url,
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode({
+              "email": emailController.text,
+              "password": passwordController.text,
+            }),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              logger.e("Request timed out after 30 seconds");
+              throw Exception(
+                "Request timed out. Please check your internet connection.",
+              );
+            },
+          );
+
+      logger.i("Response status code: ${response.statusCode}");
+      logger.i("Response body: ${response.body}");
 
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
-        logger.i("Login successful", error: response.body);
+        logger.i("Web login successful");
 
         if (!mounted) return;
 
@@ -112,13 +134,36 @@ class _WebLoginPageState extends State<WebLoginPage>
         final role = decodedToken['role'];
         String userId = decodedToken['id'];
         String username = decodedToken['username'];
+
+        logger.i(
+          "Decoded token - Role: $role, UserId: $userId, Username: $username",
+        );
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', data['token']);
         await prefs.setString('username', username);
         await prefs.setString('role', role);
         await prefs.setString('userId', userId);
-        await _handleFcmRecovery();
 
+        logger.i("Saved user data to SharedPreferences");
+
+        // Handle FCM with timeout and error handling
+        try {
+          logger.i("Starting FCM recovery...");
+          await _handleFcmRecovery().timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              logger.w("FCM recovery timed out, continuing without FCM");
+              return;
+            },
+          );
+          logger.i("FCM recovery completed");
+        } catch (fcmError) {
+          logger.w("FCM recovery failed, continuing without FCM: $fcmError");
+          // Continue with login even if FCM fails
+        }
+
+        logger.i("Navigating to home page...");
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -145,17 +190,32 @@ class _WebLoginPageState extends State<WebLoginPage>
         setState(() {
           errorMessage = data["message"] ?? "Login failed";
         });
-        logger.e("Login failed", error: response.body);
+        logger.e(
+          "Web login failed with status ${response.statusCode}: ${response.body}",
+        );
       }
     } catch (e) {
+      logger.e("Web login error: $e");
       setState(() {
-        errorMessage = "Connection error. Please try again.";
+        if (e.toString().contains("timeout") ||
+            e.toString().contains("Timeout")) {
+          errorMessage =
+              "Request timed out. Please check your internet connection and try again.";
+        } else if (e.toString().contains("SocketException") ||
+            e.toString().contains("Connection")) {
+          errorMessage =
+              "Cannot connect to server. Please check your internet connection.";
+        } else {
+          errorMessage = "Login failed: ${e.toString()}";
+        }
       });
-      logger.e("Login error", error: e);
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+      logger.i("Web login process completed");
     }
   }
 

@@ -33,6 +33,8 @@ import 'package:talent_link/widgets/applicatin_startup/startup_page.dart';
 import 'package:talent_link/widgets/applicatin_startup/web_startup_page.dart';
 import 'package:talent_link/widgets/sign_up_widgets/signup_page.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:convert';
+import 'dart:io';
 
 final logger = Logger();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -48,22 +50,99 @@ Future<void> requestPermissions() async {
 }
 
 Future<bool> validateToken(String token) async {
-  // try {
-  //   final response = await http.get(
-  //     Uri.parse("https://your-backend.com/api/validate-token"),
-  //     headers: {
-  //       'Authorization': 'Bearer $token',
-  //     },
-  //   );
-  //   if (response.statusCode == 200) {
-  //     return true;
-  //   } else {
-  //     return false;
-  //   }
-  // } catch (e) {
-  //   return false;
-  // }
-  return true;
+  try {
+    // Check if token is empty or null
+    if (token.isEmpty) {
+      logger.w("Empty token provided");
+      return false;
+    }
+
+    // Basic JWT structure validation
+    final parts = token.split('.');
+    if (parts.length != 3) {
+      logger.w("Invalid JWT structure - parts: ${parts.length}");
+      return false;
+    }
+
+    // Try to decode the token to check if it's valid
+    try {
+      final payload = parts[1];
+      // Add padding if needed
+      String normalizedPayload = payload;
+      switch (payload.length % 4) {
+        case 1:
+          normalizedPayload += '===';
+          break;
+        case 2:
+          normalizedPayload += '==';
+          break;
+        case 3:
+          normalizedPayload += '=';
+          break;
+      }
+
+      final decoded = utf8.decode(base64Url.decode(normalizedPayload));
+      final Map<String, dynamic> payloadMap = jsonDecode(decoded);
+
+      // Check if token has expired
+      if (payloadMap.containsKey('exp')) {
+        final exp = payloadMap['exp'] as int;
+        final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+        if (exp < now) {
+          logger.w("Token has expired - exp: $exp, now: $now");
+          return false;
+        }
+      }
+
+      // For mobile compatibility: Try server validation but don't fail if it doesn't work
+      final baseUrl = dotenv.env['BASE_URL'];
+      if (baseUrl != null && baseUrl.isNotEmpty) {
+        try {
+          final response = await http
+              .get(
+                Uri.parse("$baseUrl/auth/validate-token"),
+                headers: {
+                  'Authorization': 'Bearer $token',
+                  'Content-Type': 'application/json',
+                },
+              )
+              .timeout(const Duration(seconds: 5)); // Shorter timeout
+
+          if (response.statusCode == 200) {
+            logger.i("✅ Token validated successfully with server");
+            return true;
+          } else if (response.statusCode == 404) {
+            // Endpoint doesn't exist - fall back to local validation
+            logger.i(
+              "🔄 Server validation endpoint not found, using local validation",
+            );
+            return true; // Token structure is valid
+          } else {
+            logger.w(
+              "⚠️ Server token validation failed: ${response.statusCode}",
+            );
+            return false;
+          }
+        } catch (e) {
+          // Network error or timeout - fall back to local validation for mobile compatibility
+          logger.i(
+            "🔄 Server validation failed (${e.toString().substring(0, 50)}...), using local validation",
+          );
+          return true; // Token structure is valid, assume it's good
+        }
+      }
+
+      // If no server validation available, token structure is valid
+      logger.i("✅ Token structure valid, no server validation available");
+      return true;
+    } catch (e) {
+      logger.e("❌ Token decoding failed: $e");
+      return false;
+    }
+  } catch (e) {
+    logger.e("❌ Token validation error: $e");
+    return false;
+  }
 }
 
 void main() async {
@@ -97,18 +176,32 @@ void main() async {
 
   bool isValidToken = false;
 
+  logger.i("🔍 Checking stored authentication data...");
+  logger.i("Token exists: ${storedToken != null && storedToken.isNotEmpty}");
+  logger.i("UserId: $storedUserId");
+  logger.i("Role: $storedRole");
+
   if (storedToken != null && storedToken.isNotEmpty) {
     try {
+      logger.i("🔐 Validating stored token...");
       isValidToken = await validateToken(storedToken);
+      logger.i("Token validation result: $isValidToken");
     } catch (e) {
       logger.e("Token validation failed: $e");
-      // Clear all stored data on token validation failure
-      prefs.remove('token');
-      prefs.remove('role');
-      prefs.remove('userId');
-      prefs.remove('username');
+      isValidToken = false;
     }
+
+    // If token is invalid, clear all stored data
+    if (!isValidToken) {
+      logger.w("🧹 Invalid token detected, clearing all stored data...");
+      await prefs.clear();
+      logger.i("✅ Stored data cleared due to invalid token");
+    }
+  } else {
+    logger.i("ℹ️ No stored token found");
   }
+
+  logger.i("🚀 Starting app with login status: $isValidToken");
 
   runApp(
     ChangeNotifierProvider(

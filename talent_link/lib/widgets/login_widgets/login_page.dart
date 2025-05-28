@@ -7,6 +7,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:talent_link/services/fcm_service.dart';
 import 'package:talent_link/utils/app_lifecycle_manager.dart';
+import 'package:talent_link/utils/network_debug.dart';
 import 'package:talent_link/widgets/admin/adminDashboard.dart';
 import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page.dart';
@@ -99,19 +100,41 @@ class _LoginPageState extends State<LoginPage>
     });
 
     try {
+      logger.i("Starting login process...");
+      logger.i("Base URL: $baseUrl");
+      logger.i("Email: ${emailController.text}");
+
       var url = Uri.parse('$baseUrl/auth/login');
-      var response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "email": emailController.text,
-          "password": passwordController.text,
-        }),
-      );
+      logger.i("Making request to: $url");
+
+      // Create HTTP client with timeout
+      final client = http.Client();
+
+      var response = await client
+          .post(
+            url,
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode({
+              "email": emailController.text,
+              "password": passwordController.text,
+            }),
+          )
+          .timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              logger.e("Request timed out after 30 seconds");
+              throw Exception(
+                "Request timed out. Please check your internet connection.",
+              );
+            },
+          );
+
+      logger.i("Response status code: ${response.statusCode}");
+      logger.i("Response body: ${response.body}");
 
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
-        logger.i("Login successful", error: response.body);
+        logger.i("Login successful");
 
         if (!mounted) return;
 
@@ -119,13 +142,36 @@ class _LoginPageState extends State<LoginPage>
         final role = decodedToken['role'];
         String userId = decodedToken['id'];
         String username = decodedToken['username'];
+
+        logger.i(
+          "Decoded token - Role: $role, UserId: $userId, Username: $username",
+        );
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', data['token']);
         await prefs.setString('username', username);
         await prefs.setString('role', role);
         await prefs.setString('userId', userId);
-        await _handleFcmRecovery();
 
+        logger.i("Saved user data to SharedPreferences");
+
+        // Handle FCM with timeout and error handling
+        try {
+          logger.i("Starting FCM recovery...");
+          await _handleFcmRecovery().timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              logger.w("FCM recovery timed out, continuing without FCM");
+              return;
+            },
+          );
+          logger.i("FCM recovery completed");
+        } catch (fcmError) {
+          logger.w("FCM recovery failed, continuing without FCM: $fcmError");
+          // Continue with login even if FCM fails
+        }
+
+        logger.i("Navigating to home page...");
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -152,17 +198,32 @@ class _LoginPageState extends State<LoginPage>
         setState(() {
           errorMessage = data["message"] ?? "Login failed";
         });
-        logger.e("Login failed", error: response.body);
+        logger.e(
+          "Login failed with status ${response.statusCode}: ${response.body}",
+        );
       }
     } catch (e) {
+      logger.e("Login error: $e");
       setState(() {
-        errorMessage = "Connection error. Please try again.";
+        if (e.toString().contains("timeout") ||
+            e.toString().contains("Timeout")) {
+          errorMessage =
+              "Request timed out. Please check your internet connection and try again.";
+        } else if (e.toString().contains("SocketException") ||
+            e.toString().contains("Connection")) {
+          errorMessage =
+              "Cannot connect to server. Please check your internet connection.";
+        } else {
+          errorMessage = "Login failed: ${e.toString()}";
+        }
       });
-      logger.e("Login error", error: e);
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+      logger.i("Login process completed");
     }
   }
 
@@ -545,6 +606,43 @@ class _LoginPageState extends State<LoginPage>
                           ],
                         ),
                       ),
+
+                      const SizedBox(height: 20),
+
+                      // Debug Button (only show in debug mode)
+                      if (dotenv.env['DEBUG_MODE'] == 'true')
+                        FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: Center(
+                            child: TextButton.icon(
+                              onPressed: () async {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Running network diagnostics...',
+                                    ),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                                await NetworkDebug.printDiagnostics();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Check console for diagnostics results',
+                                    ),
+                                    duration: Duration(seconds: 3),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.bug_report, size: 16),
+                              label: const Text('Debug Network'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.grey[600],
+                                textStyle: const TextStyle(fontSize: 12),
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
