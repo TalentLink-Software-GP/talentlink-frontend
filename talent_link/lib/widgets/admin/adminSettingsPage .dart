@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:talent_link/widgets/appSetting/logout.dart';
+import 'package:talent_link/utils/auth_utils.dart';
+import 'package:flutter/foundation.dart';
 
 class AdminSettingsPage extends StatefulWidget {
   final String token;
@@ -268,6 +270,11 @@ class _AdminSettingsPageState extends State<AdminSettingsPage>
                                 },
                               ),
 
+                              const SizedBox(height: 12),
+
+                              // Interface Preference Setting
+                              _buildInterfaceSwitcher(context),
+
                               const SizedBox(height: 24),
 
                               // System Section
@@ -383,6 +390,116 @@ class _AdminSettingsPageState extends State<AdminSettingsPage>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInterfaceSwitcher(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: AuthUtils.getInterfacePreference(),
+      builder: (context, snapshot) {
+        final currentPreference = snapshot.data ?? (kIsWeb ? 'web' : 'mobile');
+        final isWebInterface = currentPreference == 'web';
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Icon Container
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF9C27B0).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  isWebInterface ? Icons.web : Icons.phone_android,
+                  color: const Color(0xFF9C27B0),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Text Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Interface Preference',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Currently using ${isWebInterface ? 'Web' : 'Mobile'} interface',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+              // Switch
+              Switch(
+                value: isWebInterface,
+                onChanged: (value) async {
+                  final newPreference = value ? 'web' : 'mobile';
+                  await AuthUtils.switchInterfacePreference(newPreference);
+
+                  // Show confirmation dialog
+                  if (mounted) {
+                    showDialog(
+                      context: context,
+                      builder:
+                          (context) => AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            title: Row(
+                              children: [
+                                Icon(
+                                  value ? Icons.web : Icons.phone_android,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                                const SizedBox(width: 12),
+                                const Text('Interface Changed'),
+                              ],
+                            ),
+                            content: Text(
+                              'Interface preference updated to ${value ? 'Web' : 'Mobile'}. Please restart the app to see the changes.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          ),
+                    );
+
+                    // Refresh the widget
+                    setState(() {});
+                  }
+                },
+                activeColor: const Color(0xFF9C27B0),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

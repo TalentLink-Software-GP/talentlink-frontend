@@ -42,7 +42,9 @@ class AuthUtils {
 
       // Step 2: Clear ALL SharedPreferences
       await prefs.clear();
-      _logger.i("🧹 All SharedPreferences cleared");
+      _logger.i(
+        "🧹 All SharedPreferences cleared (including interface preference)",
+      );
 
       // Verify cleanup
       final verifyToken = prefs.getString('token');
@@ -204,5 +206,34 @@ class AuthUtils {
     } catch (e) {
       _logger.e("❌ Error clearing auth data: $e");
     }
+  }
+
+  /// Switch user's interface preference
+  static Future<void> switchInterfacePreference(String preference) async {
+    try {
+      _logger.i("🔄 Switching interface preference to: $preference");
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('preferred_interface', preference);
+      _logger.i("✅ Interface preference updated to: $preference");
+    } catch (e) {
+      _logger.e("❌ Error switching interface preference: $e");
+    }
+  }
+
+  /// Get current interface preference
+  static Future<String?> getInterfacePreference() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('preferred_interface');
+    } catch (e) {
+      _logger.e("❌ Error getting interface preference: $e");
+      return null;
+    }
+  }
+
+  /// Check if user prefers web interface
+  static Future<bool> prefersWebInterface() async {
+    final preference = await getInterfacePreference();
+    return preference == 'web';
   }
 }
