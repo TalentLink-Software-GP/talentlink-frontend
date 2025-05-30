@@ -38,45 +38,206 @@ class FCMService {
     await sendTokenToServer(newToken);
   }
 
+  /// Send FCM token to server (for login)
   Future<void> sendTokenToServer(String token) async {
     try {
+      _logger.i('📤 Sending FCM token to server...');
       final prefs = await SharedPreferences.getInstance();
       String? userId = prefs.getString('userId');
       String? role = prefs.getString('role');
 
-      if (role == 'Organization') {
-        // Send token for organization
-        final response = await http.post(
-          Uri.parse('$baseUrl/organization/save-fcm-token'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'organizationId': userId, 'fcmToken': token}),
-        );
+      if (userId == null || role == null) {
+        _logger.e('❌ Cannot send FCM token: userId or role is null');
+        return;
+      }
 
-        if (response.statusCode == 200) {
-          _logger.i('Token saved for organization');
-        } else {
-          _logger.e('Failed to save token for organization: ${response.body}');
-        }
+      final endpoint =
+          role == 'Organization'
+              ? '$baseUrl/organization/save-fcm-token'
+              : '$baseUrl/users/save-fcm-token';
+
+      final body =
+          role == 'Organization'
+              ? {'organizationId': userId, 'fcmToken': token}
+              : {'userId': userId, 'fcmToken': token};
+
+      final response = await http.post(
+        Uri.parse(endpoint),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        _logger.i('✅ FCM token saved successfully for $role');
       } else {
-        if (userId != null) {
-          // Send to token backend API
-          final response = await http.post(
-            Uri.parse('$baseUrl/users/save-fcm-token'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'userId': userId, 'fcmToken': token}),
-          );
-
-          if (response.statusCode == 200) {
-            _logger.i('Token successfully saved on server');
-          } else {
-            _logger.e(
-              'Failed to save token on server: ${response.statusCode} - ${response.body}',
-            );
-          }
-        }
+        _logger.e(
+          '❌ Failed to save FCM token: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
-      _logger.e('Error sending token to server:', error: e);
+      _logger.e('❌ Error sending FCM token to server:', error: e);
+    }
+  }
+
+  /// Remove FCM token from server (for logout)
+  Future<void> removeTokenFromServer(
+    String userId,
+    String fcmToken,
+    String authToken,
+    String role,
+  ) async {
+    try {
+      _logger.i('🗑️ Removing FCM token from server...');
+
+      final endpoint =
+          role == 'Organization'
+              ? '$baseUrl/organization/remove-fcm-token'
+              : '$baseUrl/users/remove-fcm-token';
+
+      final response = await http.post(
+        Uri.parse(endpoint),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode({'id': userId, 'fcmToken': fcmToken}),
+      );
+
+      if (response.statusCode == 200) {
+        _logger.i('✅ FCM token removed from server successfully');
+      } else {
+        _logger.e('❌ Failed to remove FCM token from server: ${response.body}');
+      }
+    } catch (e) {
+      _logger.e('❌ Error removing FCM token from server', error: e);
+    }
+  }
+
+  /// Complete FCM setup after successful login
+  Future<void> setupFCMAfterLogin() async {
+    try {
+      _logger.i('🔧 Setting up FCM after login...');
+
+      // Get FCM token
+      final fcmToken = await _fcm.getToken();
+      if (fcmToken != null) {
+        _logger.i('🎫 FCM token obtained: ${fcmToken.substring(0, 20)}...');
+
+        // Send to server
+        await sendTokenToServer(fcmToken);
+
+        // Store token locally for future reference
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('fcm_token', fcmToken);
+
+        _logger.i('✅ FCM setup completed after login');
+      } else {
+        _logger.w('⚠️ No FCM token available');
+      }
+    } catch (e) {
+      _logger.e('❌ Error setting up FCM after login', error: e);
+    }
+  }
+
+  /// Complete FCM cleanup before logout
+  Future<void> cleanupFCMBeforeLogout() async {
+    try {
+      _logger.i('🧹 Cleaning up FCM before logout...');
+
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final userId = prefs.getString('userId');
+      final role = prefs.getString('role');
+
+      if (token != null && userId != null && role != null) {
+        // Get current FCM token
+        final fcmToken = await _fcm.getToken();
+        if (fcmToken != null) {
+          // Remove from server
+          await removeTokenFromServer(userId, fcmToken, token, role);
+        }
+      }
+
+      // Delete token locally from Firebase
+      await _fcm.deleteToken();
+
+      // Remove stored FCM token from SharedPreferences
+      await prefs.remove('fcm_token');
+
+      _logger.i('✅ FCM cleanup completed before logout');
+    } catch (e) {
+      _logger.e('❌ Error cleaning up FCM before logout', error: e);
+    }
+  }
+
+  /// Get current FCM token
+  Future<String?> getCurrentToken() async {
+    try {
+      return await _fcm.getToken();
+    } catch (e) {
+      _logger.e('❌ Error getting current FCM token', error: e);
+      return null;
+    }
+  }
+
+  /// Check if FCM token is registered with server
+  Future<bool> isTokenRegisteredWithServer() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storedToken = prefs.getString('fcm_token');
+      final currentToken = await getCurrentToken();
+
+      return storedToken != null && storedToken == currentToken;
+    } catch (e) {
+      _logger.e('❌ Error checking FCM token registration', error: e);
+      return false;
+    }
+  }
+
+  /// Force refresh FCM token and send to server
+  Future<void> refreshAndSendToken() async {
+    try {
+      _logger.i('🔄 Refreshing FCM token...');
+
+      // Delete old token
+      await _fcm.deleteToken();
+
+      // Get new token
+      final newToken = await _fcm.getToken();
+      if (newToken != null) {
+        _logger.i('🆕 New FCM token: ${newToken.substring(0, 20)}...');
+        await sendTokenToServer(newToken);
+      }
+    } catch (e) {
+      _logger.e('❌ Error refreshing FCM token', error: e);
+    }
+  }
+
+  /// Debug method to check FCM token status
+  Future<Map<String, dynamic>> debugTokenStatus() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final currentToken = await getCurrentToken();
+      final storedToken = prefs.getString('fcm_token');
+      final userId = prefs.getString('userId');
+      final role = prefs.getString('role');
+
+      final status = {
+        'hasCurrentToken': currentToken != null,
+        'currentTokenPrefix': currentToken?.substring(0, 20) ?? 'null',
+        'hasStoredToken': storedToken != null,
+        'storedTokenPrefix': storedToken?.substring(0, 20) ?? 'null',
+        'tokensMatch': currentToken == storedToken,
+        'userId': userId ?? 'null',
+        'role': role ?? 'null',
+        'isUserLoggedIn': userId != null && role != null,
+      };
+
+      _logger.i('🔍 FCM Token Debug Status: $status');
+      return status;
+    } catch (e) {
+      _logger.e('❌ Error getting debug status', error: e);
+      return {'error': e.toString()};
     }
   }
 }

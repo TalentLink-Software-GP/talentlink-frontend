@@ -264,39 +264,54 @@ class _WebMapScreenState extends State<WebMapScreen> {
           // Map Section
           Expanded(
             child: WebCard(
-              child: Stack(
+              child: Column(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: _buildMapContent(),
-                  ),
-                  // Floating refresh button
+                  // Map Header with Refresh Button
                   if (!_isLoading)
-                    Positioned(
-                      top: 16,
-                      right: 16,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Organization Locations',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
                             ),
-                          ],
-                        ),
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.refresh,
-                            color: Theme.of(context).primaryColor,
                           ),
-                          onPressed: _refreshMap,
-                          tooltip: 'Refresh Map',
-                        ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.refresh,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              onPressed: _refreshMap,
+                              tooltip: 'Refresh Map',
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                  // Map Content
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: _buildMapContent(),
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -77,17 +77,10 @@ class _LoginPageState extends State<LoginPage>
 
   Future<void> _handleFcmRecovery() async {
     try {
-      final token = await FirebaseMessaging.instance.getToken();
-      logger.i('FCM token is $token');
-
-      if (token != null) {
-        final fcmService = FCMService();
-        await fcmService.sendTokenToServer(token);
-      } else {
-        logger.e('FCM token is null');
-      }
+      final fcmService = FCMService();
+      await fcmService.setupFCMAfterLogin();
     } catch (e) {
-      logger.e('FCM recovery failed', error: e);
+      logger.e('FCM setup failed', error: e);
     }
   }
 

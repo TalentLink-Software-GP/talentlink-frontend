@@ -5,9 +5,14 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:logger/logger.dart';
 import 'package:talent_link/widgets/applicatin_startup/startup_page.dart';
 import 'package:talent_link/widgets/applicatin_startup/web_startup_page.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:talent_link/services/fcm_service.dart';
+import 'dart:convert';
 
 class AuthUtils {
   static final Logger _logger = Logger();
+  static final String baseUrl = dotenv.env['BASE_URL']!;
 
   /// Complete logout function that clears all data and navigates to startup
   static Future<void> performCompleteLogout(BuildContext context) async {
@@ -17,24 +22,25 @@ class AuthUtils {
 
       final prefs = await SharedPreferences.getInstance();
 
-      // Log current state
+      // Get current state for FCM token removal
       final token = prefs.getString('token');
       final userId = prefs.getString('userId');
       final role = prefs.getString('role');
+
       _logger.i(
         "📊 Current state - Token: ${token != null ? 'exists' : 'null'}, UserId: $userId, Role: $role",
       );
 
-      // Clear Firebase FCM token (with mobile-specific error handling)
+      // Step 1: Clean up FCM tokens using the enhanced FCM service
       try {
-        await FirebaseMessaging.instance.deleteToken();
-        _logger.i("🔥 Firebase FCM token deleted");
+        final fcmService = FCMService();
+        await fcmService.cleanupFCMBeforeLogout();
       } catch (e) {
-        _logger.w("⚠️ Firebase FCM token deletion failed: $e");
-        // Don't fail logout if FCM deletion fails - this is common on mobile
+        _logger.e("❌ Error during FCM cleanup: $e");
+        // Continue with logout even if FCM cleanup fails
       }
 
-      // Clear ALL SharedPreferences
+      // Step 2: Clear ALL SharedPreferences
       await prefs.clear();
       _logger.i("🧹 All SharedPreferences cleared");
 
@@ -87,6 +93,14 @@ class AuthUtils {
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.clear();
+
+        // Emergency FCM cleanup
+        try {
+          await FirebaseMessaging.instance.deleteToken();
+        } catch (fcmError) {
+          _logger.w("⚠️ Emergency FCM cleanup failed: $fcmError");
+        }
+
         _logger.i("🆘 Emergency cleanup completed");
       } catch (cleanupError) {
         _logger.e("💥 Emergency cleanup failed: $cleanupError");
@@ -122,6 +136,17 @@ class AuthUtils {
           Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
         }
       }
+    }
+  }
+
+  /// Setup FCM after successful login
+  static Future<void> setupFCMAfterLogin() async {
+    try {
+      _logger.i("🔧 Setting up FCM after login...");
+      final fcmService = FCMService();
+      await fcmService.setupFCMAfterLogin();
+    } catch (e) {
+      _logger.e("❌ Error setting up FCM after login: $e");
     }
   }
 
@@ -166,15 +191,14 @@ class AuthUtils {
   static Future<void> clearAuthData() async {
     try {
       _logger.i("🧹 Clearing authentication data...");
+
+      // Use enhanced FCM service for cleanup
+      final fcmService = FCMService();
+      await fcmService.cleanupFCMBeforeLogout();
+
+      // Clear SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-
-      // Also clear Firebase FCM token
-      try {
-        await FirebaseMessaging.instance.deleteToken();
-      } catch (e) {
-        _logger.w("⚠️ FCM token deletion failed: $e");
-      }
 
       _logger.i("✅ Authentication data cleared");
     } catch (e) {
