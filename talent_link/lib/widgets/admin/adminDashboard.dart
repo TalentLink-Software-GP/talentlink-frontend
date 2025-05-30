@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:talent_link/utils/responsive/responsive_layout.dart';
 import 'package:talent_link/widgets/admin/adminSettingsPage%20.dart';
 import 'package:talent_link/widgets/admin/adminStatisticsPage.dart';
 import 'package:talent_link/widgets/admin/managePostsPage.dart';
 import 'package:talent_link/widgets/admin/manageUsersPage.dart';
+import 'package:talent_link/widgets/admin/web_admin_dashboard.dart';
 
 class AdminDashboard extends StatefulWidget {
   final String token;
@@ -49,6 +51,13 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   @override
   Widget build(BuildContext context) {
+    return ResponsiveLayout(
+      mobile: _buildMobileLayout(context), // Original mobile layout
+      desktop: WebAdminDashboard(token: widget.token), // New web layout
+    );
+  }
+
+  Widget _buildMobileLayout(BuildContext context) {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(

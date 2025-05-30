@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:talent_link/services/fcm_service.dart';
 import 'package:talent_link/utils/app_lifecycle_manager.dart';
 import 'package:talent_link/widgets/admin/adminDashboard.dart';
+import 'package:talent_link/widgets/admin/web_admin_dashboard.dart';
+import 'package:talent_link/widgets/after_login_pages/web_organization_home_page.dart';
 import 'package:talent_link/widgets/web_layouts/web_form_components.dart';
 import 'package:talent_link/widgets/after_login_pages/web_home_page.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_home_page.dart';
@@ -173,9 +175,9 @@ class _WebLoginPageState extends State<WebLoginPage>
                   token: data["token"],
                   child:
                       role == 'admin'
-                          ? AdminDashboard(token: data["token"])
+                          ? WebAdminDashboard(token: data["token"])
                           : role == 'Organization'
-                          ? OrganizationHomePage(token: data["token"])
+                          ? WebOrganizationHomePage(token: data["token"])
                           : WebHomePage(
                             data: data["token"],
                             onTokenChanged: (newToken) async {

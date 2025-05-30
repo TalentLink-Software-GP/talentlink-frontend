@@ -303,7 +303,7 @@ class MyApp extends StatelessWidget {
         '/':
             (context) =>
                 isLoggedIn
-                    ? (userRole == 'Organization'
+                    ? (userRole == 'organization'
                         ? (kIsWeb
                             ? WebOrganizationHomePage(token: userToken ?? '')
                             : OrganizationHomePage(token: userToken ?? ''))
