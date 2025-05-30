@@ -14,6 +14,7 @@ class NotificationModel {
   final String? scheduledDateTime;
   final String? organizationId;
   final String? sender;
+  final String? applicationId;
 
   NotificationModel({
     this.id,
@@ -30,6 +31,7 @@ class NotificationModel {
     this.scheduledDateTime,
     this.organizationId,
     this.sender,
+    this.applicationId,
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
@@ -48,6 +50,7 @@ class NotificationModel {
       scheduledDateTime: json['scheduledDateTime'] ?? 'No scheduledDateTime',
       organizationId: json['organizationId'] ?? 'No organizationId',
       sender: json['sender'] ?? 'No sender',
+      applicationId: json['applicationId'] ?? 'No applicationId',
     );
   }
 }

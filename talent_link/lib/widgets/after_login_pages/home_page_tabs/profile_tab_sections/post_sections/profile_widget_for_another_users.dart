@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:talent_link/models/user_profile_data.dart';
+import 'package:talent_link/services/application_service.dart';
 import 'package:talent_link/services/post_service.dart';
 import 'package:talent_link/services/profile_service.dart';
+import 'package:talent_link/utils/pdfViewr.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/followers_list_screen.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_card.dart';
 import 'package:logger/logger.dart';
@@ -581,6 +583,53 @@ class _ProfileWidgetForAnotherUsersState
                                       followingCount,
                                       'Following',
                                       false,
+                                    ),
+                                  ],
+                                ),
+
+                                Row(
+                                  children: [
+                                    TextButton(
+                                      onPressed: () async {
+                                        final username = widget.username;
+
+                                        if (username != null) {
+                                          final cvUrl =
+                                              await ApplicationService.getUserCvByUsername(
+                                                username,
+                                              );
+                                          if (cvUrl != null &&
+                                              cvUrl.isNotEmpty) {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (context) => PDFViewerPage(
+                                                      url: cvUrl,
+                                                    ),
+                                              ),
+                                            );
+                                          } else {
+                                            print('No CV URL found');
+                                          }
+                                        } else {
+                                          print("application.userId is null!");
+                                        }
+                                      },
+                                      style: TextButton.styleFrom(
+                                        foregroundColor:
+                                            Theme.of(context).primaryColor,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 20,
+                                          vertical: 12,
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        "View Cv",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),

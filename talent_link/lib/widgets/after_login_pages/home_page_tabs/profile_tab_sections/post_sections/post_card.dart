@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/profile_widget_for_another_users.dart';
 import 'comment_sections/comments_modal.dart';
 import 'comment_sections/comments_section.dart';
@@ -105,6 +107,11 @@ class _PostCardState extends State<PostCard>
     );
 
     if (mounted) setState(() {});
+  }
+
+  Future<String> getCurrentUsername() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('username') ?? 'defaultUsername';
   }
 
   void _showPostOptions() {
@@ -291,17 +298,32 @@ class _PostCardState extends State<PostCard>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => ProfileWidgetForAnotherUsers(
-                                    username: widget.username,
-                                    token: widget.token,
-                                  ),
-                            ),
-                          );
+                        onTap: () async {
+                          final username = await getCurrentUsername();
+
+                          if (widget.username == username) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => ProfileTab(
+                                      onLogout: () {},
+                                      token: widget.token,
+                                    ),
+                              ),
+                            );
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => ProfileWidgetForAnotherUsers(
+                                      username: widget.username,
+                                      token: widget.token,
+                                    ),
+                              ),
+                            );
+                          }
                         },
                         child: Text(
                           widget.authorName,

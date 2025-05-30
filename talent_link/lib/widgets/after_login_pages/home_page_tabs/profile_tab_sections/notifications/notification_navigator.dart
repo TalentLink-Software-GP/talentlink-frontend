@@ -8,10 +8,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:talent_link/models/job.dart';
 import 'package:talent_link/services/job_service.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tabs/job_details_screen.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/nofitifcationForOrg/applicationShowOneCard.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/single_post_piew_for_notification.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_card.dart';
 import 'package:logger/logger.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/profile_widget_for_another_users.dart';
+import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/applications_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/meeting/joinMeeting.dart';
 
 final String baseUrl = dotenv.env['BASE_URL']!;
@@ -36,7 +38,8 @@ class NotificationNavigator {
     final String meetingLink = notification['meetingLink'] ?? '';
     final String scheduledDateTime = notification['scheduledDateTime'] ?? '';
     final sender = notification['sender'] ?? '';
-
+    final String applicationId = notification['applicationId'] ?? '';
+    // final String applicationId = "682bd851ce530c79f046df7d";
     switch (type) {
       case 'job':
         _navigateToJobDetails(myJobId);
@@ -64,9 +67,41 @@ class NotificationNavigator {
       case 'meeting':
         _navigateToMeeting(meetingId, meetingLink, scheduledDateTime);
         break;
+
+      case 'applyjob':
+        _navigateToJobDetailsForOrg(applicationId);
+        break;
+
       default:
         _showUnsupportedTypeMessage(type);
         break;
+    }
+  }
+
+  Future<void> _navigateToJobDetailsForOrg(String applicationId) async {
+    try {
+      _showLoadingDialog();
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) => ApplicationDetailPage(
+                token: token,
+                applicationId: applicationId,
+              ),
+        ),
+      );
+    } catch (e) {
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      _showErrorMessage('error loading application: $e');
     }
   }
 

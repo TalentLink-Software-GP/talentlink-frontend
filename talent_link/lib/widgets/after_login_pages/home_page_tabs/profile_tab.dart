@@ -1,14 +1,21 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:talent_link/services/post_service.dart';
 import 'package:talent_link/services/profile_service.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/avatar_username.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/followers_list_screen.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_card.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/resume.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/user_data.dart';
 import 'package:talent_link/widgets/appSetting/seeting.dart';
 import 'package:talent_link/models/user_profile_data.dart';
 import 'package:logger/logger.dart';
+
+final String baseUrl = dotenv.env['BASE_URL']!;
 
 class ProfileTab extends StatefulWidget {
   final VoidCallback onLogout;
@@ -36,6 +43,10 @@ class _ProfileTabState extends State<ProfileTab>
   String? uploadedImageUrl;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  bool isFollowing = false;
+  bool isFollowLoading = false;
+  int followersCount = 0;
+  int followingCount = 0;
 
   @override
   void initState() {
@@ -52,6 +63,7 @@ class _ProfileTabState extends State<ProfileTab>
     _postService = PostService(widget.token);
     fetchUserDataAndPosts();
     _animationController.forward();
+    fetchFollowerStats();
   }
 
   @override
@@ -91,6 +103,25 @@ class _ProfileTabState extends State<ProfileTab>
       await fetchProfileData();
     } catch (e) {
       _logger.e("Error deleting $field", error: e);
+    }
+  }
+
+  Future<void> fetchFollowerStats() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/user-stats/ahmadawwad'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        setState(() {
+          followersCount = responseData['followersCount'] ?? 0;
+          followingCount = responseData['followingCount'] ?? 0;
+        });
+      }
+    } catch (e) {
+      print('Error fetching follower stats: $e');
     }
   }
 
@@ -139,6 +170,46 @@ class _ProfileTabState extends State<ProfileTab>
               ),
             ],
           ),
+    );
+  }
+
+  void _showFollowList(BuildContext context, bool showFollowers) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => FollowersListScreen(
+              token: widget.token,
+              username: "ahmadawwad", //widget.username,
+              showFollowers: showFollowers,
+            ),
+      ),
+    );
+  }
+
+  Widget _buildCountWidget(int count, String label, bool isFollowers) {
+    return GestureDetector(
+      onTap: () => _showFollowList(context, isFollowers),
+      child: Column(
+        children: [
+          Text(
+            count.toString(),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.8),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -426,7 +497,35 @@ class _ProfileTabState extends State<ProfileTab>
                       ),
                       child: Stack(
                         children: [
-                          Center(child: AvatarUsername(token: widget.token)),
+                          Center(
+                            //here
+                            child: Column(
+                              children: [
+                                AvatarUsername(token: widget.token),
+                                Padding(
+                                  padding: EdgeInsets.only(top: 10),
+
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      _buildCountWidget(
+                                        followersCount,
+                                        'Followers',
+                                        true,
+                                      ),
+                                      const SizedBox(width: 24),
+                                      _buildCountWidget(
+                                        followingCount,
+                                        'Following',
+                                        false,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
                           Positioned(
                             top: 0,
                             right: 0,
