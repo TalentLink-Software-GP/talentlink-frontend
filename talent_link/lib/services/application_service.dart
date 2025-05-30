@@ -109,4 +109,47 @@ class ApplicationService {
     }
     return null;
   }
+
+  static Future<String?> getUserCvByUsername(String username) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/users/getUserCvByUsername/$username'),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['cvUrl'];
+    }
+    return null;
+  }
+
+  static Future<Application> getApplicationById(
+    String token,
+    String applicationId,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/applications/getAppbyId/$applicationId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return Application.fromJson(data);
+      } else if (response.statusCode == 404) {
+        throw Exception('Application not found');
+      } else if (response.statusCode == 403) {
+        throw Exception('Access denied');
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to fetch application');
+      }
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Network error: Unable to fetch application');
+    }
+  }
 }

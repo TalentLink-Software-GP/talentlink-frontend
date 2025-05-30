@@ -56,8 +56,7 @@ class NotificationsPageState extends State<NotificationsPage>
                 'body': notification.body,
                 'timestamp': notification.timestamp,
                 'read': notification.read ?? false,
-                'type':
-                    notificationType, // Use OUR detected type, not the backend type
+                'type': notificationType,
                 'jobId': notification.jobId ?? 'No jobId',
                 'postId': notification.postId ?? 'No postId',
 

@@ -81,6 +81,7 @@ class OrgNotificationsPageState extends State<OrgNotificationsPage>
                 'sender': notification.sender,
                 'postId': notification.postId,
                 'read': notification.read ?? false,
+                'applicationId': notification.applicationId,
               };
             }).toList();
         _logger.d('Job notifications list:', error: jobNotificationsList);
