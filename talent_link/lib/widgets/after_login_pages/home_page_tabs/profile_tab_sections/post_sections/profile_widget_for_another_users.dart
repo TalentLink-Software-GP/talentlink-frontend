@@ -33,6 +33,7 @@ class _ProfileWidgetForAnotherUsersState
   final _logger = Logger();
   late PostService _postService;
   Map<String, dynamic>? userData;
+  Map<String, dynamic>? organizationData;
   Map<String, bool> expandedSections = {};
   Map<String, bool> collapsedSections = {};
   List<Map<String, dynamic>> userPosts = [];
@@ -48,6 +49,7 @@ class _ProfileWidgetForAnotherUsersState
   bool isFollowLoading = false;
   int followersCount = 0;
   int followingCount = 0;
+  bool isOrganization = false;
 
   @override
   void initState() {
@@ -59,12 +61,63 @@ class _ProfileWidgetForAnotherUsersState
   }
 
   Future<void> _loadData() async {
-    await Future.wait([
-      fetchProfileData(),
-      fetchFollowerStats(),
-      fetchUserDataAndPosts(),
-    ]);
-    await checkFollowStatus();
+    try {
+      // First try to load as user - but handle each call individually
+      bool userDataLoaded = false;
+
+      try {
+        await fetchUserDataAndPosts();
+        userDataLoaded = true;
+      } catch (e) {
+        _logger.i("User posts not found, might be organization: $e");
+      }
+
+      if (userDataLoaded) {
+        // If user posts loaded successfully, try to load profile data and stats
+        try {
+          await Future.wait([fetchProfileData(), fetchFollowerStats()]);
+          await checkFollowStatus();
+          setState(() {
+            isOrganization = false;
+            _isLoading = false;
+          });
+          return;
+        } catch (e) {
+          _logger.e("Error loading user profile details: $e");
+        }
+      }
+
+      // If we reach here, user loading failed - try organization
+      _logger.i("User not found, trying as organization");
+      await _loadOrganizationData();
+      setState(() {
+        isOrganization = true;
+        _isLoading = false;
+      });
+    } catch (e) {
+      _logger.e("Both user and organization loading failed", error: e);
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadOrganizationData() async {
+    try {
+      final orgData = await _postService.fetchOrganizationDataByuserName(
+        widget.username,
+      );
+      setState(() {
+        organizationData = orgData;
+        fullName = orgData['name'];
+        uploadedImageUrl = orgData['avatarUrl'];
+        username = orgData['username'];
+        _isLoading = false;
+      });
+    } catch (e) {
+      _logger.e("Error fetching organization data", error: e);
+      rethrow;
+    }
   }
 
   Future<void> fetchProfileData() async {
@@ -79,6 +132,8 @@ class _ProfileWidgetForAnotherUsersState
       });
     } catch (e) {
       _logger.e("Error fetching profile", error: e);
+      // Don't set loading to false here, let the parent handle it
+      rethrow;
     }
   }
 
@@ -126,18 +181,31 @@ class _ProfileWidgetForAnotherUsersState
             }).toList();
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading profile: ${e.toString()}')),
-      );
-      debugPrint('Error in fetchUserDataAndPosts: $e');
-      // Add this to see the full URL being called
+      _logger.e('Error in fetchUserDataAndPosts: $e');
       debugPrint(
         'Attempted URL: ${_postService.baseUrl}/posts/getuser-posts-byusername/${widget.username}?page=$_page&limit=$_limit',
       );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      rethrow;
+    }
+  }
+
+  Future<void> fetchFollowerStats() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/user-stats/${widget.username}'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        setState(() {
+          followersCount = responseData['followersCount'] ?? 0;
+          followingCount = responseData['followingCount'] ?? 0;
+        });
+      }
+    } catch (e) {
+      _logger.e('Error fetching follower stats: $e');
+      // Don't rethrow for stats, it's not critical
     }
   }
 
@@ -162,6 +230,7 @@ class _ProfileWidgetForAnotherUsersState
       setState(() {
         isFollowing = false;
       });
+      _logger.e('Error checking follow status: $e');
     }
   }
 
@@ -216,25 +285,6 @@ class _ProfileWidgetForAnotherUsersState
           isFollowLoading = false;
         });
       }
-    }
-  }
-
-  Future<void> fetchFollowerStats() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/user-stats/${widget.username}'),
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
-
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        setState(() {
-          followersCount = responseData['followersCount'] ?? 0;
-          followingCount = responseData['followingCount'] ?? 0;
-        });
-      }
-    } catch (e) {
-      print('Error fetching follower stats: $e');
     }
   }
 
@@ -439,6 +489,71 @@ class _ProfileWidgetForAnotherUsersState
     );
   }
 
+  Widget _buildOrganizationInfoCard(
+    String title,
+    String? value,
+    IconData icon,
+  ) {
+    if (value == null || value.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).primaryColor.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Theme.of(context).primaryColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 15,
+                color: Colors.black87,
+                height: 1.6,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -457,8 +572,8 @@ class _ProfileWidgetForAnotherUsersState
         child:
             _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : userData == null
-                ? const Center(child: Text('User not found'))
+                : (userData == null && organizationData == null)
+                ? const Center(child: Text('User/Organization not found'))
                 : SingleChildScrollView(
                   child: Column(
                     children: [
@@ -502,7 +617,9 @@ class _ProfileWidgetForAnotherUsersState
                                     ),
                                     const Spacer(),
                                     Text(
-                                      'Profile',
+                                      isOrganization
+                                          ? 'Organization'
+                                          : 'Profile',
                                       style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.w600,
@@ -510,16 +627,13 @@ class _ProfileWidgetForAnotherUsersState
                                       ),
                                     ),
                                     const Spacer(),
-                                    const SizedBox(
-                                      width: 48,
-                                    ), // Balance the back button
+                                    const SizedBox(width: 48),
                                   ],
                                 ),
                                 const SizedBox(height: 32),
                                 // Avatar and Name
                                 Hero(
                                   tag: 'profile-avatar-${widget.username}',
-
                                   child: Container(
                                     padding: const EdgeInsets.all(4),
                                     decoration: BoxDecoration(
@@ -541,8 +655,10 @@ class _ProfileWidgetForAnotherUsersState
                                                 ? NetworkImage(
                                                   uploadedImageUrl!,
                                                 )
-                                                : const AssetImage(
-                                                      'assets/images/default_avatar.png',
+                                                : AssetImage(
+                                                      isOrganization
+                                                          ? 'assets/images/default_org.png'
+                                                          : 'assets/images/default_avatar.png',
                                                     )
                                                     as ImageProvider,
                                       ),
@@ -568,70 +684,95 @@ class _ProfileWidgetForAnotherUsersState
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
+                                if (isOrganization &&
+                                    organizationData?['industry'] != null) ...[
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      organizationData!['industry'],
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                                 const SizedBox(height: 16),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    _buildCountWidget(
-                                      followersCount,
-                                      'Followers',
-                                      true,
-                                    ),
-                                    const SizedBox(width: 24),
-                                    _buildCountWidget(
-                                      followingCount,
-                                      'Following',
-                                      false,
+                                if (!isOrganization) ...[
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      _buildCountWidget(
+                                        followersCount,
+                                        'Followers',
+                                        true,
+                                      ),
+                                      const SizedBox(width: 24),
+                                      _buildCountWidget(
+                                        followingCount,
+                                        'Following',
+                                        false,
+                                      ),
+                                    ],
+                                  ),
+                                  if (!isOrganization) ...[
+                                    Row(
+                                      children: [
+                                        TextButton(
+                                          onPressed: () async {
+                                            final username = widget.username;
+                                            if (username != null) {
+                                              final cvUrl =
+                                                  await ApplicationService.getUserCvByUsername(
+                                                    username,
+                                                  );
+                                              if (cvUrl != null &&
+                                                  cvUrl.isNotEmpty) {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (context) =>
+                                                            PDFViewerPage(
+                                                              url: cvUrl,
+                                                            ),
+                                                  ),
+                                                );
+                                              } else {
+                                                print('No CV URL found');
+                                              }
+                                            } else {
+                                              print("username is null!");
+                                            }
+                                          },
+                                          style: TextButton.styleFrom(
+                                            foregroundColor:
+                                                Theme.of(context).primaryColor,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 20,
+                                              vertical: 12,
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            "View CV",
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
-                                ),
-
-                                Row(
-                                  children: [
-                                    TextButton(
-                                      onPressed: () async {
-                                        final username = widget.username;
-
-                                        if (username != null) {
-                                          final cvUrl =
-                                              await ApplicationService.getUserCvByUsername(
-                                                username,
-                                              );
-                                          if (cvUrl != null &&
-                                              cvUrl.isNotEmpty) {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder:
-                                                    (context) => PDFViewerPage(
-                                                      url: cvUrl,
-                                                    ),
-                                              ),
-                                            );
-                                          } else {
-                                            print('No CV URL found');
-                                          }
-                                        } else {
-                                          print("application.userId is null!");
-                                        }
-                                      },
-                                      style: TextButton.styleFrom(
-                                        foregroundColor:
-                                            Theme.of(context).primaryColor,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 20,
-                                          vertical: 12,
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        "View Cv",
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                ],
                                 const SizedBox(height: 24),
                                 // Follow Button
                                 Container(
@@ -702,9 +843,17 @@ class _ProfileWidgetForAnotherUsersState
                                                       MainAxisSize.min,
                                                   children: [
                                                     Icon(
-                                                      isFollowing
-                                                          ? Icons.person_remove
-                                                          : Icons.person_add,
+                                                      isOrganization
+                                                          ? (isFollowing
+                                                              ? Icons
+                                                                  .business_center
+                                                              : Icons
+                                                                  .add_business)
+                                                          : (isFollowing
+                                                              ? Icons
+                                                                  .person_remove
+                                                              : Icons
+                                                                  .person_add),
                                                       color:
                                                           isFollowing
                                                               ? Colors.white
@@ -716,7 +865,7 @@ class _ProfileWidgetForAnotherUsersState
                                                     const SizedBox(width: 8),
                                                     Text(
                                                       isFollowing
-                                                          ? 'Unfollow'
+                                                          ? 'Following'
                                                           : 'Follow',
                                                       style: TextStyle(
                                                         color:
@@ -742,125 +891,160 @@ class _ProfileWidgetForAnotherUsersState
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // Summary Section
-                      if (userProfileData != null) ...[
-                        Container(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Theme.of(
-                                  context,
-                                ).primaryColor.withOpacity(0.08),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(
-                                          context,
-                                        ).primaryColor.withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Icon(
-                                        Icons.description_outlined,
-                                        color: Theme.of(context).primaryColor,
-                                        size: 24,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    const Text(
-                                      "Summary",
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                userProfileData!.summary.isNotEmpty
-                                    ? Text(
-                                      userProfileData!.summary,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        color: Colors.black87,
-                                        height: 1.6,
-                                      ),
-                                    )
-                                    : Container(
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[50],
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.info_outline,
-                                            color: Colors.grey[600],
-                                            size: 20,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            "No summary provided",
-                                            style: TextStyle(
-                                              fontStyle: FontStyle.italic,
-                                              color: Colors.grey[600],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                              ],
-                            ),
-                          ),
+
+                      // Content based on type
+                      if (isOrganization) ...[
+                        // Organization Info Cards
+                        _buildOrganizationInfoCard(
+                          "About",
+                          organizationData?['description'],
+                          Icons.description_outlined,
                         ),
-                      ],
-                      // Profile Sections
-                      if (userProfileData != null) ...[
-                        buildExpandableSection(
-                          "Education",
-                          userProfileData!.education,
-                          Icons.school_outlined,
+                        _buildOrganizationInfoCard(
+                          "Industry",
+                          organizationData?['industry'],
+                          Icons.business_outlined,
                         ),
-                        buildExpandableSection(
-                          "Skills",
-                          userProfileData!.skills,
-                          Icons.star_outline,
-                        ),
-                        buildExpandableSection(
-                          "Experience",
-                          userProfileData!.experience,
-                          Icons.work_outline,
-                        ),
-                        buildExpandableSection(
-                          "Certifications",
-                          userProfileData!.certifications,
-                          Icons.verified_outlined,
-                        ),
-                        buildExpandableSection(
-                          "Languages",
-                          userProfileData!.languages,
+                        _buildOrganizationInfoCard(
+                          "Website",
+                          organizationData?['website'],
                           Icons.language_outlined,
                         ),
+                        _buildOrganizationInfoCard(
+                          "Location",
+                          "${organizationData?['city'] ?? ''}, ${organizationData?['country'] ?? ''}"
+                              .trim()
+                              .replaceAll(RegExp(r'^,|,$'), ''),
+                          Icons.location_on_outlined,
+                        ),
+                        _buildOrganizationInfoCard(
+                          "Email",
+                          organizationData?['email'],
+                          Icons.email_outlined,
+                        ),
+                      ] else ...[
+                        // User Profile Sections
+                        if (userProfileData != null) ...[
+                          Container(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(
+                                    context,
+                                  ).primaryColor.withOpacity(0.08),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(
+                                            context,
+                                          ).primaryColor.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.description_outlined,
+                                          color: Theme.of(context).primaryColor,
+                                          size: 24,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      const Text(
+                                        "Summary",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  userProfileData!.summary.isNotEmpty
+                                      ? Text(
+                                        userProfileData!.summary,
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          color: Colors.black87,
+                                          height: 1.6,
+                                        ),
+                                      )
+                                      : Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[50],
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.info_outline,
+                                              color: Colors.grey[600],
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              "No summary provided",
+                                              style: TextStyle(
+                                                fontStyle: FontStyle.italic,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          buildExpandableSection(
+                            "Education",
+                            userProfileData!.education,
+                            Icons.school_outlined,
+                          ),
+                          buildExpandableSection(
+                            "Skills",
+                            userProfileData!.skills,
+                            Icons.star_outline,
+                          ),
+                          buildExpandableSection(
+                            "Experience",
+                            userProfileData!.experience,
+                            Icons.work_outline,
+                          ),
+                          buildExpandableSection(
+                            "Certifications",
+                            userProfileData!.certifications,
+                            Icons.verified_outlined,
+                          ),
+                          buildExpandableSection(
+                            "Languages",
+                            userProfileData!.languages,
+                            Icons.language_outlined,
+                          ),
+                        ],
                       ],
+
                       // Posts Section
                       Container(
                         margin: const EdgeInsets.all(16),

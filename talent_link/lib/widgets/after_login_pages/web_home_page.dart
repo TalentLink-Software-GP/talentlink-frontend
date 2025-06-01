@@ -6,7 +6,7 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/web_map_scr
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/web_profile_tab.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/web_notifications_for_user.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/web_post_creator.dart';
-import 'package:talent_link/widgets/login_widgets/login_page.dart';
+import 'package:talent_link/utils/auth_utils.dart';
 import 'package:talent_link/widgets/web_layouts/web_navigation.dart';
 import 'package:talent_link/utils/responsive/responsive_layout.dart';
 import 'package:logger/logger.dart';
@@ -77,12 +77,16 @@ class _WebHomePageState extends State<WebHomePage>
     });
   }
 
-  void _handleLogout() {
-    widget.onTokenChanged('Unauthorized');
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-    );
+  void _handleLogout() async {
+    try {
+      // Use the centralized logout utility for consistent behavior
+      await AuthUtils.performCompleteLogout(context);
+    } catch (e) {
+      _logger.e("Error during logout", error: e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error during logout. Please try again.")),
+      );
+    }
   }
 
   void _handleSearchNavigation() {

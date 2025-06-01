@@ -42,6 +42,39 @@ class _WebLoginPageState extends State<WebLoginPage>
   bool isLoading = false;
   String? errorMessage;
 
+  // Helper method to check if screen is mobile
+  bool _isMobile(BuildContext context) {
+    return MediaQuery.of(context).size.width < 768;
+  }
+
+  // Helper method to check if screen is tablet
+  bool _isTablet(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    return width >= 768 && width < 1024;
+  }
+
+  // Helper method to get responsive padding
+  EdgeInsets _getResponsivePadding(BuildContext context) {
+    if (_isMobile(context)) {
+      return const EdgeInsets.symmetric(horizontal: 16, vertical: 8);
+    } else if (_isTablet(context)) {
+      return const EdgeInsets.symmetric(horizontal: 24, vertical: 12);
+    } else {
+      return const EdgeInsets.symmetric(horizontal: 48, vertical: 16);
+    }
+  }
+
+  // Helper method to get responsive font size
+  double _getResponsiveFontSize(BuildContext context, double baseSize) {
+    if (_isMobile(context)) {
+      return baseSize * 0.8;
+    } else if (_isTablet(context)) {
+      return baseSize * 0.9;
+    } else {
+      return baseSize;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -262,7 +295,7 @@ class _WebLoginPageState extends State<WebLoginPage>
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+      padding: _getResponsivePadding(context),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -270,18 +303,22 @@ class _WebLoginPageState extends State<WebLoginPage>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(_isMobile(context) ? 6 : 8),
                 decoration: BoxDecoration(
                   color: Theme.of(context).primaryColor,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.work_outline, color: Colors.white),
+                child: Icon(
+                  Icons.work_outline,
+                  color: Colors.white,
+                  size: _isMobile(context) ? 20 : 24,
+                ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: _isMobile(context) ? 8 : 12),
               Text(
                 "TalentLink",
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: _getResponsiveFontSize(context, 24),
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).primaryColor,
                 ),
@@ -289,14 +326,24 @@ class _WebLoginPageState extends State<WebLoginPage>
             ],
           ),
 
-          // Navigation Links
-          Row(
-            children: [
-              _buildHeaderLink("Features", () {}),
-              _buildHeaderLink("About", () {}),
-              _buildHeaderLink("Contact", () {}),
-            ],
-          ),
+          // Navigation Links - Hide on mobile
+          if (!_isMobile(context))
+            Row(
+              children: [
+                _buildHeaderLink("Features", () {}),
+                _buildHeaderLink("About", () {}),
+                _buildHeaderLink("Contact", () {}),
+              ],
+            ),
+
+          // Mobile menu button
+          if (_isMobile(context))
+            IconButton(
+              icon: const Icon(Icons.menu),
+              onPressed: () {
+                // You can implement a drawer or bottom sheet here if needed
+              },
+            ),
         ],
       ),
     );
@@ -310,7 +357,7 @@ class _WebLoginPageState extends State<WebLoginPage>
         child: Text(
           text,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: _getResponsiveFontSize(context, 16),
             color: Colors.grey[700],
             fontWeight: FontWeight.w500,
           ),
@@ -321,173 +368,374 @@ class _WebLoginPageState extends State<WebLoginPage>
 
   Widget _buildLoginSection(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 48),
+      padding: EdgeInsets.symmetric(
+        vertical: _isMobile(context) ? 40 : 80,
+        horizontal: _isMobile(context) ? 16 : (_isTablet(context) ? 24 : 48),
+      ),
       child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 1200),
-          child: Row(
-            children: [
-              // Left side - Welcome message
-              Expanded(
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SlideTransition(
-                    position: _slideAnimation,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Welcome Back to\nTalentLink",
-                          style: TextStyle(
-                            fontSize: 48,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
-                            height: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          "Sign in to access your account and continue your professional journey.",
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.grey[600],
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 80),
-              // Right side - Login form
-              Expanded(
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: WebCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(40),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Sign In",
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
+          child:
+              _isMobile(context)
+                  ? Column(
+                    children: [
+                      // Login form first on mobile
+                      FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: WebCard(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Sign In",
+                                    style: TextStyle(
+                                      fontSize: _getResponsiveFontSize(
+                                        context,
+                                        32,
+                                      ),
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[800],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  WebTextField(
+                                    controller: emailController,
+                                    labelText: "Email",
+                                    prefixIcon: Icons.email_outlined,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Please enter your email';
+                                      }
+                                      if (!value.contains('@')) {
+                                        return 'Please enter a valid email';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 16),
+                                  WebTextField(
+                                    controller: passwordController,
+                                    labelText: "Password",
+                                    prefixIcon: Icons.lock_outline,
+                                    obscureText: _obscurePassword,
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscurePassword
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _obscurePassword = !_obscurePassword;
+                                        });
+                                      },
+                                    ),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Please enter your password';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  if (errorMessage != null) ...[
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      errorMessage!,
+                                      style: const TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 24),
+                                  WebButton(
+                                    text: "Sign In",
+                                    width: double.infinity,
+                                    height: 48,
+                                    isLoading: isLoading,
+                                    onPressed: login,
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Column(
+                                    children: [
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: TextButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (context) =>
+                                                        WebForgotAccountScreen(),
+                                              ),
+                                            );
+                                          },
+                                          child: Text(
+                                            "Forgot Password?",
+                                            style: TextStyle(
+                                              color:
+                                                  Theme.of(
+                                                    context,
+                                                  ).primaryColor,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: TextButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (context) =>
+                                                        WebChoosePositions(),
+                                              ),
+                                            );
+                                          },
+                                          child: Text(
+                                            "Create Account",
+                                            style: TextStyle(
+                                              color:
+                                                  Theme.of(
+                                                    context,
+                                                  ).primaryColor,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 24),
-                            WebTextField(
-                              controller: emailController,
-                              labelText: "Email",
-                              prefixIcon: Icons.email_outlined,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your email';
-                                }
-                                if (!value.contains('@')) {
-                                  return 'Please enter a valid email';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            WebTextField(
-                              controller: passwordController,
-                              labelText: "Password",
-                              prefixIcon: Icons.lock_outline,
-                              obscureText: _obscurePassword,
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_off
-                                      : Icons.visibility,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
-                                },
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter your password';
-                                }
-                                return null;
-                              },
-                            ),
-                            if (errorMessage != null) ...[
-                              const SizedBox(height: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      // Welcome message below form on mobile
+                      FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: SlideTransition(
+                          position: _slideAnimation,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
                               Text(
-                                errorMessage!,
-                                style: const TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 14,
+                                "Welcome Back to\nTalentLink",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: _getResponsiveFontSize(context, 48),
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[800],
+                                  height: 1.2,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              Text(
+                                "Sign in to access your account and continue your professional journey.",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: _getResponsiveFontSize(context, 20),
+                                  color: Colors.grey[600],
+                                  height: 1.5,
                                 ),
                               ),
                             ],
-                            const SizedBox(height: 24),
-                            WebButton(
-                              text: "Sign In",
-                              width: double.infinity,
-                              height: 48,
-                              isLoading: isLoading,
-                              onPressed: login,
-                            ),
-                            const SizedBox(height: 24),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                  : Row(
+                    children: [
+                      // Left side - Welcome message
+                      Expanded(
+                        child: FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: SlideTransition(
+                            position: _slideAnimation,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.push(
+                                Text(
+                                  "Welcome Back to\nTalentLink",
+                                  style: TextStyle(
+                                    fontSize: _getResponsiveFontSize(
                                       context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) =>
-                                                WebForgotAccountScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: Text(
-                                    "Forgot Password?",
-                                    style: TextStyle(
-                                      color: Theme.of(context).primaryColor,
+                                      48,
                                     ),
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[800],
+                                    height: 1.2,
                                   ),
                                 ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.push(
+                                const SizedBox(height: 24),
+                                Text(
+                                  "Sign in to access your account and continue your professional journey.",
+                                  style: TextStyle(
+                                    fontSize: _getResponsiveFontSize(
                                       context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (context) => WebChoosePositions(),
-                                      ),
-                                    );
-                                  },
-                                  child: Text(
-                                    "Create Account",
-                                    style: TextStyle(
-                                      color: Theme.of(context).primaryColor,
+                                      20,
                                     ),
+                                    color: Colors.grey[600],
+                                    height: 1.5,
                                   ),
                                 ),
                               ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
+                      SizedBox(width: _isTablet(context) ? 40 : 80),
+                      // Right side - Login form
+                      Expanded(
+                        child: FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: WebCard(
+                            child: Padding(
+                              padding: EdgeInsets.all(
+                                _isTablet(context) ? 24 : 40,
+                              ),
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Sign In",
+                                      style: TextStyle(
+                                        fontSize: _getResponsiveFontSize(
+                                          context,
+                                          32,
+                                        ),
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey[800],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    WebTextField(
+                                      controller: emailController,
+                                      labelText: "Email",
+                                      prefixIcon: Icons.email_outlined,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please enter your email';
+                                        }
+                                        if (!value.contains('@')) {
+                                          return 'Please enter a valid email';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    WebTextField(
+                                      controller: passwordController,
+                                      labelText: "Password",
+                                      prefixIcon: Icons.lock_outline,
+                                      obscureText: _obscurePassword,
+                                      suffixIcon: IconButton(
+                                        icon: Icon(
+                                          _obscurePassword
+                                              ? Icons.visibility_off
+                                              : Icons.visibility,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _obscurePassword =
+                                                !_obscurePassword;
+                                          });
+                                        },
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Please enter your password';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    if (errorMessage != null) ...[
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        errorMessage!,
+                                        style: const TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 24),
+                                    WebButton(
+                                      text: "Sign In",
+                                      width: double.infinity,
+                                      height: 48,
+                                      isLoading: isLoading,
+                                      onPressed: login,
+                                    ),
+                                    const SizedBox(height: 24),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (context) =>
+                                                        WebForgotAccountScreen(),
+                                              ),
+                                            );
+                                          },
+                                          child: Text(
+                                            "Forgot Password?",
+                                            style: TextStyle(
+                                              color:
+                                                  Theme.of(
+                                                    context,
+                                                  ).primaryColor,
+                                            ),
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (context) =>
+                                                        WebChoosePositions(),
+                                              ),
+                                            );
+                                          },
+                                          child: Text(
+                                            "Create Account",
+                                            style: TextStyle(
+                                              color:
+                                                  Theme.of(
+                                                    context,
+                                                  ).primaryColor,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -495,7 +743,10 @@ class _WebLoginPageState extends State<WebLoginPage>
 
   Widget _buildFeaturesSection(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 48),
+      padding: EdgeInsets.symmetric(
+        vertical: _isMobile(context) ? 40 : 80,
+        horizontal: _isMobile(context) ? 16 : (_isTablet(context) ? 24 : 48),
+      ),
       color: Colors.grey[50],
       child: Center(
         child: Container(
@@ -505,39 +756,61 @@ class _WebLoginPageState extends State<WebLoginPage>
               Text(
                 "Why Choose TalentLink",
                 style: TextStyle(
-                  fontSize: 36,
+                  fontSize: _getResponsiveFontSize(context, 36),
                   fontWeight: FontWeight.bold,
                   color: Colors.grey[800],
                 ),
               ),
-              const SizedBox(height: 60),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildFeatureCard(
-                      Icons.verified_user_outlined,
-                      "Verified Profiles",
-                      "Join a community of verified professionals and organizations.",
-                    ),
+              SizedBox(height: _isMobile(context) ? 30 : 60),
+              _isMobile(context)
+                  ? Column(
+                    children: [
+                      _buildFeatureCard(
+                        Icons.verified_user_outlined,
+                        "Verified Profiles",
+                        "Join a community of verified professionals and organizations.",
+                      ),
+                      const SizedBox(height: 24),
+                      _buildFeatureCard(
+                        Icons.security_outlined,
+                        "Secure Platform",
+                        "Your data is protected with enterprise-grade security.",
+                      ),
+                      const SizedBox(height: 24),
+                      _buildFeatureCard(
+                        Icons.support_agent_outlined,
+                        "24/7 Support",
+                        "Get help whenever you need it from our support team.",
+                      ),
+                    ],
+                  )
+                  : Row(
+                    children: [
+                      Expanded(
+                        child: _buildFeatureCard(
+                          Icons.verified_user_outlined,
+                          "Verified Profiles",
+                          "Join a community of verified professionals and organizations.",
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: _buildFeatureCard(
+                          Icons.security_outlined,
+                          "Secure Platform",
+                          "Your data is protected with enterprise-grade security.",
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: _buildFeatureCard(
+                          Icons.support_agent_outlined,
+                          "24/7 Support",
+                          "Get help whenever you need it from our support team.",
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    child: _buildFeatureCard(
-                      Icons.security_outlined,
-                      "Secure Platform",
-                      "Your data is protected with enterprise-grade security.",
-                    ),
-                  ),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    child: _buildFeatureCard(
-                      Icons.support_agent_outlined,
-                      "24/7 Support",
-                      "Get help whenever you need it from our support team.",
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
         ),
@@ -547,7 +820,7 @@ class _WebLoginPageState extends State<WebLoginPage>
 
   Widget _buildFeatureCard(IconData icon, String title, String description) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(_isMobile(context) ? 24 : 32),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -562,28 +835,32 @@ class _WebLoginPageState extends State<WebLoginPage>
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(_isMobile(context) ? 12 : 16),
             decoration: BoxDecoration(
               color: Theme.of(context).primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, size: 32, color: Theme.of(context).primaryColor),
+            child: Icon(
+              icon,
+              size: _isMobile(context) ? 28 : 32,
+              color: Theme.of(context).primaryColor,
+            ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: _isMobile(context) ? 16 : 24),
           Text(
             title,
             style: TextStyle(
-              fontSize: 20,
+              fontSize: _getResponsiveFontSize(context, 20),
               fontWeight: FontWeight.bold,
               color: Colors.grey[800],
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: _isMobile(context) ? 8 : 12),
           Text(
             description,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: _getResponsiveFontSize(context, 16),
               color: Colors.grey[600],
               height: 1.5,
             ),
@@ -595,111 +872,217 @@ class _WebLoginPageState extends State<WebLoginPage>
 
   Widget _buildWebFooter(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 48),
+      padding: EdgeInsets.symmetric(
+        vertical: _isMobile(context) ? 24 : 48,
+        horizontal: _isMobile(context) ? 16 : (_isTablet(context) ? 24 : 48),
+      ),
       color: Colors.grey[900],
       child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 1200),
           child: Column(
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
+              _isMobile(context)
+                  ? Column(
+                    children: [
+                      // Logo section
+                      Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.work_outline,
+                                  color: Theme.of(context).primaryColor,
+                                ),
                               ),
-                              child: Icon(
-                                Icons.work_outline,
-                                color: Theme.of(context).primaryColor,
+                              const SizedBox(width: 12),
+                              const Text(
+                                "TalentLink",
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            "Connecting talent with opportunity",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: _getResponsiveFontSize(context, 16),
                             ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              "TalentLink",
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+                      // Footer links in columns
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _buildFooterTitle("Company"),
+                                _buildFooterLink("About Us"),
+                                _buildFooterLink("Careers"),
+                                _buildFooterLink("Contact"),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _buildFooterTitle("Resources"),
+                                _buildFooterLink("Blog"),
+                                _buildFooterLink("Help Center"),
+                                _buildFooterLink("Guidelines"),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _buildFooterTitle("Legal"),
+                                _buildFooterLink("Privacy Policy"),
+                                _buildFooterLink("Terms of Service"),
+                                _buildFooterLink("Cookie Policy"),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                  : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    Icons.work_outline,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                const Text(
+                                  "TalentLink",
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              "Connecting talent with opportunity",
                               style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Colors.grey[400],
+                                fontSize: _getResponsiveFontSize(context, 16),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          "Connecting talent with opportunity",
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 16,
-                          ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildFooterTitle("Company"),
+                            _buildFooterLink("About Us"),
+                            _buildFooterLink("Careers"),
+                            _buildFooterLink("Contact"),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildFooterTitle("Company"),
-                        _buildFooterLink("About Us"),
-                        _buildFooterLink("Careers"),
-                        _buildFooterLink("Contact"),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildFooterTitle("Resources"),
-                        _buildFooterLink("Blog"),
-                        _buildFooterLink("Help Center"),
-                        _buildFooterLink("Guidelines"),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildFooterTitle("Legal"),
-                        _buildFooterLink("Privacy Policy"),
-                        _buildFooterLink("Terms of Service"),
-                        _buildFooterLink("Cookie Policy"),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 48),
-              Container(height: 1, color: Colors.grey[800]),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    "© 2024 TalentLink. All rights reserved.",
-                    style: TextStyle(color: Colors.grey[400], fontSize: 14),
-                  ),
-                  Row(
-                    children: [
-                      _buildSocialIcon(Icons.facebook),
-                      const SizedBox(width: 16),
-                      _buildSocialIcon(Icons.alternate_email),
-                      const SizedBox(width: 16),
-                      _buildSocialIcon(Icons.business_center),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildFooterTitle("Resources"),
+                            _buildFooterLink("Blog"),
+                            _buildFooterLink("Help Center"),
+                            _buildFooterLink("Guidelines"),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildFooterTitle("Legal"),
+                            _buildFooterLink("Privacy Policy"),
+                            _buildFooterLink("Terms of Service"),
+                            _buildFooterLink("Cookie Policy"),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                ],
-              ),
+              SizedBox(height: _isMobile(context) ? 24 : 48),
+              Container(height: 1, color: Colors.grey[800]),
+              SizedBox(height: _isMobile(context) ? 16 : 24),
+              _isMobile(context)
+                  ? Column(
+                    children: [
+                      Text(
+                        "© 2024 TalentLink. All rights reserved.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildSocialIcon(Icons.facebook),
+                          const SizedBox(width: 16),
+                          _buildSocialIcon(Icons.alternate_email),
+                          const SizedBox(width: 16),
+                          _buildSocialIcon(Icons.business_center),
+                        ],
+                      ),
+                    ],
+                  )
+                  : Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "© 2024 TalentLink. All rights reserved.",
+                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                      ),
+                      Row(
+                        children: [
+                          _buildSocialIcon(Icons.facebook),
+                          const SizedBox(width: 16),
+                          _buildSocialIcon(Icons.alternate_email),
+                          const SizedBox(width: 16),
+                          _buildSocialIcon(Icons.business_center),
+                        ],
+                      ),
+                    ],
+                  ),
             ],
           ),
         ),
@@ -709,12 +1092,13 @@ class _WebLoginPageState extends State<WebLoginPage>
 
   Widget _buildFooterTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(bottom: _isMobile(context) ? 12 : 16),
       child: Text(
         title,
-        style: const TextStyle(
+        textAlign: _isMobile(context) ? TextAlign.center : TextAlign.start,
+        style: TextStyle(
           color: Colors.white,
-          fontSize: 18,
+          fontSize: _isMobile(context) ? 16 : 18,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -723,12 +1107,16 @@ class _WebLoginPageState extends State<WebLoginPage>
 
   Widget _buildFooterLink(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: _isMobile(context) ? 8 : 12),
       child: InkWell(
         onTap: () {},
         child: Text(
           text,
-          style: TextStyle(color: Colors.grey[400], fontSize: 16),
+          textAlign: _isMobile(context) ? TextAlign.center : TextAlign.start,
+          style: TextStyle(
+            color: Colors.grey[400],
+            fontSize: _isMobile(context) ? 14 : 16,
+          ),
         ),
       ),
     );
@@ -737,7 +1125,11 @@ class _WebLoginPageState extends State<WebLoginPage>
   Widget _buildSocialIcon(IconData icon) {
     return InkWell(
       onTap: () {},
-      child: Icon(icon, color: Colors.grey[400], size: 24),
+      child: Icon(
+        icon,
+        color: Colors.grey[400],
+        size: _isMobile(context) ? 20 : 24,
+      ),
     );
   }
 }
