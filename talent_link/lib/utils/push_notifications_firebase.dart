@@ -291,7 +291,7 @@ class PushNotificationsFirebase {
     }
   }
 
-  static void _handleBackgroundMessage(RemoteMessage message) {
+  static void handleBackgroundMessage(RemoteMessage message) {
     _logger.i('Got a message whilst in the background!');
     _logger.i('Message data:', error: message.data);
 
@@ -348,6 +348,10 @@ class PushNotificationsFirebase {
     _logger.i('Got a message whilst app was terminated!');
     _logger.i('Message data:', error: message.data);
 
-    _handleBackgroundMessage(message);
+    handleBackgroundMessage(message);
+  }
+
+  Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+    PushNotificationsFirebase.handleBackgroundMessage(message);
   }
 }

@@ -30,6 +30,7 @@ dependencies:
   geolocator: ^14.0.0
   flutter_polyline_points: ^2.1.0
   logger: ^2.0.2+1
+  flutter_keyboard_visibility: ^6.0.0
   
   
 
@@ -39,7 +40,7 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   provider: ^6.0.5
 
-  flutter_typeahead: ^4.3.7
+  flutter_typeahead: ^5.2.0
   geocoding: ^3.0.0
   syncfusion_flutter_pdfviewer: ^29.2.4
   uuid: ^4.1.0

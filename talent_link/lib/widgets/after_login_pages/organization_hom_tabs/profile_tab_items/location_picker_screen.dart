@@ -82,18 +82,22 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TypeAheadField<String>(
-              textFieldConfiguration: TextFieldConfiguration(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: "Search location...",
-                  border: OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.search),
-                    onPressed:
-                        () => _moveCameraToAddress(_searchController.text),
+              controller: _searchController,
+              builder: (context, controller, focusNode) {
+                return TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  decoration: InputDecoration(
+                    hintText: "Search location...",
+                    border: OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.search),
+                      onPressed:
+                          () => _moveCameraToAddress(_searchController.text),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
               suggestionsCallback: (pattern) async {
                 // Fake suggestions for simplicity (you can use real API like Places API)
                 return pattern.length > 2
@@ -102,8 +106,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
               },
               itemBuilder:
                   (context, suggestion) => ListTile(title: Text(suggestion)),
-              onSuggestionSelected:
-                  (suggestion) => _moveCameraToAddress(suggestion),
+              onSelected: (suggestion) => _moveCameraToAddress(suggestion),
             ),
           ),
           Row(

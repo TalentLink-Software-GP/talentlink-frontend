@@ -614,9 +614,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   String peerAvatar = '';
 
   bool canMessage = false;
-  bool checkingFollowStatus = true;
-  bool currentUserFollowsPeer = false;
-  bool peerFollowsCurrentUser = false;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -647,7 +644,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     socketService.startHealthChecks();
 
     fetchPeerInfo();
-    _checkMutualFollow();
     fetchMessages();
     initSocket();
 
@@ -655,32 +651,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _initializePresence();
 
     _markMessagesAsRead();
-  }
-
-  Future<void> _checkMutualFollow() async {
-    setState(() => checkingFollowStatus = true);
-
-    final result = await messageService.checkMutualFollow(
-      widget.currentUserId,
-      widget.peerUserId,
-      widget.token,
-    );
-
-    _logger.i("Mutual follow check result: $result");
-
-    if (mounted) {
-      setState(() {
-        currentUserFollowsPeer = result['user1FollowsUser2'] ?? false;
-        peerFollowsCurrentUser = result['user2FollowsUser1'] ?? false;
-        // canMessage = currentUserFollowsPeer && peerFollowsCurrentUser;
-        canMessage = result['canMessage'] ?? false;
-        checkingFollowStatus = false;
-      });
-    }
-
-    _logger.i(
-      "Updated state - canMessage: $canMessage, currentFollowsPeer: $currentUserFollowsPeer, peerFollowsCurrent: $peerFollowsCurrentUser",
-    );
   }
 
   void _initializePresence() {
@@ -839,7 +809,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Future<void> sendMessage() async {
     if (messageController.text.trim().isEmpty) return;
-    if (!canMessage) return;
 
     setState(() {
       isSending = true;
@@ -1025,18 +994,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    // if (checkingFollowStatus) {
-    //   return Scaffold(
-    //     appBar: AppBar(title: Text(peerUsername)),
-    //     body: Center(child: CircularProgressIndicator()),
-    //   );
-    // } else if (!canMessage) {
-    //   return MessagingBlockedScreen(
-    //     peerUsername: peerUsername,
-    //     currentUserFollowsPeer: currentUserFollowsPeer,
-    //     peerFollowsCurrentUser: peerFollowsCurrentUser,
-    //   );
-    // }
     return Scaffold(
       appBar: AppBar(
         title: Center(
