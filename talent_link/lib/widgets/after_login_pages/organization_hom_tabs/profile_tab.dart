@@ -6,7 +6,7 @@ import 'package:talent_link/widgets/base_widgets/button.dart';
 import 'package:talent_link/services/location_service.dart';
 import 'package:talent_link/widgets/appSetting/seeting.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:talent_link/widgets/login_widgets/login_page.dart';
+import 'package:talent_link/utils/auth_utils.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:logger/logger.dart';
 
@@ -72,16 +72,8 @@ class _ProfileTabState extends State<ProfileTab> {
 
   Future<void> _handleLogout() async {
     try {
-      // Clear all stored data
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
-
-      // Navigate to login page
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => LoginPage()),
-        (route) => false,
-      );
+      // Use the centralized logout utility for consistent behavior
+      await AuthUtils.performCompleteLogout(context);
     } catch (e) {
       logger.e("Error during logout", error: e);
       ScaffoldMessenger.of(context).showSnackBar(

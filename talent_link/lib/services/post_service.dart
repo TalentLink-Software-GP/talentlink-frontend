@@ -52,6 +52,44 @@ class PostService {
     }
   }
 
+  Future<Map<String, dynamic>> fetchOrganizationDataByuserName(
+    String username,
+  ) async {
+    _logger.i('🏢 Fetching org data by username for $username');
+    try {
+      final uri = Uri.parse(
+        '$baseUrl/organization/getOrgDataByuserName?userName=${Uri.encodeComponent(username)}',
+      );
+      final response = await http
+          .get(
+            uri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token,
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+
+      _logger.i('📦 Response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        // Perform JSON decoding in an isolate
+        final jsonData = await compute(_parseJsonIsolate, response.body);
+
+        // Return all organization data
+        return jsonData;
+      } else {
+        _logger.e(
+          '❌ Failed to fetch org data: ${response.statusCode} - ${response.body}',
+        );
+        throw Exception('Failed to fetch organization data: ${response.body}');
+      }
+    } catch (e) {
+      _logger.e('❌ Org data error:', error: e);
+      rethrow;
+    }
+  }
+
   // Helper function to run in isolate
   static Map<String, dynamic> _parseJsonIsolate(String body) {
     return json.decode(body);
