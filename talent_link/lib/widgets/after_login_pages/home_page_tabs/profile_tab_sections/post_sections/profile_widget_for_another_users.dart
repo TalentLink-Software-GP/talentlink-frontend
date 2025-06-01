@@ -60,7 +60,8 @@ class _ProfileWidgetForAnotherUsersState
 
   Future<void> _loadData() async {
     await Future.wait([
-      fetchProfileData(), fetchFollowerStats(), // Add this line
+      fetchProfileData(),
+      fetchFollowerStats(),
       fetchUserDataAndPosts(),
     ]);
     await checkFollowStatus();
@@ -83,12 +84,10 @@ class _ProfileWidgetForAnotherUsersState
 
   Future<void> fetchUserDataAndPosts() async {
     try {
-      // 1. Fetch user data using fetchUserData()
       final userResponse = await _postService.fetchUserByUsername(
         widget.username,
       );
 
-      // 2. Fetch posts using fetchPosts()
       final postsResponse = await _postService.fetchPostsByUsername(
         widget.username,
         _page,

@@ -39,10 +39,14 @@ import 'dart:io';
 final logger = Logger();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-Future _firebaseBackgroundMessage(RemoteMessage message) async {
-  if (message.notification != null) {
-    logger.i('Notification receivedaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
-  }
+// Future _firebaseBackgroundMessage(RemoteMessage message) async {
+//   if (message.notification != null) {
+//     logger.i('Notification receivedaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+//   }
+// }
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  PushNotificationsFirebase.handleBackgroundMessage(message);
 }
 
 Future<void> requestPermissions() async {
@@ -166,7 +170,7 @@ void main() async {
     logger.i("Current FCM Token: $token");
   });
 
-  FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundMessage);
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   final prefs = await SharedPreferences.getInstance();
   final storedToken = prefs.getString('token');
