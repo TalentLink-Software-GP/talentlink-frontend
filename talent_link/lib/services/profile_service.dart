@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_profile_data.dart';
 import 'package:logger/logger.dart';
+import 'dart:typed_data';
 
 final String baseUrl = dotenv.env['BASE_URL']!;
 
@@ -89,6 +90,30 @@ class ProfileService {
 
     if (response.statusCode != 200) {
       throw Exception('Failed to update $field');
+    }
+  }
+
+  static Future<String> uploadAvatar(Uint8List bytes, String token) async {
+    try {
+      final uri = Uri.parse("$baseUrl/users/upload-avatar");
+      final request = http.MultipartRequest("POST", uri);
+      request.headers['Authorization'] = 'Bearer $token';
+      request.files.add(
+        http.MultipartFile.fromBytes('avatar', bytes, filename: 'avatar.jpg'),
+      );
+
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        final resBody = await response.stream.bytesToString();
+        final jsonResponse = json.decode(resBody);
+        return jsonResponse['avatarUrl'];
+      } else {
+        _logger.e('Failed to upload avatar:', error: response.statusCode);
+        throw Exception('Failed to upload avatar');
+      }
+    } catch (e) {
+      _logger.e('Upload error:', error: e);
+      throw Exception('Error uploading avatar: $e');
     }
   }
 }

@@ -1,90 +1,137 @@
 //new api all fixed i used api.env
 
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:talent_link/widgets/base_widgets/button.dart';
+import 'package:file_picker/file_picker.dart';
 import 'dart:convert';
 import 'dart:io';
-
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
-import 'package:talent_link/widgets/base_widgets/button.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 final String baseUrl = dotenv.env['BASE_URL']!;
 
-class Resume extends StatefulWidget {
+class ResumeWidget extends StatefulWidget {
   final String token;
   final VoidCallback onSkillsExtracted;
 
-  const Resume({
+  const ResumeWidget({
     super.key,
     required this.token,
     required this.onSkillsExtracted,
   });
 
   @override
-  State<Resume> createState() => _ResumeState();
+  State<ResumeWidget> createState() => _ResumeWidgetState();
 }
 
-class _ResumeState extends State<Resume> {
+class _ResumeWidgetState extends State<ResumeWidget> {
   String? uploadedCVUrl;
   bool _isUploading = false;
 
   Future<void> pickAndUploadPDF() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-    );
+    setState(() {
+      _isUploading = true;
+    });
 
-    if (result != null && result.files.single.path != null) {
-      File pdfFile = File(result.files.single.path!);
-      //192.168.1.7       final uri = Uri.parse("http://10.0.2.2:5000/api/users/upload-cv");
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
 
-      final uri = Uri.parse("$baseUrl/users/upload-cv");
+      if (result != null) {
+        final uri = Uri.parse("$baseUrl/users/upload-cv");
 
-      final request = http.MultipartRequest("POST", uri);
-      request.headers['Authorization'] = 'Bearer ${widget.token}';
-      request.files.add(await http.MultipartFile.fromPath('cv', pdfFile.path));
+        if (kIsWeb) {
+          // Web platform
+          if (result.files.single.bytes != null) {
+            final request = http.Request("POST", uri);
+            request.headers['Authorization'] = 'Bearer ${widget.token}';
 
-      setState(() {
-        _isUploading = true;
-      });
+            final formData = http.MultipartRequest("POST", uri);
+            formData.headers['Authorization'] = 'Bearer ${widget.token}';
+            formData.files.add(
+              http.MultipartFile.fromBytes(
+                'cv',
+                result.files.single.bytes!,
+                filename: result.files.single.name,
+              ),
+            );
 
-      try {
-        final response = await request.send();
+            final streamedResponse = await formData.send();
+            final response = await http.Response.fromStream(streamedResponse);
 
-        if (response.statusCode == 200) {
-          final resBody = await response.stream.bytesToString();
-          final jsonResponse = json.decode(resBody);
-          setState(() {
-            uploadedCVUrl = jsonResponse['cvUrl'];
-          });
+            if (response.statusCode == 200) {
+              final jsonResponse = json.decode(response.body);
+              setState(() {
+                uploadedCVUrl = jsonResponse['cvUrl'];
+              });
 
-          // Wait a moment for the backend to process the CV
-          await Future.delayed(Duration(seconds: 1));
+              await Future.delayed(Duration(seconds: 1));
+              widget.onSkillsExtracted();
 
-          // Force refresh skills and education
-          widget.onSkillsExtracted();
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('CV uploaded successfully. Extracting skills...'),
-            ),
-          );
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'CV uploaded successfully. Extracting skills...',
+                  ),
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Failed to upload CV')));
+            }
+          }
         } else {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Failed to upload CV')));
+          // Mobile platform
+          if (result.files.single.path != null) {
+            final request = http.MultipartRequest("POST", uri);
+            request.headers['Authorization'] = 'Bearer ${widget.token}';
+
+            File pdfFile = File(result.files.single.path!);
+            request.files.add(
+              await http.MultipartFile.fromPath('cv', pdfFile.path),
+            );
+
+            final streamedResponse = await request.send();
+            final response = await http.Response.fromStream(streamedResponse);
+
+            if (response.statusCode == 200) {
+              final jsonResponse = json.decode(response.body);
+              setState(() {
+                uploadedCVUrl = jsonResponse['cvUrl'];
+              });
+
+              await Future.delayed(Duration(seconds: 1));
+              widget.onSkillsExtracted();
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'CV uploaded successfully. Extracting skills...',
+                  ),
+                ),
+              );
+            } else {
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Failed to upload CV')));
+            }
+          }
         }
-      } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Upload error: $e')));
-      } finally {
-        setState(() {
-          _isUploading = false;
-        });
       }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Upload error: $e')));
+    } finally {
+      setState(() {
+        _isUploading = false;
+      });
     }
   }
 
@@ -155,7 +202,12 @@ class _ResumeState extends State<Resume> {
           else
             BaseButton(
               text: "Upload CV (PDF)",
-              onPressed: _isUploading ? () {} : pickAndUploadPDF,
+              onPressed:
+                  _isUploading
+                      ? () {}
+                      : () {
+                        pickAndUploadPDF();
+                      },
             ),
         ],
       ),

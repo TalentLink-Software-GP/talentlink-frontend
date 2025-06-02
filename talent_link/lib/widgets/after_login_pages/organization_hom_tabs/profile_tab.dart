@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/avatar_name.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/location_picker_screen.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/location_view.dart';
@@ -9,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:talent_link/utils/auth_utils.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:logger/logger.dart';
+import 'package:talent_link/widgets/appSetting/web_settings_page.dart';
 
 class ProfileTab extends StatefulWidget {
   final String token;
@@ -127,39 +129,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     horizontal: 16,
                   ),
                   child: Stack(
-                    children: [
-                      Center(child: AvatarName(token: widget.token)),
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.settings,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => SettingsPage(),
-                                ),
-                              );
-                            },
-                            tooltip: 'Settings',
-                          ),
-                        ),
-                      ),
-                    ],
+                    children: [Center(child: AvatarName(token: widget.token))],
                   ),
                 ),
               ),
@@ -270,14 +240,14 @@ class _ProfileTabState extends State<ProfileTab> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
-                          Icons.business_outlined,
+                          Icons.settings,
                           color: Theme.of(context).primaryColor,
                           size: 24,
                         ),
                       ),
                       const SizedBox(width: 12),
                       const Text(
-                        "Quick Actions",
+                        "Account Settings",
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -293,7 +263,13 @@ class _ProfileTabState extends State<ProfileTab> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => SettingsPage()),
+                        MaterialPageRoute(
+                          builder:
+                              (context) =>
+                                  kIsWeb
+                                      ? const WebSettingsPage()
+                                      : SettingsPage(),
+                        ),
                       );
                     },
                   ),

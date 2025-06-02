@@ -4,6 +4,7 @@ import 'package:talent_link/widgets/appSetting/logout.dart';
 import 'package:talent_link/widgets/appSetting/theremeProv.dart';
 import 'package:talent_link/widgets/web_layouts/web_form_components.dart';
 import 'package:talent_link/utils/responsive/responsive_layout.dart';
+import 'package:talent_link/utils/auth_utils.dart';
 
 class WebSettingsPage extends StatefulWidget {
   const WebSettingsPage({super.key});
@@ -37,6 +38,84 @@ class _WebSettingsPageState extends State<WebSettingsPage> {
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.logout, color: Theme.of(context).primaryColor),
+              const SizedBox(width: 12),
+              const Text('Logout'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Are you sure you want to logout?'),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'This will securely remove your FCM tokens and clear all session data.',
+                        style: TextStyle(color: Colors.blue[700], fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel', style: TextStyle(color: Colors.grey[600])),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                try {
+                  await AuthUtils.performCompleteLogout(context);
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error during logout: $e')),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF6B6B),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Logout',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         );
@@ -362,7 +441,7 @@ class _WebSettingsPageState extends State<WebSettingsPage> {
                                 'Sign out of your account',
                                 Icons.logout_outlined,
                                 () {
-                                  // Handle logout
+                                  _showLogoutDialog();
                                 },
                               ),
                               _buildWebDangerSetting(

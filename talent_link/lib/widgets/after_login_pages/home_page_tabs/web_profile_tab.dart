@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:talent_link/services/post_service.dart';
 import 'package:talent_link/services/profile_service.dart';
@@ -6,6 +7,7 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_card.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/resume.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/user_data.dart';
+import 'package:talent_link/widgets/appSetting/web_settings_page.dart';
 import 'package:talent_link/widgets/appSetting/seeting.dart';
 import 'package:talent_link/widgets/web_layouts/web_form_components.dart';
 import 'package:talent_link/models/user_profile_data.dart';
@@ -376,7 +378,11 @@ class _WebProfileTabState extends State<WebProfileTab>
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => SettingsPage(),
+                                      builder:
+                                          (context) =>
+                                              kIsWeb
+                                                  ? const WebSettingsPage()
+                                                  : SettingsPage(),
                                     ),
                                   );
                                 },
@@ -453,7 +459,7 @@ class _WebProfileTabState extends State<WebProfileTab>
                     const SizedBox(height: 16),
 
                     // Resume Section
-                    Resume(
+                    ResumeWidget(
                       token: widget.token,
                       onSkillsExtracted: fetchProfileData,
                     ),

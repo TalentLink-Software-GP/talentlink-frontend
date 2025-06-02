@@ -656,7 +656,7 @@ class _ProfileTabState extends State<ProfileTab>
                   userProfileData!.languages,
                   'languages',
                 ),
-                Resume(
+                ResumeWidget(
                   token: widget.token,
                   onSkillsExtracted: fetchProfileData,
                 ),

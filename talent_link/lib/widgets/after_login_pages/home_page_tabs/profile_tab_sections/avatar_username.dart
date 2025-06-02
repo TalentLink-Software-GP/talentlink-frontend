@@ -2,14 +2,19 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:logger/logger.dart';
 import 'package:talent_link/widgets/appSetting/seeting.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:talent_link/services/profile_service.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/image_picker_interface.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/web_image_picker.dart';
 
 final String baseUrl = dotenv.env['BASE_URL']!;
 
@@ -24,10 +29,13 @@ class AvatarUsername extends StatefulWidget {
 class _AvatarUsernameState extends State<AvatarUsername> {
   String? uploadedImageUrl;
   final _logger = Logger();
+  bool isLoading = false;
+  late final ImagePickerInterface _imagePicker;
 
   @override
   void initState() {
     super.initState();
+    _imagePicker = WebImagePicker;
     fetchUserData();
   }
 
@@ -54,6 +62,53 @@ class _AvatarUsernameState extends State<AvatarUsername> {
       }
     } catch (e) {
       _logger.e('Error fetching user data:', error: e);
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final bytes = await _imagePicker.pickImage();
+      if (bytes != null) {
+        await _uploadImage(bytes);
+      }
+    } catch (e) {
+      _logger.e("Error picking image", error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
+      }
+    }
+  }
+
+  Future<void> _uploadImage(Uint8List bytes) async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+
+      final result = await ProfileService.uploadAvatar(bytes, widget.token);
+
+      setState(() {
+        uploadedImageUrl = result;
+        isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile picture updated successfully')),
+        );
+      }
+    } catch (e) {
+      _logger.e("Error uploading image", error: e);
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error uploading image: $e')));
+      }
     }
   }
 
@@ -87,15 +142,7 @@ class _AvatarUsernameState extends State<AvatarUsername> {
                 title: Text('Update Profile Picture'),
                 onTap: () async {
                   Navigator.pop(context);
-                  File? image = await pickImage();
-                  if (image != null) {
-                    String? imageUrl = await uploadImageToBackend(image);
-                    if (imageUrl != null) {
-                      setState(() {
-                        uploadedImageUrl = imageUrl;
-                      });
-                    }
-                  }
+                  await _pickImage();
                 },
               ),
               ListTile(
@@ -109,43 +156,6 @@ class _AvatarUsernameState extends State<AvatarUsername> {
             ],
           ),
     );
-  }
-
-  Future<File?> pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-    );
-    if (pickedFile != null) {
-      return File(pickedFile.path);
-    }
-    return null;
-  }
-
-  Future<String?> uploadImageToBackend(File imageFile) async {
-    final uri = Uri.parse("$baseUrl/users/upload-avatar");
-
-    final request = http.MultipartRequest("POST", uri);
-    request.headers['Authorization'] = 'Bearer ${widget.token}';
-
-    request.files.add(
-      await http.MultipartFile.fromPath('avatar', imageFile.path),
-    );
-
-    try {
-      final response = await request.send();
-
-      if (response.statusCode == 200) {
-        final resBody = await response.stream.bytesToString();
-        final jsonResponse = json.decode(resBody);
-        return jsonResponse['avatarUrl'];
-      } else {
-        _logger.e('Failed to upload:', error: response.statusCode);
-        return null;
-      }
-    } catch (e) {
-      _logger.e('Upload error:', error: e);
-      return null;
-    }
   }
 
   Future<void> removeAvatarFromBackend() async {
@@ -178,44 +188,79 @@ class _AvatarUsernameState extends State<AvatarUsername> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.transparent,
-            border: Border.all(color: Colors.white, width: 2),
-          ),
-          child: SizedBox(
-            height: 110,
-            width: 110,
-            child: FloatingActionButton(
-              heroTag: "avatar_fab",
-              onPressed: showAvatarOptions,
-              elevation: 0,
-              backgroundColor: Colors.transparent,
-              shape: const CircleBorder(),
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 2,
-                  ),
-                ),
-                child: CircleAvatar(
-                  backgroundColor: Colors.white.withOpacity(0.1),
-                  backgroundImage:
-                      uploadedImageUrl != null
-                          ? NetworkImage(uploadedImageUrl!)
-                          : const AssetImage(
-                                'assets/images/avatarPlaceholder.jpg',
+        Stack(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.transparent,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: SizedBox(
+                height: 110,
+                width: 110,
+                child: FloatingActionButton(
+                  heroTag: "avatar_fab",
+                  onPressed: showAvatarOptions,
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  shape: const CircleBorder(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 2,
+                      ),
+                    ),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.white.withOpacity(0.1),
+                      backgroundImage:
+                          uploadedImageUrl != null
+                              ? NetworkImage(uploadedImageUrl!)
+                              : null,
+                      radius: 50,
+                      child:
+                          uploadedImageUrl == null
+                              ? const Icon(
+                                Icons.person,
+                                size: 50,
+                                color: Colors.grey,
                               )
-                              as ImageProvider,
-                  radius: 50,
+                              : null,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon:
+                      isLoading
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                          : const Icon(Icons.camera_alt, color: Colors.white),
+                  onPressed: isLoading ? null : _pickImage,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         Text(
@@ -239,7 +284,7 @@ class _AvatarUsernameState extends State<AvatarUsername> {
             ],
           ),
 
-          //here 
+          //here
         ),
       ],
     );
