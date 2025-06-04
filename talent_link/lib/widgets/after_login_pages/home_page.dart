@@ -13,6 +13,7 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/notifications/notifications_for_user.dart';
 import 'package:talent_link/widgets/appSetting/logout.dart';
 import 'package:talent_link/widgets/appSetting/seeting.dart';
+import 'package:talent_link/widgets/freeLancing/freelanceFeed.dart';
 import 'package:talent_link/widgets/login_widgets/login_page.dart';
 import '../after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_creator.dart';
 import 'package:logger/logger.dart';
@@ -190,6 +191,7 @@ class _HomePageState extends State<HomePage>
               PostCreator(token: widget.data),
               JobsScreenTab(token: widget.data),
               MapScreen(token: widget.data),
+              FreelanceFeed(),
               ProfileTab(token: widget.data, onLogout: _handleLogout),
             ],
           ),
@@ -236,6 +238,11 @@ class _HomePageState extends State<HomePage>
                 icon: Icon(Icons.map_outlined),
                 activeIcon: Icon(Icons.map),
                 label: "Map",
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.work_outline),
+                activeIcon: Icon(Icons.work_history),
+                label: "Freelance",
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person_outline),

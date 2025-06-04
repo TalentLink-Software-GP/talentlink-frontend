@@ -19,6 +19,7 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab
 import 'package:talent_link/services/rating_service.dart';
 import 'package:talent_link/widgets/shared/rating_display.dart';
 
+
 class ProfileTab extends StatefulWidget {
   final String token;
   const ProfileTab({super.key, required this.token});
@@ -44,6 +45,7 @@ class _ProfileTabState extends State<ProfileTab> {
   double? myRating;
   bool isRatingLoading = false;
   late RatingService _ratingService;
+
 
   @override
   void initState() {
@@ -148,7 +150,6 @@ class _ProfileTabState extends State<ProfileTab> {
       setState(() => isRatingLoading = false);
     }
   }
-
   Widget _buildCountWidget(int count, String label, bool isFollowers) {
     return GestureDetector(
       onTap: () => _showFollowList(context, isFollowers),
