@@ -10,6 +10,7 @@ import 'package:talent_link/utils/auth_utils.dart';
 import 'package:talent_link/widgets/web_layouts/web_navigation.dart';
 import 'package:talent_link/utils/responsive/responsive_layout.dart';
 import 'package:logger/logger.dart';
+import 'package:talent_link/widgets/freeLancing/freelanceFeed.dart';
 
 // Import mobile versions for fallback
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/jobs_screen_tab.dart';
@@ -57,6 +58,11 @@ class _WebHomePageState extends State<WebHomePage>
       icon: Icons.map_outlined,
       activeIcon: Icons.map,
       label: "Map",
+    ),
+    NavigationItem(
+      icon: Icons.work_outline,
+      activeIcon: Icons.work_history,
+      label: "Freelance",
     ),
     NavigationItem(
       icon: Icons.person_outline,
@@ -239,6 +245,7 @@ class _WebHomePageState extends State<WebHomePage>
             _buildWebPostCreator(),
             _buildWebJobsScreen(),
             _buildWebMapScreen(),
+            _buildWebFreelanceFeed(),
             _buildWebProfileTab(),
           ],
         ),
@@ -256,6 +263,10 @@ class _WebHomePageState extends State<WebHomePage>
 
   Widget _buildWebMapScreen() {
     return WebMapScreen(token: widget.data);
+  }
+
+  Widget _buildWebFreelanceFeed() {
+    return FreelanceFeed();
   }
 
   Widget _buildWebProfileTab() {

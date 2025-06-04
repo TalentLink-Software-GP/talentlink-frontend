@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:talent_link/services/post_service.dart';
 import 'package:talent_link/services/profile_service.dart';
+import 'package:talent_link/services/rating_service.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/avatar_username.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_card.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/resume.dart';
@@ -12,6 +13,7 @@ import 'package:talent_link/widgets/appSetting/seeting.dart';
 import 'package:talent_link/widgets/web_layouts/web_form_components.dart';
 import 'package:talent_link/models/user_profile_data.dart';
 import 'package:logger/logger.dart';
+import 'package:talent_link/widgets/shared/rating_display.dart';
 
 class WebProfileTab extends StatefulWidget {
   final VoidCallback onLogout;
@@ -27,6 +29,7 @@ class _WebProfileTabState extends State<WebProfileTab>
     with SingleTickerProviderStateMixin {
   final _logger = Logger();
   late PostService _postService;
+  late RatingService _ratingService;
   UserProfileData? userProfileData;
   Map<String, dynamic>? userData;
   bool isLoading = true;
@@ -39,6 +42,10 @@ class _WebProfileTabState extends State<WebProfileTab>
   String? uploadedImageUrl;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  double currentRating = 0;
+  int ratingCount = 0;
+  double? myRating;
+  bool isRatingLoading = false;
 
   @override
   void initState() {
@@ -53,8 +60,10 @@ class _WebProfileTabState extends State<WebProfileTab>
     );
     fetchProfileData();
     _postService = PostService(widget.token);
+    _ratingService = RatingService(token: widget.token);
     fetchUserDataAndPosts();
     _animationController.forward();
+    _loadMyRating();
   }
 
   @override
@@ -321,6 +330,43 @@ class _WebProfileTabState extends State<WebProfileTab>
     }
   }
 
+  Future<void> _loadMyRating() async {
+    try {
+      final rating = await _ratingService.getMyRating();
+      setState(() {
+        currentRating = rating.rating;
+        ratingCount = rating.count;
+        myRating = rating.userRating;
+      });
+    } catch (e) {
+      setState(() {
+        currentRating = 0;
+        ratingCount = 0;
+        myRating = null;
+      });
+    }
+  }
+
+  Future<void> _updateMyRating(double ratingValue) async {
+    setState(() => isRatingLoading = true);
+    try {
+      await _ratingService.updateRating(
+        targetUsername: userData?['username'] ?? '',
+        ratingValue: ratingValue,
+      );
+      await _loadMyRating();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Rating updated successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update rating: $e')));
+    } finally {
+      setState(() => isRatingLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -391,6 +437,15 @@ class _WebProfileTabState extends State<WebProfileTab>
                           ),
                           const SizedBox(height: 16),
                           AvatarUsername(token: widget.token),
+                          const SizedBox(height: 16),
+                          RatingDisplay(
+                            averageRating: currentRating,
+                            ratingCount: ratingCount,
+                            myRating: myRating,
+                            isLoading: isRatingLoading,
+                            allowUpdate: true,
+                            onRate: _updateMyRating,
+                          ),
                           const SizedBox(height: 16),
                           UserData(),
                         ],
