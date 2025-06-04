@@ -8,11 +8,13 @@ class FreelancePostCard extends StatelessWidget {
   final String username;
   final String content;
   final String date;
+  final String userId;
 
   const FreelancePostCard({
     required this.username,
     required this.content,
     required this.date,
+    required this.userId,
     super.key,
   });
 
@@ -72,7 +74,7 @@ class FreelancePostCard extends StatelessWidget {
         builder:
             (_) => ChatPage(
               currentUserId: userid,
-              peerUserId: userid,
+              peerUserId: userId,
               peerUsername: username,
               currentuserAvatarUrl: currentUserAvatarUrl,
               token: token,
