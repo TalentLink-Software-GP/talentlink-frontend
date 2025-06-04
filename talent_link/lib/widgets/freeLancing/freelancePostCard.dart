@@ -86,47 +86,100 @@ class FreelancePostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return FutureBuilder<String>(
       future: getCurrentUsername(),
       builder: (context, snapshot) {
         final isSelf = snapshot.data == username;
 
         return Card(
-          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                GestureDetector(
-                  onTap: () => _goToUserProfile(context),
-                  child: Text(
-                    username,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                      decoration: TextDecoration.underline,
-                    ),
+          elevation: 2,
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          color: theme.cardColor,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.dividerColor),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: theme.primaryColor.withOpacity(0.1),
+                        child: Text(
+                          username[0].toUpperCase(),
+                          style: TextStyle(
+                            color: theme.primaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _goToUserProfile(context),
+                          child: Text(
+                            username,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: theme.primaryColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        date,
+                        style: TextStyle(
+                          color: theme.textTheme.bodySmall?.color,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(content),
-                const SizedBox(height: 8),
-                Text(
-                  date,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-                const SizedBox(height: 8),
-                if (!isSelf)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _goToChatPage(context),
-                      icon: const Icon(Icons.contact_page),
-                      label: const Text("Contact"),
-                    ),
+                  const SizedBox(height: 12),
+                  Text(
+                    content,
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
                   ),
-              ],
+                  const SizedBox(height: 16),
+                  if (!isSelf)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _goToChatPage(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.primaryColor,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        icon: const Icon(
+                          Icons.message_outlined,
+                          size: 20,
+                          color: Colors.white,
+                        ),
+                        label: const Text(
+                          "Contact",
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         );
