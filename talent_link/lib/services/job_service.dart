@@ -65,6 +65,9 @@ class JobService {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((json) => Job.fromJson(json)).toList();
       } else {
+        print(
+          'JobService: status=${response.statusCode}, body=${response.body}',
+        );
         throw Exception('Failed to load jobs');
       }
     } catch (e) {
@@ -127,7 +130,7 @@ class JobService {
       }
     } catch (e) {
       _logger.e("Error fetching user jobs:", error: e);
-      rethrow;
+      return [];
     }
   }
 

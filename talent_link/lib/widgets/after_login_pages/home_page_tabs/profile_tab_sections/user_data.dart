@@ -17,9 +17,8 @@ class UserData extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.location_on),
             SizedBox(width: 8),
-            TextButton(
+            ElevatedButton.icon(
               onPressed: () async {
                 final userId = await getCurrentUserid();
 
@@ -39,16 +38,25 @@ class UserData extends StatelessWidget {
                   print("application.userId is null!");
                 }
               },
-              style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).primaryColor,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
+              icon: Icon(Icons.picture_as_pdf, color: Colors.white),
+              label: const Text(
+                "View CV",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontSize: 16,
                 ),
               ),
-              child: const Text(
-                "View Cv",
-                style: TextStyle(fontWeight: FontWeight.w600),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                elevation: 2,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],

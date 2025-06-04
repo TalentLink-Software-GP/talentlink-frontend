@@ -16,6 +16,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:talent_link/services/post_service.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_card.dart';
+import 'package:talent_link/services/rating_service.dart';
+import 'package:talent_link/widgets/shared/rating_display.dart';
+
 
 class ProfileTab extends StatefulWidget {
   final String token;
@@ -37,6 +40,12 @@ class _ProfileTabState extends State<ProfileTab> {
   late final LocationService _locationService;
   late PostService _postService;
   List<Map<String, dynamic>> orgPosts = [];
+  double currentRating = 0;
+  int ratingCount = 0;
+  double? myRating;
+  bool isRatingLoading = false;
+  late RatingService _ratingService;
+
 
   @override
   void initState() {
@@ -49,9 +58,10 @@ class _ProfileTabState extends State<ProfileTab> {
       token: widget.token,
     );
     _postService = PostService(widget.token);
-
     _fetchLocation();
     _fetchOrganizationPosts();
+    _ratingService = RatingService(token: widget.token);
+    _loadMyRating();
   }
 
   Future<void> _fetchLocation() async {
@@ -104,6 +114,42 @@ class _ProfileTabState extends State<ProfileTab> {
     }
   }
 
+  Future<void> _loadMyRating() async {
+    try {
+      final rating = await _ratingService.getMyRating();
+      setState(() {
+        currentRating = rating.rating;
+        ratingCount = rating.count;
+        myRating = rating.userRating;
+      });
+    } catch (e) {
+      setState(() {
+        currentRating = 0;
+        ratingCount = 0;
+        myRating = null;
+      });
+    }
+  }
+
+  Future<void> _updateMyRating(double ratingValue) async {
+    setState(() => isRatingLoading = true);
+    try {
+      await _ratingService.updateRating(
+        targetUsername: username,
+        ratingValue: ratingValue,
+      );
+      await _loadMyRating();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Rating updated successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update rating: $e')));
+    } finally {
+      setState(() => isRatingLoading = false);
+    }
+  }
   Widget _buildCountWidget(int count, String label, bool isFollowers) {
     return GestureDetector(
       onTap: () => _showFollowList(context, isFollowers),
@@ -180,22 +226,16 @@ class _ProfileTabState extends State<ProfileTab> {
     }
 
     // Organization Info Cards with default values if missing
-    final desc = organizationData?['description']?.toString();
-    final aboutValue =
-        (desc != null && desc.isNotEmpty) ? desc : 'No description provided';
-    final industry = organizationData?['industry']?.toString();
+    final desc = organizationData?['description']?.toString() ?? '';
+    final aboutValue = desc.isNotEmpty ? desc : 'No description provided';
+    final industry = organizationData?['industry']?.toString() ?? '';
     final industryValue =
-        (industry != null && industry.isNotEmpty)
-            ? industry
-            : 'No industry provided';
-    final website = organizationData?['website']?.toString();
-    final websiteValue =
-        (website != null && website.isNotEmpty)
-            ? website
-            : 'No website provided';
-    final email = organizationData?['email']?.toString();
-    final emailValue =
-        (email != null && email.isNotEmpty) ? email : 'No email provided';
+        industry.isNotEmpty ? industry : 'No industry provided';
+    final website = organizationData?['website']?.toString() ?? '';
+    final websiteValue = website.isNotEmpty ? website : 'No website provided';
+    final email = organizationData?['email']?.toString() ?? '';
+    final emailValue = email.isNotEmpty ? email : 'No email provided';
+    final orgUsername = username ?? '';
 
     return Container(
       decoration: BoxDecoration(
@@ -260,7 +300,15 @@ class _ProfileTabState extends State<ProfileTab> {
               ),
             ),
             const SizedBox(height: 24),
-
+            // Rating section above About
+            RatingDisplay(
+              averageRating: currentRating,
+              ratingCount: ratingCount,
+              myRating: myRating,
+              isLoading: isRatingLoading,
+              allowUpdate: true,
+              onRate: (ratingValue) => _updateMyRating(ratingValue),
+            ),
             // Location Section
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -391,11 +439,15 @@ class _ProfileTabState extends State<ProfileTab> {
                   ),
                   orgPosts.isNotEmpty
                       ? PostCard(
-                        postId: orgPosts[0]['id'],
-                        postText: orgPosts[0]['text'],
-                        authorName: orgPosts[0]['author'] ?? '',
-                        timestamp: orgPosts[0]['time'],
-                        authorAvatarUrl: orgPosts[0]['avatarUrl'] ?? '',
+                        postId: orgPosts[0]['id']?.toString() ?? '',
+                        postText: orgPosts[0]['text']?.toString() ?? '',
+                        authorName: orgPosts[0]['author']?.toString() ?? '',
+                        timestamp:
+                            orgPosts[0]['time'] != null
+                                ? DateTime.parse(orgPosts[0]['time'].toString())
+                                : DateTime.now(),
+                        authorAvatarUrl:
+                            orgPosts[0]['avatarUrl']?.toString() ?? '',
                         isOwner: orgPosts[0]['isOwner'] ?? false,
                         isLiked: orgPosts[0]['isLiked'] ?? false,
                         likeCount: orgPosts[0]['likeCount'] ?? 0,
@@ -404,7 +456,7 @@ class _ProfileTabState extends State<ProfileTab> {
                         currentUserAvatar: '',
                         currentUserName: '',
                         token: widget.token,
-                        username: orgPosts[0]['author'] ?? '',
+                        username: orgPosts[0]['author']?.toString() ?? '',
                         onDelete: null,
                         onUpdate: null,
                         initialComments: List<Map<String, dynamic>>.from(
