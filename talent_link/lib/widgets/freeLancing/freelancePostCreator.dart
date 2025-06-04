@@ -22,26 +22,68 @@ class _FreelancePostCreatorState extends State<FreelancePostCreator> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Card(
-      margin: const EdgeInsets.all(12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            TextField(
-              controller: _controller,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: "Describe your freelance project...",
-                border: OutlineInputBorder(),
+      elevation: 2,
+      margin: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: theme.cardColor,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: theme.dividerColor),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _controller,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: "Describe your freelance project...",
+                  hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.hintColor,
+                  ),
+                  filled: true,
+                  fillColor: theme.cardColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: theme.dividerColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: theme.dividerColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: theme.primaryColor),
+                  ),
+                ),
+                style: theme.textTheme.bodyMedium,
               ),
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: _handlePost,
-              child: const Text("Post Freelance Request"),
-            ),
-          ],
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _handlePost,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.primaryColor,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: Text(
+                  "Post Freelance Request",
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
