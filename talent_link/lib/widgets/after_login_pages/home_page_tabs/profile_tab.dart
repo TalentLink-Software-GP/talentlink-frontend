@@ -14,6 +14,8 @@ import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab
 import 'package:talent_link/widgets/appSetting/seeting.dart';
 import 'package:talent_link/models/user_profile_data.dart';
 import 'package:logger/logger.dart';
+import 'package:talent_link/services/rating_service.dart';
+import 'package:talent_link/widgets/shared/rating_display.dart';
 
 final String baseUrl = dotenv.env['BASE_URL']!;
 
@@ -47,6 +49,11 @@ class _ProfileTabState extends State<ProfileTab>
   bool isFollowLoading = false;
   int followersCount = 0;
   int followingCount = 0;
+  double currentRating = 0;
+  int ratingCount = 0;
+  double? myRating;
+  bool isRatingLoading = false;
+  late RatingService _ratingService;
 
   @override
   void initState() {
@@ -64,6 +71,8 @@ class _ProfileTabState extends State<ProfileTab>
     fetchUserDataAndPosts();
     _animationController.forward();
     fetchFollowerStats();
+    _ratingService = RatingService(token: widget.token);
+    _loadMyRating();
   }
 
   @override
@@ -448,6 +457,43 @@ class _ProfileTabState extends State<ProfileTab>
     }
   }
 
+  Future<void> _loadMyRating() async {
+    try {
+      final rating = await _ratingService.getMyRating();
+      setState(() {
+        currentRating = rating.rating;
+        ratingCount = rating.count;
+        myRating = rating.userRating;
+      });
+    } catch (e) {
+      setState(() {
+        currentRating = 0;
+        ratingCount = 0;
+        myRating = null;
+      });
+    }
+  }
+
+  Future<void> _updateMyRating(double ratingValue) async {
+    setState(() => isRatingLoading = true);
+    try {
+      await _ratingService.updateRating(
+        targetUsername: userData?['username'] ?? '',
+        ratingValue: ratingValue,
+      );
+      await _loadMyRating();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Rating updated successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update rating: $e')));
+    } finally {
+      setState(() => isRatingLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading || userProfileData == null) {
@@ -560,6 +606,15 @@ class _ProfileTabState extends State<ProfileTab>
                       ),
                     ),
                   ),
+                ),
+                const SizedBox(height: 16),
+                RatingDisplay(
+                  averageRating: currentRating,
+                  ratingCount: ratingCount,
+                  myRating: myRating,
+                  isLoading: isRatingLoading,
+                  allowUpdate: true,
+                  onRate: _updateMyRating,
                 ),
                 const SizedBox(height: 16),
                 UserData(),

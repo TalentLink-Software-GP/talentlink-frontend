@@ -152,30 +152,42 @@ class _PostCardState extends State<PostCard>
 
   void _showEditDialog() {
     final controller = TextEditingController(text: widget.postText);
+    String currentText = controller.text;
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Edit Post'),
-            content: TextField(
-              controller: controller,
-              maxLines: 3,
-              decoration: const InputDecoration(border: OutlineInputBorder()),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+      builder: (context) {
+        return StatefulBuilder(
+          builder:
+              (context, setState) => AlertDialog(
+                title: const Text('Edit Post'),
+                content: TextField(
+                  controller: controller,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (val) {
+                    setState(() {
+                      currentText = val;
+                    });
+                  },
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed:
+                        widget.onUpdate != null && currentText.trim().isNotEmpty
+                            ? () => widget.onUpdate!(currentText)
+                            : null,
+                    child: const Text('Save'),
+                  ),
+                ],
               ),
-              ElevatedButton(
-                onPressed: () {
-                  widget.onUpdate!(controller.text);
-                  Navigator.pop(context);
-                },
-                child: const Text('Save'),
-              ),
-            ],
-          ),
+        );
+      },
     );
   }
 

@@ -6,6 +6,7 @@ import 'package:talent_link/models/user_profile_data.dart';
 import 'package:talent_link/services/application_service.dart';
 import 'package:talent_link/services/post_service.dart';
 import 'package:talent_link/services/profile_service.dart';
+import 'package:talent_link/services/rating_service.dart';
 import 'package:talent_link/utils/pdfViewr.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/followers_list_screen.dart';
 import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_card.dart';
@@ -32,6 +33,7 @@ class _ProfileWidgetForAnotherUsersState
     extends State<ProfileWidgetForAnotherUsers> {
   final _logger = Logger();
   late PostService _postService;
+  late RatingService _ratingService;
   Map<String, dynamic>? userData;
   Map<String, dynamic>? organizationData;
   Map<String, bool> expandedSections = {};
@@ -50,11 +52,17 @@ class _ProfileWidgetForAnotherUsersState
   int followersCount = 0;
   int followingCount = 0;
   bool isOrganization = false;
+  double currentRating = 0;
+  int ratingCount = 0;
+  bool hasRated = false;
+  bool isRatingLoading = false;
+  double? myRating;
 
   @override
   void initState() {
     super.initState();
     _postService = PostService(widget.token);
+    _ratingService = RatingService(token: widget.token);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
     });
@@ -77,6 +85,7 @@ class _ProfileWidgetForAnotherUsersState
         try {
           await Future.wait([fetchProfileData(), fetchFollowerStats()]);
           await checkFollowStatus();
+          await _loadRating();
           setState(() {
             isOrganization = false;
             _isLoading = false;
@@ -90,6 +99,7 @@ class _ProfileWidgetForAnotherUsersState
       // If we reach here, user loading failed - try organization
       _logger.i("User not found, trying as organization");
       await _loadOrganizationData();
+      await _loadRating();
       setState(() {
         isOrganization = true;
         _isLoading = false;
@@ -286,6 +296,63 @@ class _ProfileWidgetForAnotherUsersState
           isFollowLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _loadRating() async {
+    try {
+      String targetUsername = widget.username;
+      if (isOrganization &&
+          organizationData != null &&
+          organizationData!['username'] != null) {
+        targetUsername = organizationData!['username'];
+      } else if (!isOrganization &&
+          userData != null &&
+          userData!['username'] != null) {
+        targetUsername = userData!['username'];
+      }
+      final rating = await _ratingService.getRatingByUsername(targetUsername);
+      setState(() {
+        currentRating = rating.rating;
+        ratingCount = rating.count;
+        myRating = rating.userRating;
+      });
+    } catch (e) {
+      _logger.e('Error loading rating:', error: e);
+    }
+  }
+
+  Future<void> _updateRating(double rating) async {
+    if (isRatingLoading) return;
+
+    debugPrint(
+      'Attempting to rate user: targetUsername=${widget.username}, rating=$rating',
+    );
+    if (widget.username == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: target username is null.')),
+      );
+      return;
+    }
+
+    setState(() => isRatingLoading = true);
+    try {
+      await _ratingService.updateRating(
+        targetUsername: widget.username,
+        ratingValue: rating,
+      );
+      await _loadRating();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Rating updated successfully')),
+      );
+    } catch (e, stack) {
+      debugPrint('Failed to update rating: $e');
+      debugPrint('Stack trace: $stack');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update rating: $e')));
+    } finally {
+      setState(() => isRatingLoading = false);
     }
   }
 
@@ -555,6 +622,130 @@ class _ProfileWidgetForAnotherUsersState
     );
   }
 
+  Widget _buildRatingStars(double rating) {
+    List<Widget> stars = [];
+    for (int i = 1; i <= 5; i++) {
+      if (rating >= i) {
+        stars.add(
+          Icon(Icons.star, color: Theme.of(context).primaryColor, size: 32),
+        );
+      } else if (rating >= i - 0.5) {
+        stars.add(
+          Icon(
+            Icons.star_half,
+            color: Theme.of(context).primaryColor,
+            size: 32,
+          ),
+        );
+      } else {
+        stars.add(
+          Icon(
+            Icons.star_border,
+            color: Theme.of(context).primaryColor,
+            size: 32,
+          ),
+        );
+      }
+    }
+    return Row(mainAxisAlignment: MainAxisAlignment.center, children: stars);
+  }
+
+  Widget _buildRatingSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).primaryColor.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.star,
+                    color: Theme.of(context).primaryColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Rating',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Column(
+              children: [
+                _buildRatingStars(currentRating),
+                const SizedBox(height: 8),
+                Text(
+                  currentRating.toStringAsFixed(1),
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                Text(
+                  '$ratingCount ${ratingCount == 1 ? 'rating' : 'ratings'}',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Always allow updating the rating
+            const Divider(),
+            const SizedBox(height: 8),
+            Text(
+              myRating != null ? 'Update your rating' : 'Rate this user',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (index) {
+                return IconButton(
+                  icon: Icon(
+                    Icons.star,
+                    color:
+                        (myRating ?? 0) > index
+                            ? Theme.of(context).primaryColor
+                            : Colors.grey[400],
+                    size: 32,
+                  ),
+                  onPressed:
+                      isRatingLoading ? null : () => _updateRating(index + 1.0),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -747,51 +938,58 @@ class _ProfileWidgetForAnotherUsersState
                                     ],
                                   ),
                                   if (!isOrganization) ...[
-                                    Row(
-                                      children: [
-                                        TextButton(
-                                          onPressed: () async {
-                                            final username = widget.username;
-                                            if (username != null) {
-                                              final cvUrl =
-                                                  await ApplicationService.getUserCvByUsername(
-                                                    username,
-                                                  );
-                                              if (cvUrl != null &&
-                                                  cvUrl.isNotEmpty) {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder:
-                                                        (context) =>
-                                                            PDFViewerPage(
-                                                              url: cvUrl,
-                                                            ),
-                                                  ),
-                                                );
-                                              } else {
-                                                print('No CV URL found');
-                                              }
-                                            } else {
-                                              print("username is null!");
-                                            }
-                                          },
-                                          style: TextButton.styleFrom(
-                                            foregroundColor:
-                                                Theme.of(context).primaryColor,
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 20,
-                                              vertical: 12,
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            "View CV",
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                    ElevatedButton.icon(
+                                      onPressed: () async {
+                                        final username = widget.username;
+                                        if (username != null) {
+                                          final cvUrl =
+                                              await ApplicationService.getUserCvByUsername(
+                                                username,
+                                              );
+                                          if (cvUrl != null &&
+                                              cvUrl.isNotEmpty) {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder:
+                                                    (context) => PDFViewerPage(
+                                                      url: cvUrl,
+                                                    ),
+                                              ),
+                                            );
+                                          } else {
+                                            print('No CV URL found');
+                                          }
+                                        } else {
+                                          print("username is null!");
+                                        }
+                                      },
+                                      icon: Icon(
+                                        Icons.picture_as_pdf,
+                                        color: Colors.white,
+                                      ),
+                                      label: const Text(
+                                        "View CV",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            Theme.of(context).primaryColor,
+                                        elevation: 2,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 24,
+                                          vertical: 14,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
                                           ),
                                         ),
-                                      ],
+                                      ),
                                     ),
                                   ],
                                 ],
@@ -916,6 +1114,7 @@ class _ProfileWidgetForAnotherUsersState
 
                       // Content based on type
                       if (isOrganization) ...[
+                        _buildRatingSection(),
                         // Organization Info Cards
                         _buildOrganizationInfoCard(
                           'About',
@@ -948,6 +1147,7 @@ class _ProfileWidgetForAnotherUsersState
                       ] else ...[
                         // User Profile Sections
                         if (userProfileData != null) ...[
+                          _buildRatingSection(),
                           Container(
                             margin: const EdgeInsets.symmetric(
                               horizontal: 16,
