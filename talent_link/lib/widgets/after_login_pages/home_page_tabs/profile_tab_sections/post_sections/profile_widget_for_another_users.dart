@@ -109,6 +109,7 @@ class _ProfileWidgetForAnotherUsersState
       );
       setState(() {
         organizationData = orgData;
+        print('Organization Data: $organizationData');
         fullName = orgData['name'];
         uploadedImageUrl = orgData['avatarUrl'];
         username = orgData['username'];
@@ -705,6 +706,27 @@ class _ProfileWidgetForAnotherUsersState
                                       ),
                                     ),
                                   ),
+                                  Padding(
+                                    padding: EdgeInsets.only(top: 10),
+
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        _buildCountWidget(
+                                          followersCount,
+                                          'Followers',
+                                          true,
+                                        ),
+                                        const SizedBox(width: 24),
+                                        _buildCountWidget(
+                                          followingCount,
+                                          'Following',
+                                          false,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ],
                                 const SizedBox(height: 16),
                                 if (!isOrganization) ...[
@@ -896,8 +918,9 @@ class _ProfileWidgetForAnotherUsersState
                       if (isOrganization) ...[
                         // Organization Info Cards
                         _buildOrganizationInfoCard(
-                          "About",
-                          organizationData?['description'],
+                          'About',
+                          organizationData?['description'] ??
+                              'No description provided',
                           Icons.description_outlined,
                         ),
                         _buildOrganizationInfoCard(

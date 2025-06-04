@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/followers_list_screen.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/avatar_name.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/location_picker_screen.dart';
 import 'package:talent_link/widgets/after_login_pages/organization_hom_tabs/profile_tab_items/location_view.dart';
@@ -11,6 +12,10 @@ import 'package:talent_link/utils/auth_utils.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:logger/logger.dart';
 import 'package:talent_link/widgets/appSetting/web_settings_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:talent_link/services/post_service.dart';
+import 'package:talent_link/widgets/after_login_pages/home_page_tabs/profile_tab_sections/post_sections/post_card.dart';
 
 class ProfileTab extends StatefulWidget {
   final String token;
@@ -25,34 +30,118 @@ class _ProfileTabState extends State<ProfileTab> {
   double lat = 32.150146;
   double lag = 35.253834;
   bool isLoading = true;
-
+  int followersCount = 0;
+  int followingCount = 0;
+  String username = '';
+  Map<String, dynamic>? organizationData;
   late final LocationService _locationService;
+  late PostService _postService;
+  List<Map<String, dynamic>> orgPosts = [];
 
   @override
   void initState() {
     super.initState();
+    final decodedToken = JwtDecoder.decode(widget.token);
+    username = decodedToken['username'];
     _locationService = LocationService(
       //192.168.1.7        baseUrl: 'http://10.0.2.2:5000',
       // baseUrl: 'http://192.168.1.7:5000',
       token: widget.token,
     );
+    _postService = PostService(widget.token);
+
     _fetchLocation();
+    _fetchOrganizationPosts();
   }
 
   Future<void> _fetchLocation() async {
     try {
       final decodedToken = JwtDecoder.decode(widget.token);
-      final username = decodedToken['username'];
+      username = decodedToken['username'];
       final location = await _locationService.getLocationByUsername(username);
       setState(() {
         lat = location['lat']!;
         lag = location['lng']!;
         isLoading = false;
       });
+      await _fetchOrganizationData();
     } catch (e) {
       logger.e("Error fetching location", error: e);
       setState(() => isLoading = false);
     }
+  }
+
+  Future<void> _fetchOrganizationData() async {
+    try {
+      final decodedToken = JwtDecoder.decode(widget.token);
+      final orgUsername = decodedToken['username'];
+      final orgData = await _postService.fetchOrganizationDataByuserName(
+        orgUsername,
+      );
+      setState(() {
+        organizationData = orgData;
+        print('Organization Data: $organizationData');
+      });
+    } catch (e) {
+      logger.e('Error fetching organization data', error: e);
+    }
+  }
+
+  Future<void> _fetchOrganizationPosts() async {
+    try {
+      final decodedToken = JwtDecoder.decode(widget.token);
+      final orgUsername = decodedToken['username'];
+      final posts = await _postService.fetchPostsByUsername(
+        orgUsername,
+        1,
+        1,
+      ); // Fetch only the latest post
+      setState(() {
+        orgPosts = posts;
+      });
+    } catch (e) {
+      logger.e('Error fetching organization posts', error: e);
+    }
+  }
+
+  Widget _buildCountWidget(int count, String label, bool isFollowers) {
+    return GestureDetector(
+      onTap: () => _showFollowList(context, isFollowers),
+      child: Column(
+        children: [
+          Text(
+            count.toString(),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.8),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFollowList(BuildContext context, bool showFollowers) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => FollowersListScreen(
+              token: widget.token,
+              username: username,
+              showFollowers: showFollowers,
+            ),
+      ),
+    );
   }
 
   Future<void> _updateLocation(double newLat, double newLng) async {
@@ -90,6 +179,24 @@ class _ProfileTabState extends State<ProfileTab> {
       return Center(child: CircularProgressIndicator());
     }
 
+    // Organization Info Cards with default values if missing
+    final desc = organizationData?['description']?.toString();
+    final aboutValue =
+        (desc != null && desc.isNotEmpty) ? desc : 'No description provided';
+    final industry = organizationData?['industry']?.toString();
+    final industryValue =
+        (industry != null && industry.isNotEmpty)
+            ? industry
+            : 'No industry provided';
+    final website = organizationData?['website']?.toString();
+    final websiteValue =
+        (website != null && website.isNotEmpty)
+            ? website
+            : 'No website provided';
+    final email = organizationData?['email']?.toString();
+    final emailValue =
+        (email != null && email.isNotEmpty) ? email : 'No email provided';
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -123,14 +230,32 @@ class _ProfileTabState extends State<ProfileTab> {
                 ),
               ),
               child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 32,
-                    horizontal: 16,
-                  ),
-                  child: Stack(
-                    children: [Center(child: AvatarName(token: widget.token))],
-                  ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 32,
+                        horizontal: 16,
+                      ),
+                      child: Stack(
+                        children: [
+                          Center(child: AvatarName(token: widget.token)),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 15),
+
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildCountWidget(followersCount, 'Followers', true),
+                          const SizedBox(width: 24),
+                          _buildCountWidget(followingCount, 'Following', false),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -183,6 +308,7 @@ class _ProfileTabState extends State<ProfileTab> {
                   const SizedBox(height: 16),
                   LocationView(lat: lat, lag: lag),
                   const SizedBox(height: 16),
+                  // Organization Info Cards
                   SizedBox(
                     width: double.infinity,
                     child: BaseButton(
@@ -209,7 +335,86 @@ class _ProfileTabState extends State<ProfileTab> {
               ),
             ),
 
+            _buildOrganizationInfoCard(
+              'About',
+              aboutValue,
+              Icons.description_outlined,
+            ),
+            _buildOrganizationInfoCard(
+              'Industry',
+              industryValue,
+              Icons.business_outlined,
+            ),
+            _buildOrganizationInfoCard(
+              'Website',
+              websiteValue,
+              Icons.language_outlined,
+            ),
+            _buildOrganizationInfoCard(
+              'Email',
+              emailValue,
+              Icons.email_outlined,
+            ),
             const SizedBox(height: 24),
+
+            // Organization Posts Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Latest Post',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => OrganizationPostsScreen(
+                                    token: widget.token,
+                                  ),
+                            ),
+                          );
+                        },
+                        child: const Text('See All'),
+                      ),
+                    ],
+                  ),
+                  orgPosts.isNotEmpty
+                      ? PostCard(
+                        postId: orgPosts[0]['id'],
+                        postText: orgPosts[0]['text'],
+                        authorName: orgPosts[0]['author'] ?? '',
+                        timestamp: orgPosts[0]['time'],
+                        authorAvatarUrl: orgPosts[0]['avatarUrl'] ?? '',
+                        isOwner: orgPosts[0]['isOwner'] ?? false,
+                        isLiked: orgPosts[0]['isLiked'] ?? false,
+                        likeCount: orgPosts[0]['likeCount'] ?? 0,
+                        onLike: () {},
+                        onComment: () {},
+                        currentUserAvatar: '',
+                        currentUserName: '',
+                        token: widget.token,
+                        username: orgPosts[0]['author'] ?? '',
+                        onDelete: null,
+                        onUpdate: null,
+                        initialComments: List<Map<String, dynamic>>.from(
+                          orgPosts[0]['comments'] ?? [],
+                        ),
+                      )
+                      : const Text('No posts yet.'),
+                ],
+              ),
+            ),
 
             // Quick Actions Section
             Container(
@@ -412,6 +617,88 @@ class _ProfileTabState extends State<ProfileTab> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildOrganizationInfoCard(
+    String title,
+    String? value,
+    IconData icon,
+  ) {
+    if (value == null || value.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).primaryColor.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Theme.of(context).primaryColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 15,
+                color: Colors.black87,
+                height: 1.6,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Placeholder for the organization posts screen
+class OrganizationPostsScreen extends StatelessWidget {
+  final String token;
+  const OrganizationPostsScreen({Key? key, required this.token})
+    : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Organization Posts')),
+      body: const Center(
+        child: Text('All organization posts will be shown here.'),
+      ),
     );
   }
 }
