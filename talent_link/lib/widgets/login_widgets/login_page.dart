@@ -142,9 +142,10 @@ class _LoginPageState extends State<LoginPage>
         final role = decodedToken['role'];
         String userId = decodedToken['id'];
         String username = decodedToken['username'];
+        String currentUserAvatarUrl = decodedToken['avatarUrl'] ?? '';
 
         logger.i(
-          "Decoded token - Role: $role, UserId: $userId, Username: $username",
+          "Decoded token - Role: $role, UserId: $userId, Username: $username, Avatar URL: $currentUserAvatarUrl",
         );
 
         final prefs = await SharedPreferences.getInstance();
@@ -152,6 +153,7 @@ class _LoginPageState extends State<LoginPage>
         await prefs.setString('username', username);
         await prefs.setString('role', role);
         await prefs.setString('userId', userId);
+        await prefs.setString('avatarUrl', currentUserAvatarUrl);
 
         logger.i("Saved user data to SharedPreferences");
 
