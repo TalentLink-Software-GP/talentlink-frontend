@@ -30,8 +30,15 @@ class _FreelanceFeedState extends State<FreelanceFeed> {
     return prefs.getString('username') ?? 'defaultUsername';
   }
 
+  Future<String> getCurrentUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('userId') ?? 'defaultUserId';
+  }
+
   Future<void> _addNewPost(String content) async {
     final username = await getCurrentUsername();
+    final userId = await getCurrentUserId();
+
     final date = DateTime.now().toIso8601String().substring(0, 10);
 
     try {
@@ -42,6 +49,7 @@ class _FreelanceFeedState extends State<FreelanceFeed> {
           'username': username,
           'content': content,
           'date': date,
+          'userId': userId,
         }),
       );
 
@@ -51,6 +59,7 @@ class _FreelanceFeedState extends State<FreelanceFeed> {
             'username': username,
             'content': content,
             'date': date,
+            'userId': userId,
           });
         });
       } else {
@@ -76,6 +85,7 @@ class _FreelanceFeedState extends State<FreelanceFeed> {
                       'username': (item['username'] ?? '').toString(),
                       'content': (item['content'] ?? '').toString(),
                       'date': (item['date'] ?? '').toString(),
+                      'userId': (item['userId'] ?? '').toString(),
                     };
                   })
                   .toList()
@@ -99,6 +109,7 @@ class _FreelanceFeedState extends State<FreelanceFeed> {
             username: post['username']!,
             content: post['content']!,
             date: post['date']!,
+            userId: post['userId']!,
           ),
         ),
       ],
