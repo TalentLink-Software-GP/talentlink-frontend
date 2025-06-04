@@ -66,7 +66,15 @@ class _RecommendedUsersScreenState extends State<RecommendedUsersScreen>
       final users = await _jobMatchService.fetchMatchedUsers(widget.jobId);
       if (mounted) {
         setState(() {
-          matchedUsers = users;
+          matchedUsers =
+              users
+                  .where(
+                    (user) =>
+                        user != null &&
+                        user['userId'] != null &&
+                        user['userId'] is Map,
+                  )
+                  .toList();
           isLoading = false;
         });
         _animationController.forward();
@@ -186,8 +194,11 @@ class _RecommendedUsersScreenState extends State<RecommendedUsersScreen>
                           itemCount: matchedUsers.length,
                           itemBuilder: (context, index) {
                             final userMatch = matchedUsers[index];
-                            final user = userMatch['userId'];
-                            final matchScore = userMatch['matchScore'];
+                            final user =
+                                userMatch['userId'] as Map<String, dynamic>?;
+                            final matchScore = userMatch['matchScore'] ?? 0;
+
+                            if (user == null) return const SizedBox.shrink();
 
                             return AnimatedBuilder(
                               animation: _animationController,
@@ -224,7 +235,9 @@ class _RecommendedUsersScreenState extends State<RecommendedUsersScreen>
                                           builder:
                                               (_) =>
                                                   ProfileWidgetForAnotherUsers(
-                                                    username: user['username'],
+                                                    username:
+                                                        user['username'] ??
+                                                        'Unknown User',
                                                     token: widget.token,
                                                   ),
                                         ),
@@ -250,24 +263,34 @@ class _RecommendedUsersScreenState extends State<RecommendedUsersScreen>
                                             child: ClipRRect(
                                               borderRadius:
                                                   BorderRadius.circular(30),
-                                              child: Image.network(
-                                                user['avatarUrl'],
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (
-                                                  context,
-                                                  error,
-                                                  stackTrace,
-                                                ) {
-                                                  return Icon(
-                                                    Icons.person,
-                                                    size: 30,
-                                                    color:
-                                                        Theme.of(
+                                              child:
+                                                  user['avatarUrl'] != null
+                                                      ? Image.network(
+                                                        user['avatarUrl'],
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder: (
                                                           context,
-                                                        ).primaryColor,
-                                                  );
-                                                },
-                                              ),
+                                                          error,
+                                                          stackTrace,
+                                                        ) {
+                                                          return Icon(
+                                                            Icons.person,
+                                                            size: 30,
+                                                            color:
+                                                                Theme.of(
+                                                                  context,
+                                                                ).primaryColor,
+                                                          );
+                                                        },
+                                                      )
+                                                      : Icon(
+                                                        Icons.person,
+                                                        size: 30,
+                                                        color:
+                                                            Theme.of(
+                                                              context,
+                                                            ).primaryColor,
+                                                      ),
                                             ),
                                           ),
                                           const SizedBox(width: 16),
@@ -279,7 +302,8 @@ class _RecommendedUsersScreenState extends State<RecommendedUsersScreen>
                                                   CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  user['username'],
+                                                  user['username'] ??
+                                                      'Unknown User',
                                                   style: const TextStyle(
                                                     fontSize: 18,
                                                     fontWeight: FontWeight.bold,
